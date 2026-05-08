@@ -36,12 +36,12 @@
     <input type="hidden" name="is_active" value="0">
     <input type="checkbox" name="is_active" value="1" class="mt-1 rounded border-slate-300 text-slate-900 focus:ring-slate-900" @checked(old('is_active', $classGroup->is_active ?? true))>
     <span>
-        <span class="block text-sm font-medium text-slate-950">Class group is active</span>
-        <span class="mt-1 block text-sm text-slate-500">Inactive groups stay available for reporting and history.</span>
+        <span class="block text-sm font-medium text-slate-950">Class group is offered this semester</span>
+        <span class="mt-1 block text-sm text-slate-500">Inactive offerings stay available for reporting and history, but are hidden from replacement creation.</span>
     </span>
 </label>
 
 <div class="flex flex-wrap gap-3">
-    <x-primary-button>{{ $isEditing ? 'Save Changes' : 'Create Class Group' }}</x-primary-button>
+    <x-primary-button>{{ $isEditing ? 'Save Changes' : 'Create Class Group Offering' }}</x-primary-button>
     <a href="{{ route('ganti-go.classes.index', ['semester_id' => $selectedSemester]) }}" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Cancel</a>
 </div>

@@ -9,6 +9,7 @@ use App\Modules\GantiGo\Models\Semester;
 use App\Modules\GantiGo\Requests\StoreCourseRequest;
 use App\Modules\GantiGo\Requests\UpdateCourseRequest;
 use App\Modules\GantiGo\Services\SemesterActivationService;
+use App\Modules\GantiGo\Services\SemesterOfferingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -29,7 +30,7 @@ class CourseController extends Controller
             'activeSemester' => $activeSemester,
             'selectedSemesterId' => $selectedSemesterId,
             'courses' => Course::query()
-                ->with(['semester', 'programme'])
+                ->with(['semester', 'programme', 'masterCourse'])
                 ->when($selectedSemesterId, fn ($query) => $query->where('semester_id', $selectedSemesterId))
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($query) use ($search): void {
@@ -47,33 +48,36 @@ class CourseController extends Controller
         ]);
     }
 
-    public function create(SemesterActivationService $semesterActivation): View
+    public function create(Request $request, SemesterActivationService $semesterActivation): View
     {
         Gate::authorize('manage-ganti-go');
+        $selectedSemester = $request->integer('semester_id')
+            ? Semester::query()->find($request->integer('semester_id'))
+            : $semesterActivation->autoActivateForToday();
 
         return view('ganti-go.courses.create', [
             'semesters' => Semester::query()->orderByDesc('start_date')->get(),
-            'activeSemester' => $semesterActivation->autoActivateForToday(),
+            'activeSemester' => $selectedSemester,
             'programmes' => Programme::query()->active()->orderBy('code')->get(),
         ]);
     }
 
-    public function store(StoreCourseRequest $request): RedirectResponse
+    public function store(StoreCourseRequest $request, SemesterOfferingService $offerings): RedirectResponse
     {
-        Course::create([
+        $offerings->createCourseOffering([
             ...$request->safe()->except(['is_active']),
             'is_active' => $request->boolean('is_active', true),
-            'created_by' => $request->user()->id,
-        ]);
+        ], $request->user());
 
         return redirect()
             ->route('ganti-go.courses.index', ['semester_id' => $request->integer('semester_id')])
-            ->with('status', 'Course has been created.');
+            ->with('status', 'Course offering has been created.');
     }
 
     public function edit(Course $course): View
     {
         Gate::authorize('manage-ganti-go');
+        abort_if($course->semester?->isArchived(), 403, 'Archived course offerings are read-only.');
 
         return view('ganti-go.courses.edit', [
             'course' => $course,
@@ -82,19 +86,19 @@ class CourseController extends Controller
         ]);
     }
 
-    public function update(UpdateCourseRequest $request, Course $course): RedirectResponse
+    public function update(UpdateCourseRequest $request, Course $course, SemesterOfferingService $offerings): RedirectResponse
     {
-        $course->update([
+        $offerings->updateCourseOffering($course, [
             ...$request->safe()->except(['is_active']),
             'is_active' => $request->boolean('is_active'),
-        ]);
+        ], $request->user());
 
         return redirect()
             ->route('ganti-go.courses.index', ['semester_id' => $request->integer('semester_id')])
-            ->with('status', 'Course has been updated.');
+            ->with('status', 'Course offering has been updated.');
     }
 
-    public function toggle(Course $course): RedirectResponse
+    public function toggle(Course $course, SemesterOfferingService $offerings): RedirectResponse
     {
         Gate::authorize('manage-ganti-go');
 
@@ -102,21 +106,9 @@ class CourseController extends Controller
             return back()->with('error', 'Past semesters are read-only.');
         }
 
-        $course->forceFill(['is_active' => ! $course->is_active])->save();
+        $offerings->toggleCourseOffering($course);
 
-        return back()->with('status', $course->is_active ? 'Course has been enabled.' : 'Course has been disabled.');
+        return back()->with('status', $course->is_active ? 'Course offering has been enabled.' : 'Course offering has been disabled.');
     }
 
-    public function destroy(Course $course): RedirectResponse
-    {
-        Gate::authorize('manage-ganti-go');
-
-        $semesterId = $course->semester_id;
-
-        $course->forceFill(['is_active' => false])->save();
-
-        return redirect()
-            ->route('ganti-go.courses.index', ['semester_id' => $semesterId])
-            ->with('status', 'Course has been disabled. Historical records were kept.');
-    }
 }

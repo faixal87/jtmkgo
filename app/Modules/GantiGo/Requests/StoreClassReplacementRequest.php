@@ -84,23 +84,29 @@ class StoreClassReplacementRequest extends FormRequest
                 $validator->errors()->add('semester_id', 'Past semesters are read-only and cannot accept new replacement records.');
             }
 
+            if ($semester && ! $semester->is_active) {
+                $validator->errors()->add('semester_id', 'Replacement records can only be created for the active current semester.');
+            }
+
             $courseBelongsToSemester = Course::query()
+                ->offered()
                 ->whereKey($this->integer('course_id'))
                 ->where('semester_id', $this->integer('semester_id'))
                 ->exists();
 
             if (! $courseBelongsToSemester) {
-                $validator->errors()->add('course_id', 'The selected course does not belong to the selected semester.');
+                $validator->errors()->add('course_id', 'The selected course is not offered in the active semester.');
             }
 
             $classesMatchSelection = ClassGroup::query()
+                ->offered()
                 ->whereIn('id', (array) $this->input('class_ids', []))
                 ->where('semester_id', $this->integer('semester_id'))
                 ->where('programme_id', $this->integer('programme_id'))
                 ->count() === count((array) $this->input('class_ids', []));
 
             if (! $classesMatchSelection) {
-                $validator->errors()->add('class_ids', 'All selected class groups must belong to the selected programme and semester.');
+                $validator->errors()->add('class_ids', 'All selected class groups must be offered for the selected programme in the active semester.');
             }
         });
     }

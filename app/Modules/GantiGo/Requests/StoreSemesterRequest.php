@@ -23,6 +23,7 @@ class StoreSemesterRequest extends FormRequest
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'is_active' => ['nullable', 'boolean'],
             'auto_activate' => ['nullable', 'boolean'],
+            'copy_previous_offerings' => ['nullable', 'boolean'],
             'remarks' => ['nullable', 'string'],
         ];
     }

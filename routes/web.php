@@ -166,6 +166,8 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
 
             Route::resource('semesters', GantiGoSemesterController::class)->except(['show', 'destroy']);
             Route::patch('semesters/{semester}/activate', [GantiGoSemesterController::class, 'activate'])->name('semesters.activate');
+            Route::get('semesters/{semester}/setup', [GantiGoSemesterController::class, 'setup'])->name('semesters.setup');
+            Route::patch('semesters/{semester}/offerings', [GantiGoSemesterController::class, 'syncOfferings'])->name('semesters.offerings.sync');
 
             Route::patch('courses/{course}/toggle', [GantiGoCourseController::class, 'toggle'])->name('courses.toggle');
             Route::resource('courses', GantiGoCourseController::class)->except(['show', 'destroy']);

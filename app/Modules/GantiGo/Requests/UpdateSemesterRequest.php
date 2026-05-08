@@ -4,6 +4,7 @@ namespace App\Modules\GantiGo\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateSemesterRequest extends FormRequest
 {
@@ -31,5 +32,14 @@ class UpdateSemesterRequest extends FormRequest
             'auto_activate' => ['nullable', 'boolean'],
             'remarks' => ['nullable', 'string'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($this->route('semester')?->isArchived()) {
+                $validator->errors()->add('semester_id', 'Archived semesters are read-only.');
+            }
+        });
     }
 }

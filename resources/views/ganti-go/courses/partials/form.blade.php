@@ -6,7 +6,7 @@
 
 <x-ganti.form-section
     title="Course Details"
-    description="Tie this course and class record to the correct semester."
+    description="Create or update the master course catalog item and offer it in the selected semester."
 >
     <div class="grid gap-5 md:grid-cols-2">
         <div>
@@ -63,14 +63,14 @@
         <input type="hidden" name="is_active" value="0">
         <input type="checkbox" name="is_active" value="1" class="mt-1 rounded border-slate-300 text-slate-900 focus:ring-slate-900" @checked(old('is_active', $course->is_active ?? true))>
         <span>
-            <span class="block text-sm font-medium text-slate-950">Course is active</span>
-            <span class="mt-1 block text-sm text-slate-500">Active courses are available in replacement creation workflows.</span>
+            <span class="block text-sm font-medium text-slate-950">Course is offered this semester</span>
+            <span class="mt-1 block text-sm text-slate-500">Inactive offerings stay available for reporting and history, but are hidden from replacement creation.</span>
         </span>
     </label>
 </x-ganti.form-section>
 
 <div class="flex flex-wrap items-center gap-3">
-    <x-primary-button>{{ $isEditing ? 'Save Changes' : 'Create Course' }}</x-primary-button>
+    <x-primary-button>{{ $isEditing ? 'Save Changes' : 'Create Course Offering' }}</x-primary-button>
     <a href="{{ route('ganti-go.courses.index', ['semester_id' => $selectedSemester]) }}" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition duration-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">
         Cancel
     </a>

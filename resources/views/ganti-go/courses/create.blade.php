@@ -2,7 +2,7 @@
     <x-slot name="header">
         <x-ganti.section-header
             title="New Course"
-            description="Add a course and class record to a semester."
+            description="Add a master course and offer it in a semester."
         />
     </x-slot>
 

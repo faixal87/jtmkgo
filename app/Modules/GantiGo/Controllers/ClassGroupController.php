@@ -7,6 +7,7 @@ use App\Modules\GantiGo\Models\ClassGroup;
 use App\Modules\GantiGo\Models\Programme;
 use App\Modules\GantiGo\Models\Semester;
 use App\Modules\GantiGo\Services\SemesterActivationService;
+use App\Modules\GantiGo\Services\SemesterOfferingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -28,7 +29,7 @@ class ClassGroupController extends Controller
             'semesters' => Semester::query()->orderByDesc('start_date')->get(),
             'selectedSemesterId' => $selectedSemesterId,
             'classes' => ClassGroup::query()
-                ->with(['programme', 'semester'])
+                ->with(['programme', 'semester', 'masterClassGroup'])
                 ->when($selectedSemesterId, fn ($query) => $query->where('semester_id', $selectedSemesterId))
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($query) use ($search): void {
@@ -43,31 +44,35 @@ class ClassGroupController extends Controller
         ]);
     }
 
-    public function create(SemesterActivationService $semesterActivation): View
+    public function create(Request $request, SemesterActivationService $semesterActivation): View
     {
         Gate::authorize('manage-ganti-go');
+        $selectedSemester = $request->integer('semester_id')
+            ? Semester::query()->find($request->integer('semester_id'))
+            : $semesterActivation->autoActivateForToday();
 
         return view('ganti-go.classes.create', [
             'semesters' => Semester::query()->orderByDesc('start_date')->get(),
-            'activeSemester' => $semesterActivation->autoActivateForToday(),
+            'activeSemester' => $selectedSemester,
             'programmes' => Programme::query()->active()->orderBy('code')->get(),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, SemesterOfferingService $offerings): RedirectResponse
     {
         Gate::authorize('manage-ganti-go');
 
-        ClassGroup::create($this->validatedData($request));
+        $offerings->createClassGroupOffering($this->validatedData($request));
 
         return redirect()
             ->route('ganti-go.classes.index', ['semester_id' => $request->integer('semester_id')])
-            ->with('status', 'Class group has been created.');
+            ->with('status', 'Class group offering has been created.');
     }
 
     public function edit(ClassGroup $classGroup): View
     {
         Gate::authorize('manage-ganti-go');
+        abort_if($classGroup->semester?->isArchived(), 403, 'Archived class group offerings are read-only.');
 
         return view('ganti-go.classes.edit', [
             'classGroup' => $classGroup,
@@ -76,18 +81,18 @@ class ClassGroupController extends Controller
         ]);
     }
 
-    public function update(Request $request, ClassGroup $classGroup): RedirectResponse
+    public function update(Request $request, ClassGroup $classGroup, SemesterOfferingService $offerings): RedirectResponse
     {
         Gate::authorize('manage-ganti-go');
 
-        $classGroup->update($this->validatedData($request, $classGroup));
+        $offerings->updateClassGroupOffering($classGroup, $this->validatedData($request, $classGroup));
 
         return redirect()
             ->route('ganti-go.classes.index', ['semester_id' => $request->integer('semester_id')])
-            ->with('status', 'Class group has been updated.');
+            ->with('status', 'Class group offering has been updated.');
     }
 
-    public function toggle(ClassGroup $classGroup): RedirectResponse
+    public function toggle(ClassGroup $classGroup, SemesterOfferingService $offerings): RedirectResponse
     {
         Gate::authorize('manage-ganti-go');
 
@@ -95,9 +100,9 @@ class ClassGroupController extends Controller
             return back()->with('error', 'Past semesters are read-only.');
         }
 
-        $classGroup->forceFill(['is_active' => ! $classGroup->is_active])->save();
+        $offerings->toggleClassGroupOffering($classGroup);
 
-        return back()->with('status', $classGroup->is_active ? 'Class group has been enabled.' : 'Class group has been disabled.');
+        return back()->with('status', $classGroup->is_active ? 'Class group offering has been enabled.' : 'Class group offering has been disabled.');
     }
 
     /**
@@ -105,6 +110,10 @@ class ClassGroupController extends Controller
      */
     private function validatedData(Request $request, ?ClassGroup $classGroup = null): array
     {
+        $request->merge([
+            'class_name' => strtoupper(trim((string) $request->input('class_name'))),
+        ]);
+
         $classNameRule = Rule::unique('classes', 'class_name')
             ->where('programme_id', $request->integer('programme_id'))
             ->where('semester_id', $request->integer('semester_id'));
@@ -128,9 +137,17 @@ class ClassGroupController extends Controller
             'is_active' => $request->boolean('is_active', true),
         ];
 
+        $data['class_name'] = strtoupper(trim((string) $data['class_name']));
+
         if (Semester::query()->find((int) $data['semester_id'])?->isArchived()) {
             throw ValidationException::withMessages([
                 'semester_id' => 'Past semesters are read-only.',
+            ]);
+        }
+
+        if ($classGroup && (int) $classGroup->semester_id !== (int) $data['semester_id']) {
+            throw ValidationException::withMessages([
+                'semester_id' => 'Existing class group offerings cannot be moved to another semester. Create a new offering instead.',
             ]);
         }
 

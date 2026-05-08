@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-ganti.section-header title="New Class Group" description="Create a class group for a semester and programme." />
+        <x-ganti.section-header title="New Class Group" description="Create a master class group and offer it in a semester." />
     </x-slot>
 
     <div class="py-8">

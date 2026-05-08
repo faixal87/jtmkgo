@@ -2,11 +2,11 @@
     <x-slot name="header">
         <x-ganti.section-header
             title="Course Management"
-            description="Manage course code and course name records by semester."
+            description="Manage reusable master courses and semester course offerings."
         >
             <x-slot name="actions">
                 <a href="{{ route('ganti-go.courses.create') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white shadow-sm transition duration-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">
-                    New Course
+                    New Course Offering
                 </a>
             </x-slot>
         </x-ganti.section-header>
@@ -65,19 +65,23 @@
                             <td class="px-5 py-4 text-sm text-slate-600">{{ $course->semester?->name }}</td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex rounded-full border px-3 py-1 text-xs font-medium {{ $course->is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-600' }}">
-                                    {{ $course->is_active ? 'Active' : 'Inactive' }}
+                                    {{ $course->is_active ? 'Offered' : 'Inactive' }}
                                 </span>
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex flex-wrap justify-end gap-2">
-                                    <a href="{{ route('ganti-go.courses.edit', $course) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition duration-200 hover:bg-slate-50">Edit</a>
-                                    <form method="POST" action="{{ route('ganti-go.courses.toggle', $course) }}">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition duration-200 hover:bg-slate-50">
-                                            {{ $course->is_active ? 'Disable' : 'Enable' }}
-                                        </button>
-                                    </form>
+                                    @if ($course->semester?->isArchived())
+                                        <span class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">Archived</span>
+                                    @else
+                                        <a href="{{ route('ganti-go.courses.edit', $course) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition duration-200 hover:bg-slate-50">Edit</a>
+                                        <form method="POST" action="{{ route('ganti-go.courses.toggle', $course) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition duration-200 hover:bg-slate-50">
+                                                {{ $course->is_active ? 'Disable' : 'Enable' }}
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -85,8 +89,8 @@
                         <tr>
                             <td colspan="5">
                                 <x-ganti.empty-state
-                                    title="No course records found"
-                                    message="Create a course or adjust the current filter."
+                                    title="No course offerings found"
+                                    message="Create a course offering or adjust the current filter."
                                 />
                             </td>
                         </tr>

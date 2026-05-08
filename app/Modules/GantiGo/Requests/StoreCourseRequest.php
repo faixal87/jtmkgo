@@ -8,6 +8,13 @@ use Illuminate\Validation\Validator;
 
 class StoreCourseRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'course_code' => strtoupper(trim((string) $this->input('course_code'))),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->can('manage-ganti-go') ?? false;

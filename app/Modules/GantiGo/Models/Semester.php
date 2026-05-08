@@ -26,6 +26,16 @@ class Semester extends Model
         return $this->hasMany(Course::class);
     }
 
+    public function semesterCourses(): HasMany
+    {
+        return $this->hasMany(SemesterCourse::class);
+    }
+
+    public function offeredSemesterCourses(): HasMany
+    {
+        return $this->semesterCourses()->where('is_offered', true);
+    }
+
     public function activeCourses(): HasMany
     {
         return $this->courses()->where('is_active', true);
@@ -34,6 +44,16 @@ class Semester extends Model
     public function classes(): HasMany
     {
         return $this->hasMany(ClassGroup::class);
+    }
+
+    public function semesterClassGroups(): HasMany
+    {
+        return $this->hasMany(SemesterClassGroup::class);
+    }
+
+    public function offeredSemesterClassGroups(): HasMany
+    {
+        return $this->semesterClassGroups()->where('is_offered', true);
     }
 
     public function classReplacements(): HasMany

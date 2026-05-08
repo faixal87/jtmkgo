@@ -64,6 +64,22 @@
     </div>
 </x-ganti.form-section>
 
+@unless ($isEditing)
+    <x-ganti.form-section
+        title="Semester Setup"
+        description="After creating the semester, configure which courses and class groups are offered."
+    >
+        <label class="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <input type="hidden" name="copy_previous_offerings" value="0">
+            <input type="checkbox" name="copy_previous_offerings" value="1" class="mt-1 rounded border-blue-300 text-blue-700 focus:ring-blue-700" @checked(old('copy_previous_offerings', true))>
+            <span>
+                <span class="block text-sm font-medium text-blue-950">Copy course and class offerings from previous semester</span>
+                <span class="mt-1 block text-sm text-blue-700">You can untick courses or class groups and add new catalog items on the setup screen.</span>
+            </span>
+        </label>
+    </x-ganti.form-section>
+@endunless
+
 <div class="flex flex-wrap items-center gap-3">
     <x-primary-button>{{ $isEditing ? 'Save Changes' : 'Create Semester' }}</x-primary-button>
     <a href="{{ route('ganti-go.semesters.index') }}" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition duration-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">

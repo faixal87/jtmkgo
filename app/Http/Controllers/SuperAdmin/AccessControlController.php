@@ -10,6 +10,7 @@ use App\Models\ModuleUserAccess;
 use App\Models\Notification;
 use App\Models\User;
 use App\Support\SafeArrayCache;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -19,16 +20,30 @@ class AccessControlController extends Controller
 {
     public function index(Request $request): View
     {
-        $accessSearch = trim((string) $request->query('access_q'));
-        $adminSearch = trim((string) $request->query('admins_q'));
         $requestStatus = (string) $request->query('request_status', 'pending');
         $notificationType = (string) $request->query('notification_type', 'all');
         $notificationSearch = trim((string) $request->query('notification_q'));
         $userSearch = trim((string) $request->query('user_q'));
+        $userFilter = (string) $request->query('user_filter', 'all');
+        $moduleFilter = (string) $request->query('module_filter', 'all');
+
+        $userFilter = in_array($userFilter, ['all', 'normal', 'module_admins', 'super_admins'], true)
+            ? $userFilter
+            : 'all';
 
         $requestStatus = in_array($requestStatus, ['all', 'pending', 'approved', 'rejected'], true)
             ? $requestStatus
             : 'pending';
+
+        $modules = Module::query()
+            ->select(['id', 'name', 'slug', 'description', 'is_active'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        if ($moduleFilter !== 'all' && ! $modules->contains('slug', $moduleFilter)) {
+            $moduleFilter = 'all';
+        }
 
         $usersPaginator = User::query()
             ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
@@ -41,24 +56,50 @@ class AccessControlController extends Controller
                 'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true),
                 'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
             ])
-            ->approvedStaff()
-            ->when($userSearch !== '', fn ($query) => $query->searchIdentity($userSearch))
+            ->where('account_status', 'approved')
+            ->when($userFilter === 'normal', fn ($query) => $query
+                ->where('is_super_admin', false)
+                ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true)))
+            ->when($userFilter === 'module_admins', fn ($query) => $query
+                ->where('is_super_admin', false)
+                ->whereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true)))
+            ->when($userFilter === 'super_admins', fn ($query) => $query->where('is_super_admin', true))
+            ->when($moduleFilter !== 'all', fn ($query) => $query->whereHas('adminModules', function ($query) use ($moduleFilter): void {
+                $query
+                    ->where('module_admins.is_active', true)
+                    ->where('modules.slug', $moduleFilter);
+            }))
+            ->when($userSearch !== '', fn ($query) => $this->applyUserPanelSearch($query, $userSearch))
             ->orderBy('name')
-            ->paginate($this->perPage($request, 'user_per_page'), ['*'], 'user_page')
+            ->paginate($userSearch !== '' ? 30 : $this->perPage($request, 'user_per_page'), ['*'], 'user_page')
             ->withQueryString();
 
         $users = $usersPaginator->getCollection();
         $selectedUserId = $request->integer('user_id');
 
+        if ($selectedUserId && ! $users->contains('id', $selectedUserId)) {
+            $selectedUser = User::query()
+                ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
+                ->with([
+                    'moduleAccesses' => fn ($query) => $query->where('is_active', true)->with('module')->latest('granted_at'),
+                    'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->orderBy('modules.name'),
+                    'moduleAccessRequests' => fn ($query) => $query->with('module')->latest('requested_at')->latest(),
+                ])
+                ->withCount([
+                    'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true),
+                    'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
+                ])
+                ->where('account_status', 'approved')
+                ->find($selectedUserId);
+
+            if ($selectedUser) {
+                $users->prepend($selectedUser);
+            }
+        }
+
         if (! $selectedUserId || ! $users->contains('id', $selectedUserId)) {
             $selectedUserId = $users->first()?->id;
         }
-
-        $modules = Module::query()
-            ->select(['id', 'name', 'slug', 'description', 'is_active'])
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
 
         return view('super-admin.access-control.index', [
             'users' => $users,
@@ -109,28 +150,11 @@ class AccessControlController extends Controller
                 ->pluck('type'),
             'notificationType' => $notificationType,
             'notificationSearch' => $notificationSearch,
-            'accessUsers' => User::query()
-                ->select(['id', 'name', 'email', 'ic_number', 'profile_photo'])
-                ->with(['moduleAccesses' => fn ($query) => $query->where('is_active', true)->with('module')->latest('granted_at')])
-                ->whereHas('moduleAccesses', fn ($query) => $query->where('is_active', true))
-                ->when($accessSearch !== '', fn ($query) => $query->searchIdentity($accessSearch))
-                ->orderBy('name')
-                ->paginate($this->perPage($request, 'access_per_page'), ['*'], 'access_page')
-                ->withQueryString(),
-            'moduleAdminUsers' => User::query()
-                ->select(['id', 'name', 'email', 'ic_number', 'profile_photo'])
-                ->with(['adminModules' => fn ($query) => $query->wherePivot('is_active', true)->orderBy('modules.name')])
-                ->whereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true))
-                ->when($adminSearch !== '', fn ($query) => $query->searchIdentity($adminSearch))
-                ->orderBy('name')
-                ->paginate($this->perPage($request, 'admins_per_page'), ['*'], 'admins_page')
-                ->withQueryString(),
-            'accessSearch' => $accessSearch,
-            'adminSearch' => $adminSearch,
-            'accessPerPage' => $this->perPage($request, 'access_per_page'),
-            'adminsPerPage' => $this->perPage($request, 'admins_per_page'),
             'userSearch' => $userSearch,
             'userPerPage' => $this->perPage($request, 'user_per_page'),
+            'userFilter' => $userFilter,
+            'moduleFilter' => $moduleFilter,
+            'isSearchingUsers' => $userSearch !== '',
         ]);
     }
 
@@ -149,7 +173,7 @@ class AccessControlController extends Controller
             ->get();
 
         if ($users->isEmpty()) {
-            return back()->with('error', 'Only approved users can be granted module access.');
+            return $this->redirectToIndexWithState($request)->with('error', 'Only approved users can be granted module access.');
         }
 
         $moduleIds = Module::query()
@@ -158,7 +182,7 @@ class AccessControlController extends Controller
             ->pluck('id');
 
         if ($moduleIds->isEmpty()) {
-            return back()->with('error', 'Select at least one active module.');
+            return $this->redirectToIndexWithState($request)->with('error', 'Select at least one active module.');
         }
 
         foreach ($users as $user) {
@@ -179,15 +203,15 @@ class AccessControlController extends Controller
 
         $this->clearUserAccessCaches($users->pluck('id')->all());
 
-        return back()->with('status', "Access granted to {$users->count()} users for {$moduleIds->count()} modules.");
+        return $this->redirectToIndexWithState($request)->with('status', "Access granted to {$users->count()} users for {$moduleIds->count()} modules.");
     }
 
-    public function revokeAccess(ModuleUserAccess $access): RedirectResponse
+    public function revokeAccess(Request $request, ModuleUserAccess $access): RedirectResponse
     {
         $access->forceFill(['is_active' => false])->save();
         $this->clearUserAccessCaches([$access->user_id]);
 
-        return back()->with('status', 'Module access has been removed.');
+        return $this->redirectToIndexWithState($request, $access->user_id)->with('status', 'Module access has been removed.');
     }
 
     public function revokeUserAccess(Request $request, User $user): RedirectResponse
@@ -204,7 +228,7 @@ class AccessControlController extends Controller
             ->update(['is_active' => false, 'updated_at' => now()]);
         $this->clearUserAccessCaches([$user->id]);
 
-        return back()->with('status', "Removed {$count} module access record(s) for {$user->name}.");
+        return $this->redirectToIndexWithState($request, $user->id)->with('status', "Removed {$count} module access record(s) for {$user->name}.");
     }
 
     public function assignModuleAdmin(Request $request): RedirectResponse
@@ -219,7 +243,7 @@ class AccessControlController extends Controller
         $user = User::findOrFail($validated['user_id']);
 
         if ($user->account_status !== 'approved') {
-            return back()->with('error', 'Only approved users can be assigned as module admins.');
+            return $this->redirectToIndexWithState($request, $user->id)->with('error', 'Only approved users can be assigned as module admins.');
         }
 
         $moduleIds = collect($validated['module_ids'] ?? [])
@@ -229,7 +253,7 @@ class AccessControlController extends Controller
             ->values();
 
         if ($moduleIds->isEmpty()) {
-            return back()->with('error', 'Select at least one module.');
+            return $this->redirectToIndexWithState($request, $user->id)->with('error', 'Select at least one module.');
         }
 
         foreach ($moduleIds as $moduleId) {
@@ -260,15 +284,15 @@ class AccessControlController extends Controller
 
         $this->clearUserAccessCaches([$user->id]);
 
-        return back()->with('status', "Module admin assigned for {$moduleIds->count()} module(s).");
+        return $this->redirectToIndexWithState($request, $user->id)->with('status', "Module admin assigned for {$moduleIds->count()} module(s).");
     }
 
-    public function revokeModuleAdmin(ModuleAdmin $admin): RedirectResponse
+    public function revokeModuleAdmin(Request $request, ModuleAdmin $admin): RedirectResponse
     {
         $admin->forceFill(['is_active' => false])->save();
         $this->clearUserAccessCaches([$admin->user_id]);
 
-        return back()->with('status', 'Module admin role has been removed.');
+        return $this->redirectToIndexWithState($request, $admin->user_id)->with('status', 'Module admin role has been removed.');
     }
 
     public function revokeUserModuleAdmins(Request $request, User $user): RedirectResponse
@@ -285,7 +309,33 @@ class AccessControlController extends Controller
             ->update(['is_active' => false, 'updated_at' => now()]);
         $this->clearUserAccessCaches([$user->id]);
 
-        return back()->with('status', "Removed {$count} module admin role(s) for {$user->name}.");
+        return $this->redirectToIndexWithState($request, $user->id)->with('status', "Removed {$count} module admin role(s) for {$user->name}.");
+    }
+
+    private function applyUserPanelSearch(Builder $query, string $search): Builder
+    {
+        $normalizedSearch = strtolower($search);
+        $isSuperSearch = str_contains($normalizedSearch, 'super');
+
+        return $query->where(function (Builder $query) use ($search, $normalizedSearch, $isSuperSearch): void {
+            $query->searchIdentity($search);
+
+            if ($isSuperSearch) {
+                $query->orWhere('is_super_admin', true);
+            }
+
+            if (str_contains($normalizedSearch, 'module admin') || (! $isSuperSearch && str_contains($normalizedSearch, 'admin'))) {
+                $query->orWhereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true));
+            }
+
+            if (str_contains($normalizedSearch, 'normal') || str_contains($normalizedSearch, 'staff')) {
+                $query->orWhere(function (Builder $query): void {
+                    $query
+                        ->where('is_super_admin', false)
+                        ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true));
+                });
+            }
+        });
     }
 
     private function perPage(Request $request, string $key): int
@@ -293,6 +343,30 @@ class AccessControlController extends Controller
         $perPage = (int) $request->query($key, 10);
 
         return in_array($perPage, [10, 20, 30], true) ? $perPage : 10;
+    }
+
+    private function redirectToIndexWithState(Request $request, ?int $selectedUserId = null): RedirectResponse
+    {
+        return redirect()->route('super-admin.access-control.index', $this->stateQuery($request, $selectedUserId));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function stateQuery(Request $request, ?int $selectedUserId = null): array
+    {
+        $selectedUserId ??= (int) ($request->input('state_user_id') ?: $request->input('user_id') ?: collect((array) $request->input('user_ids'))->first());
+
+        return collect([
+            'tab' => $request->input('tab'),
+            'user_id' => $selectedUserId ?: null,
+            'user_q' => $request->input('user_q'),
+            'user_per_page' => $request->input('user_per_page'),
+            'user_filter' => $request->input('user_filter'),
+            'module_filter' => $request->input('module_filter'),
+        ])
+            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->all();
     }
 
     /**

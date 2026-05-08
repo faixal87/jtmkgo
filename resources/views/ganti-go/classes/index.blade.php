@@ -2,11 +2,11 @@
     <x-slot name="header">
         <x-ganti.section-header
             title="Class Management"
-            description="Manage semester-based class groups for combined replacement workflows."
+            description="Manage reusable master class groups and semester class offerings."
         >
             <x-slot name="actions">
                 <a href="{{ route('ganti-go.classes.create') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800">
-                    New Class Group
+                    New Class Group Offering
                 </a>
             </x-slot>
         </x-ganti.section-header>
@@ -57,19 +57,23 @@
                             <td class="px-5 py-4"><x-ganti.status-badge :status="$classGroup->is_active ? 'active' : 'inactive'" /></td>
                             <td class="px-5 py-4">
                                 <div class="flex justify-end gap-2">
-                                    <a href="{{ route('ganti-go.classes.edit', $classGroup) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">Edit</a>
-                                    <form method="POST" action="{{ route('ganti-go.classes.toggle', $classGroup) }}">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">{{ $classGroup->is_active ? 'Disable' : 'Enable' }}</button>
-                                    </form>
+                                    @if ($classGroup->semester?->isArchived())
+                                        <span class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">Archived</span>
+                                    @else
+                                        <a href="{{ route('ganti-go.classes.edit', $classGroup) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">Edit</a>
+                                        <form method="POST" action="{{ route('ganti-go.classes.toggle', $classGroup) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">{{ $classGroup->is_active ? 'Disable' : 'Enable' }}</button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="5">
-                                <x-ganti.empty-state title="No class groups yet" message="Create class groups such as DIT1A, DNS2B, or DIS3A for the selected semester." />
+                                <x-ganti.empty-state title="No class group offerings yet" message="Create class group offerings such as DIT1A, DNS2B, or DIS3A for the selected semester." />
                             </td>
                         </tr>
                     @endforelse

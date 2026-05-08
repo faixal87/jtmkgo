@@ -7,6 +7,13 @@
     ];
 
     $firstUser = $users->first();
+    $accessStateQuery = array_filter([
+        'user_id' => $selectedUserId,
+        'user_q' => $userSearch ?? null,
+        'user_per_page' => $userPerPage ?? null,
+        'user_filter' => $userFilter ?? null,
+        'module_filter' => $moduleFilter ?? null,
+    ], fn ($value) => filled($value));
 @endphp
 
 <x-app-layout>
@@ -22,7 +29,27 @@
             activeTab: @js(array_key_exists($activeTab, $tabs) ? $activeTab : 'access'),
             selectedUser: @js($selectedUserId ?: $firstUser?->id),
             userSearch: @js($userSearch ?? ''),
-            rejectRequest: null
+            rejectRequest: null,
+            persistState() {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', this.activeTab);
+
+                if (this.selectedUser) {
+                    url.searchParams.set('user_id', this.selectedUser);
+                } else {
+                    url.searchParams.delete('user_id');
+                }
+
+                window.history.replaceState({}, '', url);
+            },
+            setTab(tab) {
+                this.activeTab = tab;
+                this.persistState();
+            },
+            selectUser(userId) {
+                this.selectedUser = userId;
+                this.persistState();
+            }
         }"
         class="py-8"
     >
@@ -43,7 +70,7 @@
                         @foreach ($tabs as $key => $label)
                             <button
                                 type="button"
-                                @click="activeTab = @js($key)"
+                                @click="setTab(@js($key))"
                                 class="relative whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition duration-200"
                                 :class="activeTab === @js($key) ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]' : 'text-[var(--color-muted)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-text)]'"
                             >
@@ -58,23 +85,41 @@
                     <aside class="border-b border-[var(--color-border)] bg-[var(--color-secondary-bg)] lg:border-b-0 lg:border-r">
                         <div class="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-4">
                             <label for="access_user_search" class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Users</label>
-                            <form method="GET" action="{{ route('super-admin.access-control.index') }}" class="mt-2 space-y-2">
+                            <form method="GET" action="{{ route('super-admin.access-control.index') }}" x-ref="userFilterForm" class="mt-2 space-y-2">
                                 <input type="hidden" name="tab" :value="activeTab">
+                                <input type="hidden" name="user_id" :value="selectedUser">
                                 <div class="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
                                     <svg class="h-4 w-4 text-[var(--color-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                         <path d="m21 21-4.3-4.3" />
                                         <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z" />
                                     </svg>
-                                    <input id="access_user_search" name="user_q" value="{{ $userSearch ?? '' }}" x-model="userSearch" placeholder="Search name or IC" class="w-full border-0 bg-transparent p-0 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:ring-0">
+                                    <input id="access_user_search" name="user_q" value="{{ $userSearch ?? '' }}" x-model="userSearch" @input.debounce.550ms="$refs.userFilterForm.submit()" placeholder="Search all users" class="w-full border-0 bg-transparent p-0 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:ring-0">
+                                </div>
+                                <div class="grid gap-2">
+                                    <select name="user_filter" @change="$refs.userFilterForm.submit()" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                                        <option value="all" @selected(($userFilter ?? 'all') === 'all')>All approved users</option>
+                                        <option value="normal" @selected(($userFilter ?? 'all') === 'normal')>Normal users</option>
+                                        <option value="module_admins" @selected(($userFilter ?? 'all') === 'module_admins')>Module admins</option>
+                                        <option value="super_admins" @selected(($userFilter ?? 'all') === 'super_admins')>Super admin</option>
+                                    </select>
+                                    <select name="module_filter" @change="$refs.userFilterForm.submit()" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                                        <option value="all" @selected(($moduleFilter ?? 'all') === 'all')>All module types</option>
+                                        @foreach ($modules as $module)
+                                            <option value="{{ $module->slug }}" @selected(($moduleFilter ?? 'all') === $module->slug)>{{ $module->name }} admins</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <select name="user_per_page" class="flex-1 rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                                    <select name="user_per_page" @change="$refs.userFilterForm.submit()" class="flex-1 rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                                         @foreach ([10, 20, 30] as $size)
                                             <option value="{{ $size }}" @selected(($userPerPage ?? 10) === $size)>{{ $size }} users</option>
                                         @endforeach
                                     </select>
                                     <button class="theme-button-primary rounded-lg px-3 py-2 text-xs font-semibold">Search</button>
                                 </div>
+                                @if ($isSearchingUsers ?? false)
+                                    <p class="text-xs text-[var(--color-muted)]">Showing global search results across all approved users.</p>
+                                @endif
                             </form>
                         </div>
 
@@ -116,8 +161,12 @@
                                             <span class="theme-badge">{{ $enabledModules->count() }} active module(s)</span>
                                         </div>
 
+                                        @if ($user->is_super_admin)
+                                            <x-access.empty-state title="Platform-wide access" message="Super admin accounts can access all modules and do not need module access assignments." />
+                                        @else
                                         <form method="POST" action="{{ route('super-admin.access-control.grant') }}" class="space-y-4">
                                             @csrf
+                                            @include('super-admin.access-control.partials.state-inputs')
                                             <input type="hidden" name="user_ids[]" value="{{ $user->id }}">
                                             <div class="flex items-center justify-between gap-3">
                                                 <div>
@@ -144,6 +193,7 @@
                                         <form method="POST" action="{{ route('super-admin.access-control.revoke-user-access', $user) }}" class="space-y-4">
                                             @csrf
                                             @method('DELETE')
+                                            @include('super-admin.access-control.partials.state-inputs')
                                             <div class="flex items-center justify-between gap-3">
                                                 <div>
                                                     <h4 class="text-sm font-semibold text-[var(--color-text)]">Disable Module Access</h4>
@@ -165,6 +215,7 @@
                                                 <x-access.empty-state title="No active module access" message="Grant access from the disabled module cards above." />
                                             @endif
                                         </form>
+                                        @endif
                                     </div>
                                 @endforeach
                             </section>
@@ -186,8 +237,12 @@
                                             <span class="theme-badge">{{ $enabledAdminModules->count() }} admin module(s)</span>
                                         </div>
 
+                                        @if ($user->is_super_admin)
+                                            <x-access.empty-state title="System administrator" message="Super admin privileges are managed at platform level, not through module admin assignments." />
+                                        @else
                                         <form method="POST" action="{{ route('super-admin.access-control.assign-admin') }}" class="space-y-4">
                                             @csrf
+                                            @include('super-admin.access-control.partials.state-inputs')
                                             <input type="hidden" name="user_id" value="{{ $user->id }}">
                                             <div class="flex items-center justify-between gap-3">
                                                 <div>
@@ -214,6 +269,7 @@
                                         <form method="POST" action="{{ route('super-admin.access-control.revoke-user-admins', $user) }}" class="space-y-4">
                                             @csrf
                                             @method('DELETE')
+                                            @include('super-admin.access-control.partials.state-inputs')
                                             <div class="flex items-center justify-between gap-3">
                                                 <div>
                                                     <h4 class="text-sm font-semibold text-[var(--color-text)]">Remove Admin Privileges</h4>
@@ -235,6 +291,7 @@
                                                 <x-access.empty-state title="No active module admin roles" message="Assign admin privileges from the disabled module cards above." />
                                             @endif
                                         </form>
+                                        @endif
                                     </div>
                                 @endforeach
                             </section>
@@ -247,7 +304,7 @@
                                     </div>
                                     <div class="flex flex-wrap gap-2">
                                         @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'all' => 'All'] as $statusKey => $statusLabel)
-                                            <a href="{{ route('super-admin.access-control.index', ['tab' => 'requests', 'request_status' => $statusKey]) }}" class="rounded-lg px-3 py-2 text-sm font-semibold transition {{ $requestStatus === $statusKey ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]' : 'text-[var(--color-muted)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-text)]' }}">
+                                            <a href="{{ route('super-admin.access-control.index', array_merge($accessStateQuery, ['tab' => 'requests', 'request_status' => $statusKey])) }}" class="rounded-lg px-3 py-2 text-sm font-semibold transition {{ $requestStatus === $statusKey ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]' : 'text-[var(--color-muted)] hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-text)]' }}">
                                                 {{ $statusLabel }}
                                             </a>
                                         @endforeach
@@ -279,7 +336,7 @@
                                                 <div class="flex flex-col gap-1 border-b border-[var(--color-border)] pb-3 sm:flex-row sm:items-center sm:justify-between">
                                                     <div>
                                                         <p class="font-semibold text-[var(--color-text)]">{{ $requestUser?->name }}</p>
-                                                        <p class="text-sm text-[var(--color-muted)]">IC: {{ $requestUser?->ic_number }}</p>
+                                                        <p class="text-sm text-[var(--color-muted)]">{{ $requestUser?->email ?: 'No email recorded' }}</p>
                                                     </div>
                                                     <span class="theme-badge">{{ $groupedRequests->count() }} request(s)</span>
                                                 </div>
@@ -331,6 +388,11 @@
                                     </div>
                                     <form method="GET" action="{{ route('super-admin.access-control.index') }}" class="flex flex-col gap-2 sm:flex-row">
                                         <input type="hidden" name="tab" value="notifications">
+                                        <input type="hidden" name="user_id" :value="selectedUser">
+                                        <input type="hidden" name="user_q" value="{{ $userSearch ?? '' }}">
+                                        <input type="hidden" name="user_per_page" value="{{ $userPerPage ?? 10 }}">
+                                        <input type="hidden" name="user_filter" value="{{ $userFilter ?? 'all' }}">
+                                        <input type="hidden" name="module_filter" value="{{ $moduleFilter ?? 'all' }}">
                                         <input name="notification_q" value="{{ $notificationSearch }}" placeholder="Search notifications" class="rounded-lg border-[var(--color-border)] text-sm shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                                         <select name="notification_type" class="rounded-lg border-[var(--color-border)] text-sm shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                                             <option value="all" @selected($notificationType === 'all')>All groups</option>

@@ -78,10 +78,21 @@ class ClassReplacementController extends Controller
 
         return view('ganti-go.replacements.create', [
             'activeSemester' => $activeSemester,
-            'semesters' => Semester::query()->orderByDesc('start_date')->get(),
+            'semesters' => $activeSemester ? collect([$activeSemester]) : collect(),
             'programmes' => Programme::query()->active()->orderBy('code')->get(),
-            'classes' => ClassGroup::query()->with(['programme', 'semester'])->active()->orderBy('class_name')->get(),
-            'courses' => Course::query()->with(['semester', 'programme'])->active()->orderBy('course_code')->orderBy('course_name')->get(),
+            'classes' => ClassGroup::query()
+                ->with(['programme', 'semester'])
+                ->offered()
+                ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id), fn ($query) => $query->whereRaw('1 = 0'))
+                ->orderBy('class_name')
+                ->get(),
+            'courses' => Course::query()
+                ->with(['semester', 'programme'])
+                ->offered()
+                ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id), fn ($query) => $query->whereRaw('1 = 0'))
+                ->orderBy('course_code')
+                ->orderBy('course_name')
+                ->get(),
             'methods' => ClassReplacement::REPLACEMENT_METHODS,
             'evidenceRequired' => GantiGoSetting::bool('require_evidence_upload'),
         ]);
@@ -121,13 +132,37 @@ class ClassReplacementController extends Controller
     public function edit(ClassReplacement $classReplacement): View
     {
         Gate::authorize('update', $classReplacement);
+        $semester = $classReplacement->semester;
+        $courses = Course::query()
+            ->with(['semester', 'programme'])
+            ->offered()
+            ->where('semester_id', $semester?->id)
+            ->orderBy('course_code')
+            ->orderBy('course_name')
+            ->get();
+
+        if ($classReplacement->course && ! $courses->contains('id', $classReplacement->course_id)) {
+            $courses->push($classReplacement->course->loadMissing(['semester', 'programme']));
+        }
+
+        $classes = ClassGroup::query()
+            ->with(['programme', 'semester'])
+            ->offered()
+            ->where('semester_id', $semester?->id)
+            ->orderBy('class_name')
+            ->get();
+
+        $classReplacement->loadMissing('classes');
+        $classReplacement->classes
+            ->reject(fn (ClassGroup $classGroup) => $classes->contains('id', $classGroup->id))
+            ->each(fn (ClassGroup $classGroup) => $classes->push($classGroup->loadMissing(['programme', 'semester'])));
 
         return view('ganti-go.replacements.edit', [
             'replacement' => $classReplacement->load(['semester', 'course', 'programme', 'classes']),
-            'semesters' => Semester::query()->orderByDesc('start_date')->get(),
+            'semesters' => $semester ? collect([$semester]) : collect(),
             'programmes' => Programme::query()->active()->orderBy('code')->get(),
-            'classes' => ClassGroup::query()->with(['programme', 'semester'])->active()->orderBy('class_name')->get(),
-            'courses' => Course::query()->with(['semester', 'programme'])->active()->orderBy('course_code')->orderBy('course_name')->get(),
+            'classes' => $classes,
+            'courses' => $courses,
             'methods' => ClassReplacement::REPLACEMENT_METHODS,
             'evidenceRequired' => GantiGoSetting::bool('require_evidence_upload'),
         ]);

@@ -36,7 +36,7 @@
                     <tr>
                         <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Semester</th>
                         <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Dates</th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Courses</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Offerings</th>
                         <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
                         <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
                     </tr>
@@ -52,7 +52,8 @@
                                 {{ $semester->start_date->format('d M Y') }} to {{ $semester->end_date->format('d M Y') }}
                             </td>
                             <td class="px-5 py-4 text-sm text-slate-600">
-                                {{ $semester->active_courses_count }} active / {{ $semester->courses_count }} total
+                                <span class="block">{{ $semester->offered_semester_courses_count }} offered course(s)</span>
+                                <span class="mt-1 block text-xs text-slate-500">{{ $semester->offered_semester_class_groups_count }} offered class group(s)</span>
                             </td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex rounded-full border px-3 py-1 text-xs font-medium {{ $semester->is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : ($semester->isArchived() ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-blue-200 bg-blue-50 text-blue-700') }}">
@@ -61,14 +62,17 @@
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex justify-end gap-2">
-                                    <a href="{{ route('ganti-go.semesters.edit', $semester) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition duration-200 hover:bg-slate-50">Edit</a>
-                                    @unless ($semester->is_active)
+                                    @unless ($semester->isArchived())
+                                        <a href="{{ route('ganti-go.semesters.edit', $semester) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition duration-200 hover:bg-slate-50">Edit</a>
+                                        <a href="{{ route('ganti-go.semesters.setup', $semester) }}" class="rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-700 transition duration-200 hover:bg-blue-50">Setup</a>
+                                    @endunless
+                                    @if (! $semester->is_active && ! $semester->isArchived())
                                         <form method="POST" action="{{ route('ganti-go.semesters.activate', $semester) }}">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit" class="rounded-lg bg-slate-950 px-3 py-2 text-xs font-medium text-white transition duration-200 hover:bg-slate-800">Activate</button>
                                         </form>
-                                    @endunless
+                                    @endif
                                 </div>
                             </td>
                         </tr>

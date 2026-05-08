@@ -3,11 +3,11 @@
 namespace App\Modules\GantiGo\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\GantiGo\Models\Course;
 use App\Modules\GantiGo\Models\ClassReplacement;
 use App\Modules\GantiGo\Models\ReplacementMethod;
 use App\Modules\GantiGo\Models\ReplacementReason;
 use App\Modules\GantiGo\Models\Semester;
+use App\Modules\GantiGo\Models\SemesterCourse;
 use App\Modules\GantiGo\Services\ClassReplacementWorkflowService;
 use App\Modules\GantiGo\Services\ReplacementDashboardService;
 use App\Modules\GantiGo\Services\SemesterActivationService;
@@ -33,10 +33,10 @@ class DashboardController extends Controller
             'semesterCount' => Semester::query()->count(),
             'archivedSemesterCount' => Semester::query()->archived()->count(),
             'courseCount' => $activeSemester
-                ? Course::query()->where('semester_id', $activeSemester->id)->count()
+                ? SemesterCourse::query()->where('semester_id', $activeSemester->id)->count()
                 : 0,
             'activeCourseCount' => $activeSemester
-                ? Course::query()->active()->where('semester_id', $activeSemester->id)->count()
+                ? SemesterCourse::query()->where('semester_id', $activeSemester->id)->where('is_offered', true)->count()
                 : 0,
             'methodCount' => ReplacementMethod::query()->active()->count(),
             'reasonCount' => ReplacementReason::query()->active()->count(),

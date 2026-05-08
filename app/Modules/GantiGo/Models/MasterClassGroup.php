@@ -4,24 +4,25 @@ namespace App\Modules\GantiGo\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Programme extends Model
+class MasterClassGroup extends Model
 {
     protected $fillable = [
-        'code',
-        'name',
+        'class_group_name',
+        'programme_id',
         'is_active',
     ];
 
-    public function courses(): HasMany
+    public function programme(): BelongsTo
     {
-        return $this->hasMany(Course::class);
+        return $this->belongsTo(Programme::class);
     }
 
-    public function masterCourses(): HasMany
+    public function semesterClassGroups(): HasMany
     {
-        return $this->hasMany(MasterCourse::class);
+        return $this->hasMany(SemesterClassGroup::class);
     }
 
     public function classes(): HasMany
@@ -29,24 +30,14 @@ class Programme extends Model
         return $this->hasMany(ClassGroup::class);
     }
 
-    public function masterClassGroups(): HasMany
+    public function setClassGroupNameAttribute(?string $value): void
     {
-        return $this->hasMany(MasterClassGroup::class);
+        $this->attributes['class_group_name'] = $value === null ? null : strtoupper(trim($value));
     }
 
-    public function classReplacements(): HasMany
-    {
-        return $this->hasMany(ClassReplacement::class);
-    }
-
-    public function getCodeAttribute(?string $value): ?string
+    public function getClassGroupNameAttribute(?string $value): ?string
     {
         return $value === null ? null : strtoupper($value);
-    }
-
-    public function setCodeAttribute(?string $value): void
-    {
-        $this->attributes['code'] = $value === null ? null : strtoupper(trim($value));
     }
 
     public function scopeActive(Builder $query): Builder

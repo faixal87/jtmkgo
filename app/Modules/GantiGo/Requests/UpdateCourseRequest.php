@@ -8,6 +8,13 @@ use Illuminate\Validation\Validator;
 
 class UpdateCourseRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'course_code' => strtoupper(trim((string) $this->input('course_code'))),
+        ]);
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->can('manage-ganti-go') ?? false;
@@ -32,9 +39,14 @@ class UpdateCourseRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $semester = Semester::query()->find($this->integer('semester_id'));
+            $course = $this->route('course');
 
             if ($semester?->isArchived()) {
                 $validator->errors()->add('semester_id', 'Past semesters are read-only.');
+            }
+
+            if ($course && (int) $course->semester_id !== $this->integer('semester_id')) {
+                $validator->errors()->add('semester_id', 'Existing course offerings cannot be moved to another semester. Create a new offering instead.');
             }
         });
     }
