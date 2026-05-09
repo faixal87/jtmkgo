@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PeterpanSuperAdminSeeder::class,
             DefaultModulesSeeder::class,
             GantiGoMasterDataSeeder::class,
+            PhotoRepositoryCategorySeeder::class,
             BrandingSettingsSeeder::class,
         ]);
     }

@@ -36,6 +36,17 @@ class DefaultModulesSeeder extends Seeder
             ]
         );
 
+        Module::updateOrCreate(
+            ['slug' => 'photo-repository'],
+            [
+                'name' => 'Photo Repository',
+                'icon' => 'PR',
+                'route_prefix' => '/photo-repository',
+                'description' => 'Centralized official portrait and profile photo repository.',
+                'is_active' => true,
+            ]
+        );
+
         $retiredModule = Module::query()
             ->where('slug', 'class-replacement')
             ->first();

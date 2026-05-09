@@ -22,6 +22,13 @@
             'icon' => 'passport-photo',
             'href' => route('passport-photo.dashboard'),
         ],
+        'photo-repository' => [
+            'title' => 'Photo Repository',
+            'subtitle' => 'Official portrait and profile photo repository',
+            'accent' => 'emerald',
+            'icon' => 'photo-repository',
+            'href' => route('photo-repository.dashboard'),
+        ],
     ];
 
     $adminActions = [

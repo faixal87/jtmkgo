@@ -9,11 +9,14 @@
     $subDisabled = 'cursor-not-allowed text-[var(--color-sidebar-disabled)]';
     $gantiGoModule = $sidebarModules->firstWhere('slug', 'ganti-go');
     $passportModule = $sidebarModules->firstWhere('slug', 'passport-photo');
-    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'passport-photo'], true));
+    $photoRepositoryModule = $sidebarModules->firstWhere('slug', 'photo-repository');
+    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'passport-photo', 'photo-repository'], true));
     $isSuperAdmin = (bool) $user?->is_super_admin;
     $canManageGantiGo = $gantiGoModule && $managedModuleIds->contains($gantiGoModule->id);
     $canViewGantiGoAnalytics = $isSuperAdmin || $canManageGantiGo;
     $canManagePassport = $passportModule && $managedModuleIds->contains($passportModule->id);
+    $canManagePhotoRepository = $photoRepositoryModule && ! $isSuperAdmin && $managedModuleIds->contains($photoRepositoryModule->id);
+    $canViewPhotoRepositoryAnalytics = $photoRepositoryModule && ($isSuperAdmin || $canManagePhotoRepository);
     $canManageAnyModule = $isSuperAdmin || $managedModuleIds->isNotEmpty();
     $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
     $workspaceBrandText = $brandingSettings['workspace_brand_text'] ?? 'JTMK';
@@ -123,6 +126,36 @@
                     <span class="{{ $subItem }} {{ $subDisabled }}">Upload Photos</span>
                     <span class="{{ $subItem }} {{ $subDisabled }}">Gallery</span>
                     <span class="{{ $subItem }} {{ $subDisabled }}">Management</span>
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($photoRepositoryModule)
+                <x-sidebar.collapsible-submenu id="photo-repository" title="Photo Repository" :active="request()->routeIs('photo-repository.*')" :badge="$canManagePhotoRepository ? 'Admin' : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
+                            <path d="M8 15s1.5-2 4-2 4 2 4 2" />
+                            <path d="M12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('photo-repository.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                    <a href="{{ route('photo-repository.gallery') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.gallery') ? $subActive : $subIdle }}">Gallery</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('photo-repository.my-photos') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.my-photos') ? $subActive : $subIdle }}">My Photos</a>
+                        <a href="{{ route('photo-repository.upload.create') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.upload.*') ? $subActive : $subIdle }}">Upload Photo</a>
+                    @endunless
+                    @if ($canViewPhotoRepositoryAnalytics || $canManagePhotoRepository)
+                        <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ $canManagePhotoRepository ? 'Admin' : 'Insights' }}</span>
+                    @endif
+                    @if ($canViewPhotoRepositoryAnalytics)
+                        <a href="{{ route('photo-repository.admin.analytics') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.analytics') ? $subActive : $subIdle }}">Analytics</a>
+                    @endif
+                    @if ($canManagePhotoRepository)
+                        <a href="{{ route('photo-repository.admin.review-queue') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.review-queue') ? $subActive : $subIdle }}">Review Queue</a>
+                        <a href="{{ route('photo-repository.admin.profiles') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.profiles*') ? $subActive : $subIdle }}">Profiles</a>
+                        <a href="{{ route('photo-repository.admin.categories') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.categories*') ? $subActive : $subIdle }}">Categories</a>
+                    @endif
                 </x-sidebar.collapsible-submenu>
             @endif
 
@@ -311,6 +344,36 @@
                     <span class="{{ $mobileSubItem }} {{ $subDisabled }}">Upload Photos</span>
                     <span class="{{ $mobileSubItem }} {{ $subDisabled }}">Gallery</span>
                     <span class="{{ $mobileSubItem }} {{ $subDisabled }}">Management</span>
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($photoRepositoryModule)
+                <x-sidebar.collapsible-submenu id="mobile-photo-repository" title="Photo Repository" :active="request()->routeIs('photo-repository.*')" :badge="$canManagePhotoRepository ? 'Admin' : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
+                            <path d="M8 15s1.5-2 4-2 4 2 4 2" />
+                            <path d="M12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('photo-repository.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                    <a href="{{ route('photo-repository.gallery') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.gallery') ? $subActive : $subIdle }}">Gallery</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('photo-repository.my-photos') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.my-photos') ? $subActive : $subIdle }}">My Photos</a>
+                        <a href="{{ route('photo-repository.upload.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.upload.*') ? $subActive : $subIdle }}">Upload Photo</a>
+                    @endunless
+                    @if ($canViewPhotoRepositoryAnalytics || $canManagePhotoRepository)
+                        <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ $canManagePhotoRepository ? 'Admin' : 'Insights' }}</span>
+                    @endif
+                    @if ($canViewPhotoRepositoryAnalytics)
+                        <a href="{{ route('photo-repository.admin.analytics') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.analytics') ? $subActive : $subIdle }}">Analytics</a>
+                    @endif
+                    @if ($canManagePhotoRepository)
+                        <a href="{{ route('photo-repository.admin.review-queue') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.review-queue') ? $subActive : $subIdle }}">Review Queue</a>
+                        <a href="{{ route('photo-repository.admin.profiles') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.profiles*') ? $subActive : $subIdle }}">Profiles</a>
+                        <a href="{{ route('photo-repository.admin.categories') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.categories*') ? $subActive : $subIdle }}">Categories</a>
+                    @endif
                 </x-sidebar.collapsible-submenu>
             @endif
         </x-sidebar.section>
