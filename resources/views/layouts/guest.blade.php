@@ -15,8 +15,7 @@
     @php
         $branding = app(\App\Support\BrandingSettings::class);
         $brandingSettings = $branding->all();
-        $primaryLogo = $branding->asset($brandingSettings['login_logo_primary'] ?? null);
-        $secondaryLogo = $branding->asset($brandingSettings['login_logo_secondary'] ?? null);
+        $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
         $theme = match ($brandingSettings['default_theme'] ?? 'default') {
             'blue' => 'blue',
             'dark' => 'dark',
@@ -27,18 +26,13 @@
         <div class="jtmk-login-shell flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
             <main class="flex flex-1 items-center justify-center">
                 <div class="w-full {{ request()->routeIs('register') ? 'sm:max-w-2xl' : 'sm:max-w-md' }}">
-                    <div class="mb-8 flex justify-center">
-                        <a href="{{ url('/') }}" aria-label="JTMK Go! home" class="flex max-w-full items-center justify-center gap-6 sm:gap-8">
-                            @if ($primaryLogo)
-                                <img src="{{ $primaryLogo }}" alt="POLIMAS logo" class="max-h-16 max-w-32 object-contain sm:max-h-20 sm:max-w-44" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
-                            @endif
-                            <span class="hidden rounded-lg border border-zinc-200 bg-white px-5 py-3 text-base font-semibold text-zinc-700">POLIMAS</span>
-                            @if ($secondaryLogo)
-                                <img src="{{ $secondaryLogo }}" alt="JTMK logo" class="max-h-16 max-w-32 object-contain sm:max-h-20 sm:max-w-44" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
-                            @endif
-                            <span class="hidden rounded-lg border border-zinc-200 bg-white px-5 py-3 text-base font-semibold text-zinc-700">JTMK</span>
-                        </a>
-                    </div>
+                    @if ($workspaceLogo)
+                        <div class="mb-8 flex justify-center">
+                            <a href="{{ url('/') }}" aria-label="JTMK Go! home" class="flex max-w-full items-center justify-center">
+                                <img src="{{ $workspaceLogo }}" alt="{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }} logo" class="max-h-20 max-w-56 object-contain sm:max-h-24 sm:max-w-72" onerror="this.remove();">
+                            </a>
+                        </div>
+                    @endif
 
                     <div class="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/95 px-6 py-6 shadow-[0_24px_70px_rgba(24,24,27,0.08)] backdrop-blur sm:px-8">
                         {{ $slot }}

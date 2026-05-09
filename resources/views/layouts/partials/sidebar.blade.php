@@ -18,21 +18,21 @@
 @endphp
 
 <aside class="fixed inset-y-0 left-0 z-40 hidden bg-[var(--color-sidebar)] text-white shadow-xl transition-all duration-300 lg:flex lg:flex-col" :class="sidebarCollapsed ? 'w-20' : 'w-64'">
-    <div class="flex h-16 items-center gap-3 border-b border-white/10 px-4" :class="sidebarCollapsed ? 'justify-center' : 'justify-between'">
-        <div class="flex min-w-0 items-center">
+    <div class="relative flex h-20 items-center justify-center border-b border-white/10 px-3">
+        <div class="flex min-w-0 items-center justify-center" :class="sidebarCollapsed ? 'w-full' : 'w-full pe-9'">
             @if ($workspaceLogo)
-                <img src="{{ $workspaceLogo }}" alt="{{ $workspaceBrandText }}" class="h-8 w-auto rounded object-contain" :class="sidebarCollapsed ? 'max-w-10' : 'max-w-36'">
+                <img src="{{ $workspaceLogo }}" alt="{{ $workspaceBrandText }}" class="h-11 w-auto max-w-full object-contain" :class="sidebarCollapsed ? 'max-h-10 max-w-12' : 'max-h-14 max-w-44'">
             @else
                 <span class="jtmk-sidebar-brand truncate text-base font-bold" :class="sidebarCollapsed ? 'text-sm' : 'text-base'">{{ $workspaceBrandText }}</span>
             @endif
         </div>
 
-        <button type="button" @click="toggleSidebar()" class="hidden rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:inline-flex" x-show="!sidebarCollapsed" x-cloak aria-label="Collapse sidebar">
+        <button type="button" @click="toggleSidebar()" class="absolute right-3 hidden rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:inline-flex" x-show="!sidebarCollapsed" x-cloak aria-label="Collapse sidebar">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="m15 18-6-6 6-6" />
             </svg>
         </button>
-        <button type="button" @click="toggleSidebar()" class="hidden rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:inline-flex" x-show="sidebarCollapsed" x-cloak aria-label="Expand sidebar">
+        <button type="button" @click="toggleSidebar()" class="absolute right-2 hidden rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:inline-flex" x-show="sidebarCollapsed" x-cloak aria-label="Expand sidebar">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="m9 18 6-6-6-6" />
             </svg>
@@ -209,9 +209,9 @@
 
 <aside x-show="sidebarOpen" x-cloak x-transition class="fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto bg-[var(--color-sidebar)] p-4 text-white shadow-2xl lg:hidden" x-data="{ sidebarCollapsed: false }">
     <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
+        <div class="flex min-w-0 flex-1 items-center justify-center pe-10">
             @if ($workspaceLogo)
-                <img src="{{ $workspaceLogo }}" alt="{{ $workspaceBrandText }}" class="h-8 max-w-36 rounded object-contain">
+                <img src="{{ $workspaceLogo }}" alt="{{ $workspaceBrandText }}" class="h-12 max-h-14 max-w-48 object-contain">
             @else
                 <span class="jtmk-sidebar-brand text-base font-bold">{{ $workspaceBrandText }}</span>
             @endif

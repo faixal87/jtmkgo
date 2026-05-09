@@ -29,24 +29,25 @@ class BrandingSettingsController extends Controller
             'workspace_brand_text' => ['nullable', 'string', 'max:40'],
             'default_theme' => ['required', Rule::in(['default', 'blue', 'dark'])],
             'workspace_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
-            'login_logo_primary' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
-            'login_logo_secondary' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+            'remove_workspace_logo' => ['nullable', 'boolean'],
         ]);
 
         $settings = collect($validated)
-            ->except(['workspace_logo', 'login_logo_primary', 'login_logo_secondary'])
+            ->except(['workspace_logo', 'remove_workspace_logo'])
             ->all();
 
-        foreach (['workspace_logo', 'login_logo_primary', 'login_logo_secondary'] as $logoKey) {
-            if ($request->hasFile($logoKey)) {
-                $current = $branding->get($logoKey);
+        if ($request->boolean('remove_workspace_logo')) {
+            $settings['workspace_logo'] = null;
+        }
 
-                if ($current && ! str_starts_with($current, 'images/')) {
-                    Storage::disk('public')->delete($current);
-                }
+        if ($request->hasFile('workspace_logo')) {
+            $current = $branding->get('workspace_logo');
 
-                $settings[$logoKey] = $request->file($logoKey)->store('branding', 'public');
+            if ($current && ! str_starts_with($current, 'images/')) {
+                Storage::disk('public')->delete($current);
             }
+
+            $settings['workspace_logo'] = $request->file('workspace_logo')->store('branding', 'public');
         }
 
         $branding->update($settings);

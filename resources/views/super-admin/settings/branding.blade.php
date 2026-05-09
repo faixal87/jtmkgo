@@ -2,7 +2,7 @@
     $brandingHelper = app(\App\Support\BrandingSettings::class);
     $settingsSections = [
         ['id' => 'identity', 'title' => 'Identity', 'description' => 'System title, tagline, version, and footer text.'],
-        ['id' => 'logos', 'title' => 'Logos', 'description' => 'Sidebar and login logo assets.'],
+        ['id' => 'logos', 'title' => 'Logo', 'description' => 'Single system logo used across landing and workspace areas.'],
         ['id' => 'theme', 'title' => 'Theme', 'description' => 'Default workspace color theme.'],
         ['id' => 'reset', 'title' => 'Reset', 'description' => 'Restore default JTMK Go! branding values.'],
     ];
@@ -12,7 +12,7 @@
     <x-slot name="header">
         <div>
             <h2 class="text-xl font-semibold leading-tight text-[var(--color-text)]">Branding Settings</h2>
-            <p class="mt-1 text-sm text-[var(--color-muted)]">Manage workspace identity, login logos, footer text, and default theme.</p>
+            <p class="mt-1 text-sm text-[var(--color-muted)]">Manage workspace identity, the system logo, footer text, and default theme.</p>
         </div>
     </x-slot>
 
@@ -86,28 +86,32 @@
                         <section x-show="activeSection === 'logos'" x-cloak class="space-y-5">
                             <div class="border-b border-[var(--color-border)] pb-5">
                                 <h3 class="text-lg font-semibold text-[var(--color-text)]">Logo Assets</h3>
-                                <p class="mt-1 text-sm text-[var(--color-muted)]">Upload lightweight image assets for sidebar branding and login identity.</p>
+                                <p class="mt-1 text-sm text-[var(--color-muted)]">Upload one lightweight logo. The same logo appears on the landing page and workspace menu.</p>
                             </div>
 
-                            <div class="grid gap-5 lg:grid-cols-3">
-                                @foreach ([
-                                    'workspace_logo' => ['label' => 'Sidebar Logo', 'preview' => $brandingHelper->asset($branding['workspace_logo'] ?? null)],
-                                    'login_logo_primary' => ['label' => 'POLIMAS Logo', 'preview' => $brandingHelper->asset($branding['login_logo_primary'] ?? null)],
-                                    'login_logo_secondary' => ['label' => 'JTMK Logo', 'preview' => $brandingHelper->asset($branding['login_logo_secondary'] ?? null)],
-                                ] as $field => $meta)
-                                    <div class="enterprise-card rounded-xl border p-4">
-                                        <div class="flex h-20 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-secondary-bg)]">
-                                            @if ($meta['preview'])
-                                                <img src="{{ $meta['preview'] }}" alt="{{ $meta['label'] }}" class="max-h-14 max-w-full object-contain">
-                                            @else
-                                                <span class="text-xs font-semibold text-[var(--color-muted)]">No logo</span>
-                                            @endif
-                                        </div>
-                                        <x-input-label :for="$field" :value="$meta['label']" class="mt-4" />
-                                        <input id="{{ $field }}" name="{{ $field }}" type="file" accept="image/*" class="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] shadow-sm file:me-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white">
-                                        <x-input-error :messages="$errors->get($field)" class="mt-2" />
+                            <div class="enterprise-card rounded-xl border p-5">
+                                <div class="flex min-h-28 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-4">
+                                    @if ($brandingHelper->asset($branding['workspace_logo'] ?? null))
+                                        <img src="{{ $brandingHelper->asset($branding['workspace_logo'] ?? null) }}" alt="Current system logo" class="max-h-20 max-w-full object-contain">
+                                    @else
+                                        <span class="text-xs font-semibold text-[var(--color-muted)]">No uploaded logo</span>
+                                    @endif
+                                </div>
+
+                                <div class="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                                    <div>
+                                        <x-input-label for="workspace_logo" value="System Logo" />
+                                        <input id="workspace_logo" name="workspace_logo" type="file" accept="image/*" class="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] shadow-sm file:me-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white">
+                                        <x-input-error :messages="$errors->get('workspace_logo')" class="mt-2" />
                                     </div>
-                                @endforeach
+
+                                    @if ($branding['workspace_logo'] ?? null)
+                                        <label class="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-muted)]">
+                                            <input type="checkbox" name="remove_workspace_logo" value="1" class="rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                                            Remove logo
+                                        </label>
+                                    @endif
+                                </div>
                             </div>
                         </section>
 
@@ -144,12 +148,12 @@
                         <section x-show="activeSection === 'reset'" x-cloak class="space-y-5">
                             <div class="border-b border-[var(--color-border)] pb-5">
                                 <h3 class="text-lg font-semibold text-[var(--color-text)]">Reset Branding</h3>
-                                <p class="mt-1 text-sm text-[var(--color-muted)]">Restore default titles, logos, footer text, sidebar branding, and theme. Uploaded files remain stored.</p>
+                                <p class="mt-1 text-sm text-[var(--color-muted)]">Restore default titles, footer text, sidebar branding, theme, and a blank logo state. Uploaded files remain stored.</p>
                             </div>
 
                             <div class="enterprise-card rounded-xl border border-red-200 p-5">
                                 <h4 class="text-sm font-semibold text-red-700">Reset to Default Branding</h4>
-                                <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">This resets setting values to JTMK Go!, Developed by JTMK for JTMK, pulut-sekaya, JTMK sidebar branding, default POLIMAS/JTMK logos, and the current orange theme.</p>
+                                <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">This resets setting values to JTMK Go!, Developed by JTMK for JTMK, pulut-sekaya, JTMK sidebar branding, no uploaded logo, and the current orange theme.</p>
                                 <button
                                     type="submit"
                                     form="branding-reset-form"

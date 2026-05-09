@@ -1,9 +1,15 @@
+@php
+    $branding = app(\App\Support\BrandingSettings::class);
+    $logo = $branding->asset($branding->get('workspace_logo'));
+@endphp
+
 <span {{ $attributes->merge(['class' => 'inline-flex items-center justify-center']) }}>
-    <img
-        src="{{ asset('images/logo-jtmk.png') }}"
-        alt="JTMK"
-        class="h-full w-auto object-contain"
-        onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');"
-    >
-    <span class="hidden whitespace-nowrap rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">JTMK</span>
+    @if ($logo)
+        <img
+            src="{{ $logo }}"
+            alt="{{ $branding->get('system_title') ?? 'JTMK Go!' }} logo"
+            class="h-full w-auto object-contain"
+            onerror="this.remove();"
+        >
+    @endif
 </span>

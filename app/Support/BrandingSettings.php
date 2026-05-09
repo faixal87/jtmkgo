@@ -53,6 +53,10 @@ class BrandingSettings
      */
     public function update(array $settings): void
     {
+        Setting::query()
+            ->whereIn('setting_key', ['login_logo_primary', 'login_logo_secondary'])
+            ->delete();
+
         foreach ($settings as $key => $value) {
             if (! array_key_exists($key, $this->defaults())) {
                 continue;
@@ -69,6 +73,10 @@ class BrandingSettings
 
     public function resetToDefaults(): void
     {
+        Setting::query()
+            ->whereIn('setting_key', ['login_logo_primary', 'login_logo_secondary'])
+            ->delete();
+
         foreach ($this->defaults() as $key => $value) {
             Setting::updateOrCreate(
                 ['setting_key' => $key],
@@ -91,8 +99,6 @@ class BrandingSettings
             'footer_text' => 'JTMK Go! &mdash; Version: pulut-sekaya',
             'workspace_brand_text' => 'JTMK',
             'workspace_logo' => null,
-            'login_logo_primary' => 'images/logo-polimas.png',
-            'login_logo_secondary' => 'images/logo-jtmk.png',
             'default_theme' => 'default',
         ];
     }
