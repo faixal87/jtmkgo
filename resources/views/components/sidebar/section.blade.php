@@ -3,7 +3,7 @@
 ])
 
 <div {{ $attributes->merge(['class' => 'mt-6 first:mt-0']) }}>
-    <p class="px-3 text-xs font-semibold uppercase tracking-wide text-slate-500" x-show="!sidebarCollapsed" x-cloak>
+    <p class="px-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]" x-show="!sidebarCollapsed" x-cloak>
         {{ $title }}
     </p>
 

@@ -1,6 +1,9 @@
 @php
     $user = auth()->user();
     $branding = app(\App\Support\BrandingSettings::class);
+    $brandingSettings = $branding->all();
+    $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
+    $logoSize = $brandingSettings['logo_size'] ?? 'medium';
     $availableModules = $availableModules ?? collect();
     $managedModuleIds = $managedModuleIds ?? collect();
 
@@ -32,10 +35,13 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <div>
+        <div class="flex items-center gap-3">
+            @if ($workspaceLogo)
+                <x-branding-logo :src="$workspaceLogo" :alt="($brandingSettings['system_title'] ?? 'JTMK Go!').' logo'" :size="$logoSize" context="dashboard" class="shrink-0" />
+            @endif
             <div>
-                <h1 class="text-xl font-semibold tracking-tight text-slate-950">Dashboard</h1>
-                <p class="mt-1 text-sm text-slate-500">{{ $branding->get('system_title') ?? 'JTMK Go!' }} &mdash; {{ $branding->get('version_name') ?? 'pulut-sekaya' }}</p>
+                <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">Dashboard</h1>
+                <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }} &mdash; {{ $brandingSettings['version_name'] ?? 'pulut-sekaya' }}</p>
             </div>
         </div>
     </x-slot>

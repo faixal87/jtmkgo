@@ -160,6 +160,10 @@ class ClassReplacementWorkflowService
      */
     private function ensureReviewerCanAct(ClassReplacement $classReplacement, User $admin): void
     {
+        if ($admin->is_super_admin) {
+            throw new AuthorizationException('Only another Ganti Go module admin can verify replacement implementations.');
+        }
+
         if ($classReplacement->blocksSelfVerificationFor($admin)) {
             throw new AuthorizationException('Self-verification is not allowed.');
         }

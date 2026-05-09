@@ -13,7 +13,15 @@
     --color-text: #0f172a;
     --color-muted: #64748b;
     --color-border: #e2e8f0;
-    --color-sidebar: #1f2937;
+    --color-sidebar: #292524;
+    --color-sidebar-text: #fff7ed;
+    --color-sidebar-muted: #d6d3d1;
+    --color-sidebar-border: rgba(251, 191, 36, 0.18);
+    --color-sidebar-hover: rgba(251, 191, 36, 0.12);
+    --color-sidebar-active-bg: rgba(245, 158, 11, 0.18);
+    --color-sidebar-active-text: #fffbeb;
+    --color-sidebar-disabled: rgba(214, 211, 209, 0.45);
+    --color-sidebar-brand: #f59e0b;
     --color-accent: #f59e0b;
     --color-accent-strong: #d97706;
     --color-accent-soft: #fffbeb;
@@ -29,6 +37,14 @@
     --color-muted: #475569;
     --color-border: #bfdbfe;
     --color-sidebar: #172554;
+    --color-sidebar-text: #eff6ff;
+    --color-sidebar-muted: #bfdbfe;
+    --color-sidebar-border: rgba(147, 197, 253, 0.22);
+    --color-sidebar-hover: rgba(96, 165, 250, 0.16);
+    --color-sidebar-active-bg: rgba(59, 130, 246, 0.22);
+    --color-sidebar-active-text: #ffffff;
+    --color-sidebar-disabled: rgba(191, 219, 254, 0.45);
+    --color-sidebar-brand: #93c5fd;
     --color-accent: #2563eb;
     --color-accent-strong: #1d4ed8;
     --color-accent-soft: #dbeafe;
@@ -43,7 +59,15 @@
     --color-text: #f8fafc;
     --color-muted: #cbd5e1;
     --color-border: #334155;
-    --color-sidebar: #020617;
+    --color-sidebar: #f8fafc;
+    --color-sidebar-text: #0f172a;
+    --color-sidebar-muted: #475569;
+    --color-sidebar-border: rgba(15, 23, 42, 0.12);
+    --color-sidebar-hover: rgba(8, 145, 178, 0.12);
+    --color-sidebar-active-bg: rgba(8, 145, 178, 0.16);
+    --color-sidebar-active-text: #0e7490;
+    --color-sidebar-disabled: rgba(100, 116, 139, 0.55);
+    --color-sidebar-brand: #0f172a;
     --color-accent: #22d3ee;
     --color-accent-strong: #06b6d4;
     --color-accent-soft: rgba(34, 211, 238, 0.12);
@@ -52,9 +76,37 @@
     --color-secondary-text: #f8fafc;
 }
 
+.theme-purple-matcha {
+    --color-page: #f3f6ea;
+    --color-surface: #fffdf7;
+    --color-text: #221b2f;
+    --color-muted: #6b6474;
+    --color-border: #ded8c8;
+    --color-sidebar: #3b244f;
+    --color-sidebar-text: #fbf7ff;
+    --color-sidebar-muted: #d8c9e8;
+    --color-sidebar-border: rgba(216, 201, 232, 0.2);
+    --color-sidebar-hover: rgba(196, 181, 253, 0.15);
+    --color-sidebar-active-bg: rgba(196, 181, 253, 0.24);
+    --color-sidebar-active-text: #ffffff;
+    --color-sidebar-disabled: rgba(216, 201, 232, 0.44);
+    --color-sidebar-brand: #d8b4fe;
+    --color-accent: #7c3aed;
+    --color-accent-strong: #6d28d9;
+    --color-accent-soft: #f1eaff;
+    --color-accent-text: #4c1d95;
+    --color-secondary-bg: #eef4d5;
+    --color-secondary-text: #3f4a25;
+}
+
 .theme-blue .theme-card,
 .theme-blue .enterprise-card {
     box-shadow: 0 14px 35px rgba(30, 64, 175, 0.08);
+}
+
+.theme-purple-matcha .theme-card,
+.theme-purple-matcha .enterprise-card {
+    box-shadow: 0 14px 35px rgba(59, 36, 79, 0.09);
 }
 
 .theme-dark header,
@@ -270,6 +322,14 @@
         #0f172a;
 }
 
+.theme-purple-matcha .jtmk-login-shell {
+    background:
+        linear-gradient(rgba(59, 36, 79, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 36, 79, 0.045) 1px, transparent 1px),
+        radial-gradient(circle at 50% 20%, rgba(167, 201, 87, 0.18), transparent 28rem),
+        #f3f6ea;
+}
+
 .theme-blue .jtmk-login-shell {
     background:
         linear-gradient(rgba(37, 99, 235, 0.045) 1px, transparent 1px),
@@ -296,10 +356,10 @@
 }
 
 .jtmk-sidebar-brand {
-    color: #f59e0b;
+    color: var(--color-sidebar-brand);
     letter-spacing: 0.14em;
     text-transform: uppercase;
     text-shadow:
-        1px 0 0 rgba(251, 191, 36, 0.28),
-        -1px 0 0 rgba(15, 23, 42, 0.8);
+        1px 0 0 color-mix(in srgb, var(--color-sidebar-brand) 26%, transparent),
+        -1px 0 0 color-mix(in srgb, var(--color-sidebar-text) 22%, transparent);
 }

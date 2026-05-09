@@ -16,6 +16,7 @@
         $branding = app(\App\Support\BrandingSettings::class);
         $brandingSettings = $branding->all();
         $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
+        $logoSize = $brandingSettings['logo_size'] ?? 'medium';
     @endphp
     <body class="bg-white font-sans text-zinc-950 antialiased">
         <main class="jtmk-login-shell flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
@@ -23,7 +24,7 @@
                 <section class="w-full max-w-md">
                     @if ($workspaceLogo)
                         <div class="mb-8 flex justify-center">
-                            <img src="{{ $workspaceLogo }}" alt="{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }} logo" class="max-h-20 max-w-56 object-contain sm:max-h-24 sm:max-w-72" onerror="this.remove();">
+                            <x-branding-logo :src="$workspaceLogo" :alt="($brandingSettings['system_title'] ?? 'JTMK Go!').' logo'" :size="$logoSize" context="login" />
                         </div>
                     @endif
 

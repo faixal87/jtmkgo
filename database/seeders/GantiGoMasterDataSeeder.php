@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Modules\GantiGo\Models\ClassReplacement;
 use App\Modules\GantiGo\Models\GantiGoSetting;
 use App\Modules\GantiGo\Models\Programme;
 use App\Modules\GantiGo\Models\ReplacementMethod;
@@ -35,12 +36,26 @@ class GantiGoMasterDataSeeder extends Seeder
             );
         }
 
-        $reasons = [
-            ['name' => 'Official Duty', 'slug' => 'official-duty', 'sort_order' => 10],
-            ['name' => 'Medical Leave', 'slug' => 'medical-leave', 'sort_order' => 20],
-            ['name' => 'Training or Course', 'slug' => 'training-or-course', 'sort_order' => 30],
-            ['name' => 'Other Approved Reason', 'slug' => 'other-approved-reason', 'sort_order' => 40],
-        ];
+        $reasons = collect(ClassReplacement::replacementReasonOptions())
+            ->map(fn (string $name, string $slug) => [
+                'name' => $name,
+                'slug' => $slug,
+                'sort_order' => match ($slug) {
+                    ClassReplacement::REASON_CUTI_REHAT => 10,
+                    ClassReplacement::REASON_URUSAN_RASMI => 20,
+                    ClassReplacement::REASON_KURSUS => 30,
+                    ClassReplacement::REASON_EL_MC => 40,
+                    ClassReplacement::REASON_PROGRAM_JABATAN => 50,
+                    ClassReplacement::REASON_LAIN_LAIN => 60,
+                    default => 99,
+                },
+            ])
+            ->values()
+            ->all();
+
+        ReplacementReason::query()
+            ->whereNotIn('slug', array_column($reasons, 'slug'))
+            ->update(['is_active' => false]);
 
         foreach ($reasons as $reason) {
             ReplacementReason::updateOrCreate(

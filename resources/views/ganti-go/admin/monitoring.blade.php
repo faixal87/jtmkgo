@@ -8,6 +8,7 @@
     $monthlyMax = max(collect($monthlyCounts)->max('total') ?? 1, 1);
     $semesterMax = max(collect($semesterTrend)->max('total') ?? 1, 1);
     $programmeMax = max(collect($programmeCounts)->max('total') ?? 1, 1);
+    $reasonMax = max(collect($reasonBreakdown)->max('total') ?? 1, 1);
     $firstReplacementId = $replacements->first()?->id;
 @endphp
 
@@ -15,13 +16,15 @@
     <x-slot name="header">
         <x-ganti.section-header
             title="Monitoring Dashboard"
-            description="Module admin view for Ganti Go verification, trends, and lecturer activity."
+            :description="$isSuperAdminReadOnly ? 'Read-only analytics for Ganti Go trends and lecturer activity.' : 'Module admin view for Ganti Go verification, trends, and lecturer activity.'"
         >
-            <x-slot name="actions">
-                <a href="{{ route('ganti-go.admin.review-queue') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white shadow-sm transition duration-200 hover:bg-slate-800">
-                    Review Queue
-                </a>
-            </x-slot>
+            @if ($canReviewImplementations)
+                <x-slot name="actions">
+                    <a href="{{ route('ganti-go.admin.review-queue') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white shadow-sm transition duration-200 hover:bg-slate-800">
+                        Review Queue
+                    </a>
+                </x-slot>
+            @endif
         </x-ganti.section-header>
     </x-slot>
 
@@ -70,7 +73,7 @@
                 </x-ganti.card>
             </section>
 
-            <section class="grid gap-6 xl:grid-cols-2">
+            <section class="grid gap-6 xl:grid-cols-3">
                 <x-ganti.card>
                     <x-ganti.section-header title="Semester Trend" description="Verified implementations across semesters." />
                     <div class="mt-6 flex h-56 items-end gap-3">
@@ -101,6 +104,23 @@
                             </div>
                         @empty
                             <x-ganti.empty-state title="No programme data yet" message="Programme counts appear after replacement records are created." />
+                        @endforelse
+                    </div>
+                </x-ganti.card>
+
+                <x-ganti.card>
+                    <x-ganti.section-header title="Replacement Reason" description="Replacement totals by selected reason." />
+                    <div class="mt-6 space-y-3">
+                        @forelse ($reasonBreakdown as $item)
+                            <div class="grid grid-cols-[8rem_1fr_3rem] items-center gap-3 text-sm">
+                                <span class="font-medium text-slate-700">{{ $item['label'] }}</span>
+                                <div class="h-3 overflow-hidden rounded-full bg-slate-100">
+                                    <div class="h-full rounded-full bg-amber-500" style="width: {{ max(($item['total'] / $reasonMax) * 100, 4) }}%"></div>
+                                </div>
+                                <span class="text-right font-semibold text-slate-800">{{ $item['total'] }}</span>
+                            </div>
+                        @empty
+                            <x-ganti.empty-state title="No reason data yet" message="Reason breakdown appears after replacement records are submitted." />
                         @endforelse
                     </div>
                 </x-ganti.card>
@@ -157,10 +177,17 @@
                                 <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $title }}</h3>
                                 <div class="mt-2 space-y-2">
                                     @forelse ($attentionItems[$key] as $replacement)
-                                        <a href="{{ route('ganti-go.replacements.show', $replacement) }}" class="block rounded-lg border border-slate-200 px-3 py-2 text-sm transition hover:bg-slate-50">
-                                            <span class="block font-medium text-slate-950">{{ $replacement->course?->course_code }} - {{ $replacement->lecturer?->name }}</span>
-                                            <span class="mt-1 block text-xs text-slate-500">{{ $replacement->replacement_date->format('d M Y') }} - {{ $replacement->formattedClassGroups() }}</span>
-                                        </a>
+                                        @if ($canReviewImplementations)
+                                            <a href="{{ route('ganti-go.replacements.show', $replacement) }}" class="block rounded-lg border border-slate-200 px-3 py-2 text-sm transition hover:bg-slate-50">
+                                                <span class="block font-medium text-slate-950">{{ $replacement->course?->course_code }} - {{ $replacement->lecturer?->name }}</span>
+                                                <span class="mt-1 block text-xs text-slate-500">{{ $replacement->replacement_date->format('d M Y') }} - {{ $replacement->formattedClassGroups() }}</span>
+                                            </a>
+                                        @else
+                                            <div class="block rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                                                <span class="block font-medium text-slate-950">{{ $replacement->course?->course_code }} - {{ $replacement->lecturer?->name }}</span>
+                                                <span class="mt-1 block text-xs text-slate-500">{{ $replacement->replacement_date->format('d M Y') }} - {{ $replacement->formattedClassGroups() }}</span>
+                                            </div>
+                                        @endif
                                     @empty
                                         <p class="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-500">No records.</p>
                                     @endforelse
@@ -268,7 +295,7 @@
                                     <article class="enterprise-card rounded-xl border p-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Method</p>
                                         <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $replacement->replacement_method }}</p>
-                                        <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $replacement->replacement_venue ?: 'No venue required' }}</p>
+                                        <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $replacement->reasonLabel() }}</p>
                                     </article>
                                 </div>
 
@@ -293,9 +320,15 @@
                                             <h4 class="text-sm font-semibold text-[var(--color-text)]">Record Actions</h4>
                                             <p class="mt-1 text-sm text-[var(--color-muted)]">Open the full replacement record for evidence, remarks, and review actions.</p>
                                         </div>
-                                        <a href="{{ route('ganti-go.replacements.show', $replacement) }}" class="theme-button-primary inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold">
-                                            View Record
-                                        </a>
+                                        @if ($canReviewImplementations)
+                                            <a href="{{ route('ganti-go.replacements.show', $replacement) }}" class="theme-button-primary inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold">
+                                                View Record
+                                            </a>
+                                        @else
+                                            <span class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-muted)]">
+                                                Read-only analytics
+                                            </span>
+                                        @endif
                                     </div>
 
                                     @if ($selfVerificationBlocked)

@@ -9,35 +9,39 @@ class ClassReplacementPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->hasModuleAccess($user);
+        return ! $user->is_super_admin && $this->hasModuleAccess($user);
     }
 
     public function view(User $user, ClassReplacement $classReplacement): bool
     {
-        return $this->canManage($user)
-            || (int) $classReplacement->user_id === (int) $user->id;
+        return ! $user->is_super_admin
+            && ($this->canManage($user)
+                || (int) $classReplacement->user_id === (int) $user->id);
     }
 
     public function create(User $user): bool
     {
-        return $this->hasModuleAccess($user);
+        return ! $user->is_super_admin && $this->hasModuleAccess($user);
     }
 
     public function update(User $user, ClassReplacement $classReplacement): bool
     {
-        return (int) $classReplacement->user_id === (int) $user->id
+        return ! $user->is_super_admin
+            && (int) $classReplacement->user_id === (int) $user->id
             && $classReplacement->canBeEditedByLecturer();
     }
 
     public function cancel(User $user, ClassReplacement $classReplacement): bool
     {
-        return (int) $classReplacement->user_id === (int) $user->id
+        return ! $user->is_super_admin
+            && (int) $classReplacement->user_id === (int) $user->id
             && $classReplacement->canBeCancelled();
     }
 
     public function submitImplementation(User $user, ClassReplacement $classReplacement): bool
     {
-        return (int) $classReplacement->user_id === (int) $user->id
+        return ! $user->is_super_admin
+            && (int) $classReplacement->user_id === (int) $user->id
             && $classReplacement->canSubmitImplementation();
     }
 
@@ -53,10 +57,6 @@ class ClassReplacementPolicy
 
     private function hasModuleAccess(User $user): bool
     {
-        if ($user->is_super_admin) {
-            return true;
-        }
-
         if ($this->canManage($user)) {
             return true;
         }

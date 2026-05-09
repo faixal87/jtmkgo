@@ -34,6 +34,22 @@ class ClassReplacement extends Model
         'Others',
     ];
 
+    public const REASON_CUTI_REHAT = 'cuti_rehat';
+    public const REASON_URUSAN_RASMI = 'urusan_rasmi';
+    public const REASON_KURSUS = 'kursus';
+    public const REASON_EL_MC = 'el_mc';
+    public const REASON_PROGRAM_JABATAN = 'program_jabatan';
+    public const REASON_LAIN_LAIN = 'lain_lain';
+
+    public const REPLACEMENT_REASONS = [
+        self::REASON_CUTI_REHAT => 'CUTI REHAT',
+        self::REASON_URUSAN_RASMI => 'URUSAN RASMI',
+        self::REASON_KURSUS => 'KURSUS',
+        self::REASON_EL_MC => 'EL/MC',
+        self::REASON_PROGRAM_JABATAN => 'PROGRAM JABATAN',
+        self::REASON_LAIN_LAIN => 'LAIN-LAIN',
+    ];
+
     protected $fillable = [
         'semester_id',
         'user_id',
@@ -181,6 +197,39 @@ class ClassReplacement extends Model
             self::STATUS_OVERDUE => 'Overdue',
             default => 'Unknown',
         };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function replacementReasonOptions(): array
+    {
+        return self::REPLACEMENT_REASONS;
+    }
+
+    public static function reasonLabelFor(?string $reason): string
+    {
+        if (! $reason) {
+            return 'No reason provided.';
+        }
+
+        $normalized = self::normalizeReasonValue($reason);
+
+        return self::REPLACEMENT_REASONS[$normalized] ?? strtoupper($reason);
+    }
+
+    public static function normalizeReasonValue(mixed $reason): mixed
+    {
+        if (! is_string($reason) || $reason === '') {
+            return $reason;
+        }
+
+        return trim((string) preg_replace('/[^a-z0-9]+/', '_', strtolower($reason)), '_');
+    }
+
+    public function reasonLabel(): string
+    {
+        return self::reasonLabelFor($this->reason);
     }
 
     public function formattedClassGroups(): string

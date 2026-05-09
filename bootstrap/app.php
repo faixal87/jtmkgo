@@ -8,6 +8,8 @@ use App\Http\Middleware\EnsureModuleAdmin;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureUserApproved;
 use App\Http\Middleware\HandleSessionTimeout;
+use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -25,5 +27,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (PostTooLargeException $_, Request $request) {
+            $message = 'The uploaded file is too large. Profile photos must be 10MB or smaller.';
+
+            if ($request->is('profile', 'profile/*')) {
+                return back()->withErrors(['profile_photo' => $message]);
+            }
+
+            return back()->withErrors(['upload' => $message]);
+        });
     })->create();

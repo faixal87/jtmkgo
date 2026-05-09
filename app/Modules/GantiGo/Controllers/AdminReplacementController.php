@@ -21,13 +21,13 @@ class AdminReplacementController extends Controller
 {
     public function monitoring(Request $request, SemesterActivationService $semesterActivation, ClassReplacementWorkflowService $workflow): View
     {
-        Gate::authorize('manage-ganti-go');
+        abort_unless($request->user()?->is_super_admin || Gate::allows('manage-ganti-go'), 403);
         $workflow->markOverdueRecords();
 
         $activeSemester = $semesterActivation->autoActivateForToday();
         $selectedSemesterId = $request->integer('semester_id') ?: $activeSemester?->id;
         $query = $this->filteredQuery($request, $selectedSemesterId);
-        $widgetKeys = ['stats', 'statusBreakdown', 'monthlyCounts', 'semesterTrend', 'programmeCounts'];
+        $widgetKeys = ['stats', 'statusBreakdown', 'monthlyCounts', 'semesterTrend', 'programmeCounts', 'reasonBreakdown'];
         $widgets = SafeArrayCache::remember("ganti-go.monitoring.widgets.".($selectedSemesterId ?? 'all'), now()->addSeconds(30), function () use ($selectedSemesterId) {
             $statusBreakdown = $this->statusBreakdown($selectedSemesterId);
 
@@ -37,6 +37,7 @@ class AdminReplacementController extends Controller
                 'monthlyCounts' => $this->monthlyCounts($selectedSemesterId),
                 'semesterTrend' => $this->semesterTrend(),
                 'programmeCounts' => $this->programmeCounts($selectedSemesterId),
+                'reasonBreakdown' => $this->reasonBreakdown($selectedSemesterId),
             ];
         }, $widgetKeys);
 
@@ -45,13 +46,21 @@ class AdminReplacementController extends Controller
             'semesters' => Semester::query()->orderByDesc('start_date')->get(),
             'selectedSemesterId' => $selectedSemesterId,
             'statusOptions' => ClassReplacement::STATUSES,
+            'canReviewImplementations' => ! $request->user()->is_super_admin && Gate::allows('manage-ganti-go'),
+            'isSuperAdminReadOnly' => $request->user()->is_super_admin,
             'lecturerStats' => $this->lecturerStats($selectedSemesterId),
             'attentionItems' => $this->attentionItems($selectedSemesterId),
         ]);
     }
 
-    public function reviewQueue(Request $request, SemesterActivationService $semesterActivation, ClassReplacementWorkflowService $workflow): View
+    public function reviewQueue(Request $request, SemesterActivationService $semesterActivation, ClassReplacementWorkflowService $workflow): View|RedirectResponse
     {
+        if ($request->user()?->is_super_admin) {
+            return redirect()
+                ->route('ganti-go.dashboard')
+                ->with('status', 'Super admin can only view Ganti Go dashboard and analytics.');
+        }
+
         Gate::authorize('manage-ganti-go');
         $workflow->markOverdueRecords();
 
@@ -96,10 +105,13 @@ class AdminReplacementController extends Controller
             )
             ->when($request->filled('q'), function ($query) use ($request) {
                 $search = (string) $request->string('q');
+                $normalizedReasonSearch = ClassReplacement::normalizeReasonValue($search);
 
-                $query->where(function ($query) use ($search) {
+                $query->where(function ($query) use ($search, $normalizedReasonSearch) {
                     $query
                         ->whereHas('lecturer', fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('ic_number', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"))
+                        ->orWhere('reason', 'like', "%{$search}%")
+                        ->orWhere('reason', 'like', "%{$normalizedReasonSearch}%")
                         ->orWhereHas('programme', fn ($query) => $query->where('code', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%"))
                         ->orWhereHas('classes', fn ($query) => $query->where('class_name', 'like', "%{$search}%"))
                         ->orWhereHas('course', fn ($query) => $query->where('course_code', 'like', "%{$search}%")->orWhere('course_name', 'like', "%{$search}%")->orWhere('class_name', 'like', "%{$search}%"));
@@ -214,6 +226,53 @@ class AdminReplacementController extends Controller
             ->get()
             ->map(fn ($row) => ['label' => $row->label, 'total' => (int) $row->total])
             ->all();
+    }
+
+    /**
+     * @return array<int, array{label: string, total: int}>
+     */
+    private function reasonBreakdown(?int $semesterId): array
+    {
+        $counts = ClassReplacement::query()
+            ->select('reason', DB::raw('COUNT(*) as total'))
+            ->when($semesterId, fn ($query) => $query->where('semester_id', $semesterId))
+            ->groupBy('reason')
+            ->pluck('total', 'reason')
+            ->all();
+
+        $knownReasons = array_keys(ClassReplacement::replacementReasonOptions());
+        $normalizedCounts = [];
+        $legacyTotal = 0;
+
+        foreach ($counts as $reason => $total) {
+            $normalizedReason = ClassReplacement::normalizeReasonValue($reason);
+
+            if (is_string($normalizedReason) && in_array($normalizedReason, $knownReasons, true)) {
+                $normalizedCounts[$normalizedReason] = ($normalizedCounts[$normalizedReason] ?? 0) + (int) $total;
+
+                continue;
+            }
+
+            if (! blank($reason)) {
+                $legacyTotal += (int) $total;
+            }
+        }
+
+        $breakdown = collect(ClassReplacement::replacementReasonOptions())
+            ->map(fn (string $label, string $reason) => [
+                'label' => $label,
+                'total' => (int) ($normalizedCounts[$reason] ?? 0),
+            ])
+            ->values();
+
+        if ($legacyTotal > 0) {
+            $breakdown->push([
+                'label' => 'LEGACY / OTHER',
+                'total' => (int) $legacyTotal,
+            ]);
+        }
+
+        return $breakdown->all();
     }
 
     /**

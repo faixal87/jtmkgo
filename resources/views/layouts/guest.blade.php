@@ -16,9 +16,11 @@
         $branding = app(\App\Support\BrandingSettings::class);
         $brandingSettings = $branding->all();
         $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
+        $logoSize = $brandingSettings['logo_size'] ?? 'medium';
         $theme = match ($brandingSettings['default_theme'] ?? 'default') {
             'blue' => 'blue',
             'dark' => 'dark',
+            'purple-matcha' => 'purple-matcha',
             default => 'default',
         };
     @endphp
@@ -29,7 +31,7 @@
                     @if ($workspaceLogo)
                         <div class="mb-8 flex justify-center">
                             <a href="{{ url('/') }}" aria-label="JTMK Go! home" class="flex max-w-full items-center justify-center">
-                                <img src="{{ $workspaceLogo }}" alt="{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }} logo" class="max-h-20 max-w-56 object-contain sm:max-h-24 sm:max-w-72" onerror="this.remove();">
+                                <x-branding-logo :src="$workspaceLogo" :alt="($brandingSettings['system_title'] ?? 'JTMK Go!').' logo'" :size="$logoSize" context="login" />
                             </a>
                         </div>
                     @endif

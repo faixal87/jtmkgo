@@ -20,11 +20,13 @@
                 ?: match ($user?->theme ?? null) {
                     'blue' => 'blue',
                     'dark' => 'dark',
+                    'purple-matcha' => 'purple-matcha',
                     default => $brandingSettings['default_theme'] ?? 'default',
                 };
             $theme = match ($storedTheme) {
                 'blue' => 'blue',
                 'dark' => 'dark',
+                'purple-matcha' => 'purple-matcha',
                 default => 'default',
             };
             $themeClass = "theme-{$theme}";

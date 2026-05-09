@@ -9,6 +9,17 @@
                 </svg>
             </button>
 
+            @php
+                $topbarLogo = isset($branding, $brandingSettings) ? $branding->asset($brandingSettings['workspace_logo'] ?? null) : null;
+                $topbarLogoSize = isset($brandingSettings) ? ($brandingSettings['logo_size'] ?? 'medium') : 'medium';
+            @endphp
+
+            @if ($topbarLogo)
+                <a href="{{ route('dashboard') }}" class="flex max-w-32 items-center lg:hidden" aria-label="{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }} dashboard">
+                    <x-branding-logo :src="$topbarLogo" :alt="($brandingSettings['system_title'] ?? 'JTMK Go!').' logo'" :size="$topbarLogoSize" context="topbar" />
+                </a>
+            @endif
+
             <div class="min-w-0">
                 @isset($header)
                     {{ $header }}

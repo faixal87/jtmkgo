@@ -23,8 +23,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClassReplacementController extends Controller
 {
-    public function index(Request $request, ClassReplacementWorkflowService $workflow): View
+    private const SUPER_ADMIN_READ_ONLY_MESSAGE = 'Super admin can only view Ganti Go dashboard and analytics.';
+
+    public function index(Request $request, ClassReplacementWorkflowService $workflow): View|RedirectResponse
     {
+        if ($redirect = $this->redirectSuperAdmin($request)) {
+            return $redirect;
+        }
+
         Gate::authorize('viewAny', ClassReplacement::class);
         $workflow->markOverdueRecords();
 
@@ -40,9 +46,13 @@ class ClassReplacementController extends Controller
                     fn ($query) => $query->where('status', $status)
                 )
                 ->when($search !== '', function ($query) use ($search): void {
-                    $query->where(function ($query) use ($search): void {
+                    $normalizedReasonSearch = ClassReplacement::normalizeReasonValue($search);
+
+                    $query->where(function ($query) use ($search, $normalizedReasonSearch): void {
                         $query
                             ->where('replacement_method', 'like', "%{$search}%")
+                            ->orWhere('reason', 'like', "%{$search}%")
+                            ->orWhere('reason', 'like', "%{$normalizedReasonSearch}%")
                             ->orWhereHas('programme', function ($query) use ($search): void {
                                 $query
                                     ->where('code', 'like', "%{$search}%")
@@ -70,8 +80,12 @@ class ClassReplacementController extends Controller
         ]);
     }
 
-    public function create(SemesterActivationService $semesterActivation): View
+    public function create(Request $request, SemesterActivationService $semesterActivation): View|RedirectResponse
     {
+        if ($redirect = $this->redirectSuperAdmin($request)) {
+            return $redirect;
+        }
+
         Gate::authorize('create', ClassReplacement::class);
 
         $activeSemester = $semesterActivation->autoActivateForToday();
@@ -94,6 +108,7 @@ class ClassReplacementController extends Controller
                 ->orderBy('course_name')
                 ->get(),
             'methods' => ClassReplacement::REPLACEMENT_METHODS,
+            'reasons' => ClassReplacement::replacementReasonOptions(),
             'evidenceRequired' => GantiGoSetting::bool('require_evidence_upload'),
         ]);
     }
@@ -112,8 +127,12 @@ class ClassReplacementController extends Controller
             ->with('warnings', $warnings);
     }
 
-    public function show(ClassReplacement $classReplacement): View
+    public function show(Request $request, ClassReplacement $classReplacement): View|RedirectResponse
     {
+        if ($redirect = $this->redirectSuperAdmin($request)) {
+            return $redirect;
+        }
+
         Gate::authorize('view', $classReplacement);
 
         return view('ganti-go.replacements.show', [
@@ -129,8 +148,12 @@ class ClassReplacementController extends Controller
         ]);
     }
 
-    public function edit(ClassReplacement $classReplacement): View
+    public function edit(Request $request, ClassReplacement $classReplacement): View|RedirectResponse
     {
+        if ($redirect = $this->redirectSuperAdmin($request)) {
+            return $redirect;
+        }
+
         Gate::authorize('update', $classReplacement);
         $semester = $classReplacement->semester;
         $courses = Course::query()
@@ -164,6 +187,7 @@ class ClassReplacementController extends Controller
             'classes' => $classes,
             'courses' => $courses,
             'methods' => ClassReplacement::REPLACEMENT_METHODS,
+            'reasons' => ClassReplacement::replacementReasonOptions(),
             'evidenceRequired' => GantiGoSetting::bool('require_evidence_upload'),
         ]);
     }
@@ -184,6 +208,10 @@ class ClassReplacementController extends Controller
 
     public function cancel(ClassReplacement $classReplacement, ClassReplacementWorkflowService $workflow): RedirectResponse
     {
+        if ($redirect = $this->redirectSuperAdmin(request())) {
+            return $redirect;
+        }
+
         Gate::authorize('cancel', $classReplacement);
 
         $workflow->cancel($classReplacement);
@@ -193,17 +221,36 @@ class ClassReplacementController extends Controller
 
     public function submitImplementation(SubmitImplementationRequest $request, ClassReplacement $classReplacement, ClassReplacementWorkflowService $workflow): RedirectResponse
     {
+        if ($redirect = $this->redirectSuperAdmin($request)) {
+            return $redirect;
+        }
+
         $workflow->submitImplementation($classReplacement, $request->file('evidence_file'));
 
         return back()->with('status', 'Implementation has been submitted for verification.');
     }
 
-    public function downloadEvidence(ClassReplacement $classReplacement): StreamedResponse
+    public function downloadEvidence(Request $request, ClassReplacement $classReplacement): StreamedResponse|RedirectResponse
     {
+        if ($redirect = $this->redirectSuperAdmin($request)) {
+            return $redirect;
+        }
+
         Gate::authorize('view', $classReplacement);
 
         abort_unless($classReplacement->evidence_path && Storage::exists($classReplacement->evidence_path), 404);
 
         return Storage::download($classReplacement->evidence_path, $classReplacement->evidence_original_name);
+    }
+
+    private function redirectSuperAdmin(Request $request): ?RedirectResponse
+    {
+        if (! $request->user()?->is_super_admin) {
+            return null;
+        }
+
+        return redirect()
+            ->route('ganti-go.dashboard')
+            ->with('status', self::SUPER_ADMIN_READ_ONLY_MESSAGE);
     }
 }

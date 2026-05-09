@@ -27,8 +27,9 @@ class BrandingSettingsController extends Controller
             'version_name' => ['required', 'string', 'max:80'],
             'footer_text' => ['required', 'string', 'max:160'],
             'workspace_brand_text' => ['nullable', 'string', 'max:40'],
-            'default_theme' => ['required', Rule::in(['default', 'blue', 'dark'])],
-            'workspace_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+            'logo_size' => ['required', Rule::in(['large', 'medium', 'small'])],
+            'default_theme' => ['required', Rule::in(['default', 'blue', 'dark', 'purple-matcha'])],
+            'workspace_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
             'remove_workspace_logo' => ['nullable', 'boolean'],
         ]);
 
@@ -41,13 +42,21 @@ class BrandingSettingsController extends Controller
         }
 
         if ($request->hasFile('workspace_logo')) {
+            $storedPath = $request->file('workspace_logo')->store('branding', 'public');
+
+            if (! $storedPath) {
+                return back()
+                    ->withErrors(['workspace_logo' => 'The logo could not be uploaded. Please try again.'])
+                    ->withInput();
+            }
+
             $current = $branding->get('workspace_logo');
 
             if ($current && ! str_starts_with($current, 'images/')) {
                 Storage::disk('public')->delete($current);
             }
 
-            $settings['workspace_logo'] = $request->file('workspace_logo')->store('branding', 'public');
+            $settings['workspace_logo'] = $storedPath;
         }
 
         $branding->update($settings);

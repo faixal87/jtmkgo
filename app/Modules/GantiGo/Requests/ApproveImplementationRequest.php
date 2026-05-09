@@ -14,6 +14,10 @@ class ApproveImplementationRequest extends FormRequest
 
     protected function failedAuthorization(): void
     {
+        if ($this->user()?->is_super_admin) {
+            throw new AuthorizationException('Only another Ganti Go module admin can verify replacement implementations.');
+        }
+
         if ($this->user() && $this->route('classReplacement')?->blocksSelfVerificationFor($this->user())) {
             throw new AuthorizationException('Self-verification is not allowed.');
         }

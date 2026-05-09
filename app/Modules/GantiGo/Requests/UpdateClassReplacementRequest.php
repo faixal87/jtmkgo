@@ -8,6 +8,7 @@ use App\Modules\GantiGo\Models\Course;
 use App\Modules\GantiGo\Models\GantiGoSetting;
 use App\Modules\GantiGo\Models\Semester;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -21,12 +22,22 @@ class UpdateClassReplacementRequest extends FormRequest
             'original_end_time' => $this->normalizeTime($this->input('original_end_time')),
             'replacement_start_time' => $this->normalizeTime($this->input('replacement_start_time')),
             'replacement_end_time' => $this->normalizeTime($this->input('replacement_end_time')),
+            'reason' => ClassReplacement::normalizeReasonValue($this->input('reason')),
         ]);
     }
 
     public function authorize(): bool
     {
         return $this->user()?->can('update', $this->route('classReplacement')) ?? false;
+    }
+
+    protected function failedAuthorization(): void
+    {
+        if ($this->user()?->is_super_admin) {
+            throw new AuthorizationException('Super admin can only view Ganti Go dashboard and analytics.');
+        }
+
+        parent::failedAuthorization();
     }
 
     /**
@@ -55,9 +66,9 @@ class UpdateClassReplacementRequest extends FormRequest
                 'string',
                 'max:255',
             ],
-            'reason' => ['nullable', 'string'],
+            'reason' => ['required', 'string', Rule::in(array_keys(ClassReplacement::replacementReasonOptions()))],
             'remarks' => [
-                Rule::requiredIf(fn () => $this->input('replacement_method') === 'Others'),
+                Rule::requiredIf(fn () => $this->input('reason') === ClassReplacement::REASON_LAIN_LAIN),
                 'nullable',
                 'string',
             ],

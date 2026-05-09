@@ -73,7 +73,7 @@
                     <div class="mt-6 grid gap-4">
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Reason</p>
-                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ $replacement->reason ?: 'No reason provided.' }}</p>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ $replacement->reasonLabel() }}</p>
                         </div>
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Remarks</p>

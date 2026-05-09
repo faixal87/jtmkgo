@@ -6,6 +6,13 @@
         ['id' => 'theme', 'title' => 'Theme', 'description' => 'Default workspace color theme.'],
         ['id' => 'reset', 'title' => 'Reset', 'description' => 'Restore default JTMK Go! branding values.'],
     ];
+    $initialSection = old('active_section', 'identity');
+
+    if ($errors->has('workspace_logo') || $errors->has('logo_size')) {
+        $initialSection = 'logos';
+    } elseif ($errors->has('default_theme')) {
+        $initialSection = 'theme';
+    }
 @endphp
 
 <x-app-layout>
@@ -17,7 +24,7 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8" x-data="{ activeSection: 'identity', settingsSearch: '', defaultTheme: @js(old('default_theme', $branding['default_theme'] ?? 'default')) }">
+        <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8" x-data="{ activeSection: @js($initialSection), settingsSearch: '', defaultTheme: @js(old('default_theme', $branding['default_theme'] ?? 'default')), logoSize: @js(old('logo_size', $branding['logo_size'] ?? 'medium')) }">
             <x-toast />
 
             <x-split-panel-layout height="min-h-[38rem]">
@@ -43,6 +50,7 @@
                     <form method="POST" action="{{ route('super-admin.settings.branding.update') }}" enctype="multipart/form-data" class="space-y-6">
                         @csrf
                         @method('PATCH')
+                        <input type="hidden" name="active_section" :value="activeSection">
 
                         <section x-show="activeSection === 'identity'" x-cloak class="space-y-5">
                             <div class="border-b border-[var(--color-border)] pb-5">
@@ -92,7 +100,7 @@
                             <div class="enterprise-card rounded-xl border p-5">
                                 <div class="flex min-h-28 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-4">
                                     @if ($brandingHelper->asset($branding['workspace_logo'] ?? null))
-                                        <img src="{{ $brandingHelper->asset($branding['workspace_logo'] ?? null) }}" alt="Current system logo" class="max-h-20 max-w-full object-contain">
+                                        <x-branding-logo :src="$brandingHelper->asset($branding['workspace_logo'] ?? null)" alt="Current system logo" :size="old('logo_size', $branding['logo_size'] ?? 'medium')" context="preview" />
                                     @else
                                         <span class="text-xs font-semibold text-[var(--color-muted)]">No uploaded logo</span>
                                     @endif
@@ -102,6 +110,7 @@
                                     <div>
                                         <x-input-label for="workspace_logo" value="System Logo" />
                                         <input id="workspace_logo" name="workspace_logo" type="file" accept="image/*" class="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] shadow-sm file:me-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white">
+                                        <p class="mt-2 text-xs text-[var(--color-muted)]">PNG, JPG, WebP, or SVG up to 5 MB. Transparent PNG is supported.</p>
                                         <x-input-error :messages="$errors->get('workspace_logo')" class="mt-2" />
                                     </div>
 
@@ -112,6 +121,32 @@
                                         </label>
                                     @endif
                                 </div>
+
+                                <div class="mt-5 border-t border-[var(--color-border)] pt-5">
+                                    <x-input-label value="Logo Size" />
+                                    <div class="mt-2 grid gap-3 sm:grid-cols-3">
+                                        @foreach ([
+                                            'large' => ['title' => 'Large', 'description' => 'Current full display size.'],
+                                            'medium' => ['title' => 'Medium', 'description' => 'Half of large. Default.'],
+                                            'small' => ['title' => 'Small', 'description' => 'Half of medium.'],
+                                        ] as $size => $meta)
+                                            <label
+                                                class="enterprise-card cursor-pointer rounded-xl border p-3 transition hover:-translate-y-0.5 hover:shadow-md"
+                                                :class="logoSize === @js($size) ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : ''"
+                                            >
+                                                <input type="radio" name="logo_size" value="{{ $size }}" x-model="logoSize" class="sr-only" @checked(old('logo_size', $branding['logo_size'] ?? 'medium') === $size)>
+                                                <span class="flex items-start justify-between gap-3">
+                                                    <span>
+                                                        <span class="block text-sm font-semibold text-[var(--color-text)]">{{ $meta['title'] }}</span>
+                                                        <span class="mt-1 block text-xs leading-5 text-[var(--color-muted)]">{{ $meta['description'] }}</span>
+                                                    </span>
+                                                    <span class="h-4 w-4 rounded-full border border-[var(--color-border)]" :class="logoSize === @js($size) ? 'border-[var(--color-accent)] bg-[var(--color-accent)]' : ''"></span>
+                                                </span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <x-input-error :messages="$errors->get('logo_size')" class="mt-2" />
+                                </div>
                             </div>
                         </section>
 
@@ -121,11 +156,12 @@
                                 <p class="mt-1 text-sm text-[var(--color-muted)]">Choose the default theme for users who have not selected a personal theme.</p>
                             </div>
 
-                            <div class="grid gap-4 md:grid-cols-3">
+                            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 @foreach ([
                                     'default' => ['title' => 'Default Orange', 'description' => 'White workspace, dark slate sidebar, amber accent.'],
                                     'blue' => ['title' => 'Blue Corporate', 'description' => 'White workspace with blue interface accents.'],
                                     'dark' => ['title' => 'Dark Mode', 'description' => 'Dark elevated cards with high contrast neon accents.'],
+                                    'purple-matcha' => ['title' => 'Purple Matcha', 'description' => 'Soft matcha workspace, muted purple sidebar, lavender accents.'],
                                 ] as $theme => $meta)
                                     <label
                                         class="enterprise-card cursor-pointer rounded-xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md"
@@ -153,7 +189,7 @@
 
                             <div class="enterprise-card rounded-xl border border-red-200 p-5">
                                 <h4 class="text-sm font-semibold text-red-700">Reset to Default Branding</h4>
-                                <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">This resets setting values to JTMK Go!, Developed by JTMK for JTMK, pulut-sekaya, JTMK sidebar branding, no uploaded logo, and the current orange theme.</p>
+                                <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">This resets setting values to JTMK Go!, Developed by JTMK for JTMK, pulut-sekaya, JTMK sidebar branding, medium logo size, no uploaded logo, and the current orange theme.</p>
                                 <button
                                     type="submit"
                                     form="branding-reset-form"

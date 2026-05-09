@@ -1,38 +1,56 @@
 @php
     $navItem = 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition duration-200';
-    $navIdle = 'text-slate-300 hover:bg-white/10 hover:text-white';
-    $navActive = 'bg-white/10 text-white shadow-sm ring-1 ring-white/10';
+    $navIdle = 'text-[var(--color-sidebar-muted)] hover:bg-[var(--color-sidebar-hover)] hover:text-[var(--color-sidebar-text)]';
+    $navActive = 'bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)] shadow-sm ring-1 ring-[var(--color-sidebar-border)]';
     $subItem = 'block rounded-lg px-9 py-1.5 text-xs font-medium transition duration-200';
     $mobileSubItem = 'block rounded-lg px-3 py-1.5 text-xs font-medium transition duration-200';
-    $subIdle = 'text-slate-400 hover:bg-white/10 hover:text-white';
-    $subActive = 'bg-white/10 text-white';
-    $subDisabled = 'cursor-not-allowed text-slate-600';
+    $subIdle = 'text-[var(--color-sidebar-muted)] hover:bg-[var(--color-sidebar-hover)] hover:text-[var(--color-sidebar-text)]';
+    $subActive = 'bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)]';
+    $subDisabled = 'cursor-not-allowed text-[var(--color-sidebar-disabled)]';
     $gantiGoModule = $sidebarModules->firstWhere('slug', 'ganti-go');
     $passportModule = $sidebarModules->firstWhere('slug', 'passport-photo');
     $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'passport-photo'], true));
+    $isSuperAdmin = (bool) $user?->is_super_admin;
     $canManageGantiGo = $gantiGoModule && $managedModuleIds->contains($gantiGoModule->id);
+    $canViewGantiGoAnalytics = $isSuperAdmin || $canManageGantiGo;
     $canManagePassport = $passportModule && $managedModuleIds->contains($passportModule->id);
-    $canManageAnyModule = $user?->is_super_admin || $managedModuleIds->isNotEmpty();
+    $canManageAnyModule = $isSuperAdmin || $managedModuleIds->isNotEmpty();
     $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
     $workspaceBrandText = $brandingSettings['workspace_brand_text'] ?? 'JTMK';
+    $logoSize = in_array($brandingSettings['logo_size'] ?? 'medium', ['large', 'medium', 'small'], true) ? $brandingSettings['logo_size'] : 'medium';
+    $sidebarLogoClasses = [
+        'large' => 'h-11 max-h-14 max-w-44',
+        'medium' => 'h-6 max-h-7 max-w-[5.5rem]',
+        'small' => 'h-3 max-h-4 max-w-[2.75rem]',
+    ][$logoSize];
+    $sidebarCollapsedLogoClasses = [
+        'large' => 'max-h-10 max-w-12',
+        'medium' => 'max-h-5 max-w-6',
+        'small' => 'max-h-3 max-w-4',
+    ][$logoSize];
+    $mobileSidebarLogoClasses = [
+        'large' => 'h-12 max-h-14 max-w-48',
+        'medium' => 'h-6 max-h-7 max-w-24',
+        'small' => 'h-3 max-h-4 max-w-12',
+    ][$logoSize];
 @endphp
 
-<aside class="fixed inset-y-0 left-0 z-40 hidden bg-[var(--color-sidebar)] text-white shadow-xl transition-all duration-300 lg:flex lg:flex-col" :class="sidebarCollapsed ? 'w-20' : 'w-64'">
-    <div class="relative flex h-20 items-center justify-center border-b border-white/10 px-3">
+<aside class="fixed inset-y-0 left-0 z-40 hidden border-r border-[var(--color-sidebar-border)] bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] shadow-xl transition-all duration-300 lg:flex lg:flex-col" :class="sidebarCollapsed ? 'w-20' : 'w-64'">
+    <div class="relative flex h-20 items-center justify-center border-b border-[var(--color-sidebar-border)] px-3">
         <div class="flex min-w-0 items-center justify-center" :class="sidebarCollapsed ? 'w-full' : 'w-full pe-9'">
             @if ($workspaceLogo)
-                <img src="{{ $workspaceLogo }}" alt="{{ $workspaceBrandText }}" class="h-11 w-auto max-w-full object-contain" :class="sidebarCollapsed ? 'max-h-10 max-w-12' : 'max-h-14 max-w-44'">
+                <img src="{{ $workspaceLogo }}" alt="{{ $workspaceBrandText }}" class="w-auto max-w-full object-contain transition-[max-height,max-width,height] duration-200" :class="sidebarCollapsed ? @js($sidebarCollapsedLogoClasses) : @js($sidebarLogoClasses)">
             @else
                 <span class="jtmk-sidebar-brand truncate text-base font-bold" :class="sidebarCollapsed ? 'text-sm' : 'text-base'">{{ $workspaceBrandText }}</span>
             @endif
         </div>
 
-        <button type="button" @click="toggleSidebar()" class="absolute right-3 hidden rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:inline-flex" x-show="!sidebarCollapsed" x-cloak aria-label="Collapse sidebar">
+        <button type="button" @click="toggleSidebar()" class="absolute right-3 hidden rounded-lg p-2 text-[var(--color-sidebar-muted)] transition hover:bg-[var(--color-sidebar-hover)] hover:text-[var(--color-sidebar-text)] lg:inline-flex" x-show="!sidebarCollapsed" x-cloak aria-label="Collapse sidebar">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="m15 18-6-6 6-6" />
             </svg>
         </button>
-        <button type="button" @click="toggleSidebar()" class="absolute right-2 hidden rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:inline-flex" x-show="sidebarCollapsed" x-cloak aria-label="Expand sidebar">
+        <button type="button" @click="toggleSidebar()" class="absolute right-2 hidden rounded-lg p-2 text-[var(--color-sidebar-muted)] transition hover:bg-[var(--color-sidebar-hover)] hover:text-[var(--color-sidebar-text)] lg:inline-flex" x-show="sidebarCollapsed" x-cloak aria-label="Expand sidebar">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="m9 18 6-6-6-6" />
             </svg>
@@ -64,7 +82,7 @@
             @if ($gantiGoModule)
                 <x-sidebar.collapsible-submenu id="ganti-go" title="Ganti Go" :active="request()->routeIs('ganti-go.*')" :badge="$canManageGantiGo ? 'Admin' : null">
                     <x-slot name="icon">
-                        <svg class="h-4 w-4 text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M4 5h16" />
                             <path d="M7 5v14" />
                             <path d="M17 5v14" />
@@ -73,12 +91,16 @@
                     </x-slot>
 
                     <a href="{{ route('ganti-go.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
-                    <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.index') || request()->routeIs('ganti-go.replacements.show') || request()->routeIs('ganti-go.replacements.edit') ? $subActive : $subIdle }}">My Replacements</a>
-                    <a href="{{ route('ganti-go.replacements.create') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">Create Replacement</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.index') || request()->routeIs('ganti-go.replacements.show') || request()->routeIs('ganti-go.replacements.edit') ? $subActive : $subIdle }}">My Replacements</a>
+                        <a href="{{ route('ganti-go.replacements.create') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">Create Replacement</a>
+                    @endunless
+                    @if ($canViewGantiGoAnalytics)
+                        <a href="{{ route('ganti-go.admin.monitoring') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">Monitoring</a>
+                    @endif
                     @if ($canManageGantiGo)
                         <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">Review Queue</a>
-                        <a href="{{ route('ganti-go.admin.monitoring') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">Monitoring</a>
-                        <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500">Admin</span>
+                        <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">Admin</span>
                         <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $subActive : $subIdle }}">Semesters</a>
                         <a href="{{ route('ganti-go.courses.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">Courses</a>
                         <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.programmes.*') ? $subActive : $subIdle }}">Programmes</a>
@@ -91,7 +113,7 @@
             @if ($passportModule)
                 <x-sidebar.collapsible-submenu id="passport-photo" title="Passport Photo System" :active="request()->routeIs('passport-photo.*')" :badge="$canManagePassport ? 'Admin' : null">
                     <x-slot name="icon">
-                        <svg class="h-4 w-4 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
                             <path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                         </svg>
@@ -116,7 +138,7 @@
             @endforeach
 
             @if ($sidebarModules->isEmpty())
-                <p class="px-3 py-2 text-sm text-slate-500" x-show="!sidebarCollapsed" x-cloak>No modules assigned.</p>
+                <p class="px-3 py-2 text-sm text-[var(--color-sidebar-muted)]" x-show="!sidebarCollapsed" x-cloak>No modules assigned.</p>
             @endif
         </x-sidebar.section>
 
@@ -207,16 +229,16 @@
 
 <div x-show="sidebarOpen" x-cloak x-transition.opacity class="fixed inset-0 z-50 bg-slate-950/50 lg:hidden" @click="sidebarOpen = false"></div>
 
-<aside x-show="sidebarOpen" x-cloak x-transition class="fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto bg-[var(--color-sidebar)] p-4 text-white shadow-2xl lg:hidden" x-data="{ sidebarCollapsed: false }">
+<aside x-show="sidebarOpen" x-cloak x-transition class="fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto border-r border-[var(--color-sidebar-border)] bg-[var(--color-sidebar)] p-4 text-[var(--color-sidebar-text)] shadow-2xl lg:hidden" x-data="{ sidebarCollapsed: false }">
     <div class="flex items-center justify-between">
         <div class="flex min-w-0 flex-1 items-center justify-center pe-10">
             @if ($workspaceLogo)
-                <img src="{{ $workspaceLogo }}" alt="{{ $workspaceBrandText }}" class="h-12 max-h-14 max-w-48 object-contain">
+                <img src="{{ $workspaceLogo }}" alt="{{ $workspaceBrandText }}" class="{{ $mobileSidebarLogoClasses }} w-auto object-contain transition-[max-height,max-width,height] duration-200">
             @else
                 <span class="jtmk-sidebar-brand text-base font-bold">{{ $workspaceBrandText }}</span>
             @endif
         </div>
-        <button @click="sidebarOpen = false" class="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white">
+        <button @click="sidebarOpen = false" class="rounded-lg p-2 text-[var(--color-sidebar-muted)] transition hover:bg-[var(--color-sidebar-hover)] hover:text-[var(--color-sidebar-text)]">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="M18 6 6 18" />
                 <path d="m6 6 12 12" />
@@ -248,7 +270,7 @@
             @if ($gantiGoModule)
                 <x-sidebar.collapsible-submenu id="mobile-ganti-go" title="Ganti Go" :active="request()->routeIs('ganti-go.*')" :badge="$canManageGantiGo ? 'Admin' : null">
                     <x-slot name="icon">
-                        <svg class="h-4 w-4 text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M4 5h16" />
                             <path d="M7 5v14" />
                             <path d="M17 5v14" />
@@ -257,12 +279,16 @@
                     </x-slot>
 
                     <a href="{{ route('ganti-go.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
-                    <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.index') || request()->routeIs('ganti-go.replacements.show') || request()->routeIs('ganti-go.replacements.edit') ? $subActive : $subIdle }}">My Replacements</a>
-                    <a href="{{ route('ganti-go.replacements.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">Create Replacement</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.index') || request()->routeIs('ganti-go.replacements.show') || request()->routeIs('ganti-go.replacements.edit') ? $subActive : $subIdle }}">My Replacements</a>
+                        <a href="{{ route('ganti-go.replacements.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">Create Replacement</a>
+                    @endunless
+                    @if ($canViewGantiGoAnalytics)
+                        <a href="{{ route('ganti-go.admin.monitoring') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">Monitoring</a>
+                    @endif
                     @if ($canManageGantiGo)
                         <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">Review Queue</a>
-                        <a href="{{ route('ganti-go.admin.monitoring') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">Monitoring</a>
-                        <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500">Admin</span>
+                        <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">Admin</span>
                         <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $subActive : $subIdle }}">Semesters</a>
                         <a href="{{ route('ganti-go.courses.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">Courses</a>
                         <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.programmes.*') ? $subActive : $subIdle }}">Programmes</a>
@@ -275,7 +301,7 @@
             @if ($passportModule)
                 <x-sidebar.collapsible-submenu id="mobile-passport-photo" title="Passport Photo System" :active="request()->routeIs('passport-photo.*')" :badge="$canManagePassport ? 'Admin' : null">
                     <x-slot name="icon">
-                        <svg class="h-4 w-4 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
                             <path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                         </svg>

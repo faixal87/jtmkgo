@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use RuntimeException;
 
 class ProfileController extends Controller
 {
@@ -32,10 +33,16 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if ($request->hasFile('profile_photo')) {
-            $validated['profile_photo'] = $profilePhotoUploader->store(
-                $request->file('profile_photo'),
-                $user->profile_photo
-            );
+            try {
+                $validated['profile_photo'] = $profilePhotoUploader->store(
+                    $request->file('profile_photo'),
+                    $user->profile_photo
+                );
+            } catch (RuntimeException $exception) {
+                return Redirect::route('profile.edit')
+                    ->withInput()
+                    ->withErrors(['profile_photo' => $exception->getMessage()]);
+            }
         } else {
             unset($validated['profile_photo']);
         }

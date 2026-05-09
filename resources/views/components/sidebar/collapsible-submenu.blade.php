@@ -8,8 +8,8 @@
 @php
     $storageKey = 'jtmkSidebarMenu:'.$id;
     $buttonClass = $active
-        ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/10'
-        : 'text-slate-300 hover:bg-white/10 hover:text-white';
+        ? 'bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)] shadow-sm ring-1 ring-[var(--color-sidebar-border)]'
+        : 'text-[var(--color-sidebar-muted)] hover:bg-[var(--color-sidebar-hover)] hover:text-[var(--color-sidebar-text)]';
 @endphp
 
 <div
@@ -17,7 +17,7 @@
         open: @js((bool) $active) || (localStorage.getItem(@js($storageKey)) === null ? false : localStorage.getItem(@js($storageKey)) === 'true')
     }"
     x-init="$watch('open', value => localStorage.setItem(@js($storageKey), value))"
-    class="rounded-xl bg-white/5 p-1 ring-1 ring-white/10"
+    class="rounded-xl bg-[var(--color-sidebar-hover)] p-1 ring-1 ring-[var(--color-sidebar-border)]"
 >
     <button
         type="button"
@@ -43,12 +43,12 @@
         <span class="truncate" x-show="!sidebarCollapsed" x-cloak>{{ $title }}</span>
 
         @if ($badge)
-            <span class="ms-auto rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-300" x-show="!sidebarCollapsed" x-cloak>
+            <span class="ms-auto rounded-full bg-[var(--color-sidebar-active-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-sidebar-active-text)]" x-show="!sidebarCollapsed" x-cloak>
                 {{ $badge }}
             </span>
         @endif
 
-        <svg class="ms-auto h-4 w-4 text-slate-400 transition duration-200" :class="open ? 'rotate-90' : ''" x-show="!sidebarCollapsed" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <svg class="ms-auto h-4 w-4 text-[var(--color-sidebar-muted)] transition duration-200" :class="open ? 'rotate-90' : ''" x-show="!sidebarCollapsed" x-cloak viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="m9 18 6-6-6-6" />
         </svg>
     </button>
@@ -62,7 +62,7 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="translate-y-0 opacity-100"
         x-transition:leave-end="-translate-y-1 opacity-0"
-        class="mt-1 space-y-1 border-t border-white/10 pt-1"
+        class="mt-1 space-y-1 border-t border-[var(--color-sidebar-border)] pt-1"
     >
         {{ $slot }}
     </div>

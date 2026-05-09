@@ -23,9 +23,12 @@ class DashboardController extends Controller
         $activeSemester = $semesterActivation->autoActivateForToday();
         $user = $request->user();
         $semesterCacheKey = $activeSemester?->id ?? 'none';
+        $canManageGantiGo = $user->can('manage-ganti-go');
+        $canOperateReplacements = ! $user->is_super_admin;
+        $canViewAnalytics = $user->is_super_admin || $canManageGantiGo;
         $myStats = $replacementDashboard->forUser($user, $activeSemester);
         $adminStatsKeys = ['allRecords', 'reviewQueue', 'implemented', 'cancelled', 'overdue'];
-        $adminStats = $user->can('manage-ganti-go')
+        $adminStats = $canViewAnalytics
             ? SafeArrayCache::remember("ganti-go.dashboard.admin-stats.{$semesterCacheKey}", now()->addSeconds(30), fn () => $replacementDashboard->adminStats($activeSemester), $adminStatsKeys)
             : null;
         $foundationKeys = ['semesterCount', 'archivedSemesterCount', 'courseCount', 'activeCourseCount', 'methodCount', 'reasonCount', 'reviewQueueCount'];
@@ -53,6 +56,9 @@ class DashboardController extends Controller
                 ->orderByDesc('start_date')
                 ->take(5)
                 ->get(),
+            'canManageGantiGo' => $canManageGantiGo,
+            'canOperateReplacements' => $canOperateReplacements,
+            'canViewAnalytics' => $canViewAnalytics,
             'myStats' => $myStats,
             'adminStats' => $adminStats,
         ]);

@@ -4,7 +4,6 @@ namespace App\Support;
 
 use App\Models\Setting;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 
 class BrandingSettings
 {
@@ -27,6 +26,12 @@ class BrandingSettings
             $settings['default_theme'] = $settings['default_theme'] === 'light'
                 ? 'default'
                 : $settings['default_theme'];
+            $settings['default_theme'] = in_array($settings['default_theme'], ['default', 'blue', 'dark', 'purple-matcha'], true)
+                ? $settings['default_theme']
+                : 'default';
+            $settings['logo_size'] = in_array($settings['logo_size'] ?? 'medium', ['large', 'medium', 'small'], true)
+                ? $settings['logo_size']
+                : 'medium';
 
             return $settings;
         }, array_keys($this->defaults()));
@@ -43,9 +48,13 @@ class BrandingSettings
             return null;
         }
 
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
         return str_starts_with($path, 'images/')
             ? asset($path)
-            : Storage::url($path);
+            : asset('storage/'.ltrim($path, '/'));
     }
 
     /**
@@ -99,6 +108,7 @@ class BrandingSettings
             'footer_text' => 'JTMK Go! &mdash; Version: pulut-sekaya',
             'workspace_brand_text' => 'JTMK',
             'workspace_logo' => null,
+            'logo_size' => 'medium',
             'default_theme' => 'default',
         ];
     }

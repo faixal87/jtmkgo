@@ -7,6 +7,9 @@
         ->map(fn ($id) => (int) $id)
         ->all();
     $selectedMethod = old('replacement_method', $replacement->replacement_method ?? '');
+    $reasonOptions = $reasons ?? \App\Modules\GantiGo\Models\ClassReplacement::replacementReasonOptions();
+    $selectedReason = \App\Modules\GantiGo\Models\ClassReplacement::normalizeReasonValue(old('reason', $replacement->reason ?? ''));
+    $selectedReason = is_string($selectedReason) && array_key_exists($selectedReason, $reasonOptions) ? $selectedReason : '';
     $alreadyImplemented = (bool) old('already_implemented', $replacement->already_implemented ?? false);
     $workflowLocked = $workflowLocked ?? false;
 @endphp
@@ -25,6 +28,7 @@
         replacementStart: @js(old('replacement_start_time', isset($replacement) ? substr($replacement->replacement_start_time, 0, 5) : '')),
         replacementEnd: @js(old('replacement_end_time', isset($replacement) ? substr($replacement->replacement_end_time, 0, 5) : '')),
         method: @js($selectedMethod),
+        reason: @js($selectedReason),
         alreadyImplemented: @js($alreadyImplemented),
         workflowLocked: @js($workflowLocked),
         minutes(start, end) {
@@ -48,6 +52,9 @@
         },
         venueRequired() {
             return ['Face-to-face', 'Hybrid', 'Combined Class'].includes(this.method);
+        },
+        remarksRequired() {
+            return this.reason === 'lain_lain';
         }
     }"
     x-effect="if (workflowLocked && typeof selectedWorkflow !== 'undefined') alreadyImplemented = selectedWorkflow === 'implemented'"
@@ -221,16 +228,22 @@
                 <x-input-error :messages="$errors->get('evidence_file')" class="mt-2" />
             </div>
 
-            <div class="md:col-span-2">
-                <x-input-label for="reason" value="Reason" />
-                <textarea id="reason" name="reason" rows="3" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('reason', $replacement->reason ?? '') }}</textarea>
+            <div>
+                <x-input-label for="reason" value="Replacement Reason" />
+                <select id="reason" name="reason" x-model="reason" required class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                    <option value="">Select reason</option>
+                    @foreach ($reasonOptions as $value => $label)
+                        <option value="{{ $value }}" @selected($selectedReason === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
                 <x-input-error :messages="$errors->get('reason')" class="mt-2" />
             </div>
 
             <div class="md:col-span-2">
                 <x-input-label for="remarks" value="Remarks" />
-                <textarea id="remarks" name="remarks" rows="3" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('remarks', $replacement->remarks ?? '') }}</textarea>
-                <p class="mt-2 text-xs text-slate-500">Required when method is Others.</p>
+                <textarea id="remarks" name="remarks" rows="3" x-bind:required="remarksRequired()" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('remarks', $replacement->remarks ?? '') }}</textarea>
+                <p x-show="remarksRequired()" x-cloak class="mt-2 text-xs font-medium text-amber-700">Please provide remarks when selecting LAIN-LAIN.</p>
+                <p x-show="!remarksRequired()" x-cloak class="mt-2 text-xs text-slate-500">Optional supporting notes for the replacement record.</p>
                 <x-input-error :messages="$errors->get('remarks')" class="mt-2" />
             </div>
         </div>
