@@ -17,8 +17,14 @@
         $brandingSettings = $branding->all();
         $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
         $logoSize = $brandingSettings['logo_size'] ?? 'medium';
+        $theme = match ($brandingSettings['default_theme'] ?? 'default') {
+            'blue' => 'blue',
+            'dark' => 'dark',
+            'purple-matcha' => 'purple-matcha',
+            default => 'default',
+        };
     @endphp
-    <body class="bg-white font-sans text-zinc-950 antialiased">
+    <body class="theme-{{ $theme }} bg-[var(--color-page)] font-sans text-[var(--color-text)] antialiased" data-theme="{{ $theme }}">
         <main class="jtmk-login-shell flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
             <div class="flex flex-1 items-center justify-center">
                 <section class="w-full max-w-md">
@@ -28,20 +34,20 @@
                         </div>
                     @endif
 
-                    <div class="rounded-2xl border border-zinc-200/80 bg-white/95 p-6 shadow-[0_24px_70px_rgba(24,24,27,0.08)] backdrop-blur sm:p-8">
+                    <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_24px_70px_rgba(24,24,27,0.08)] backdrop-blur sm:p-8">
                         @auth
                             <div class="text-center">
-                                <p class="text-xs font-medium uppercase tracking-[0.24em] text-zinc-500">{{ $brandingSettings['tagline'] ?? 'Developed by JTMK for JTMK' }}</p>
-                                <h1 class="jtmk-cyber-title mt-4 text-4xl font-semibold text-zinc-950">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }}</h1>
+                                <p class="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-muted)]">{{ $brandingSettings['tagline'] ?? 'Developed by JTMK for JTMK' }}</p>
+                                <h1 class="jtmk-cyber-title mt-4 text-4xl font-semibold text-[var(--color-text)]">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }}</h1>
                                 <div class="mx-auto mt-4 h-px w-24 bg-gradient-to-r from-cyan-400 via-zinc-300 to-amber-400"></div>
-                                <a href="{{ route('dashboard') }}" class="mt-8 inline-flex w-full items-center justify-center rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2">
+                                <a href="{{ route('dashboard') }}" class="theme-button-primary mt-8 inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold">
                                     Open Dashboard
                                 </a>
                             </div>
                         @else
                             <div class="mb-8 text-center">
-                                <p class="text-xs font-medium uppercase tracking-[0.24em] text-zinc-500">{{ $brandingSettings['tagline'] ?? 'Developed by JTMK for JTMK' }}</p>
-                                <h1 class="jtmk-cyber-title mt-4 text-4xl font-semibold text-zinc-950">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }}</h1>
+                                <p class="text-xs font-medium uppercase tracking-[0.24em] text-[var(--color-muted)]">{{ $brandingSettings['tagline'] ?? 'Developed by JTMK for JTMK' }}</p>
+                                <h1 class="jtmk-cyber-title mt-4 text-4xl font-semibold text-[var(--color-text)]">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }}</h1>
                                 <div class="mx-auto mt-4 h-px w-24 bg-gradient-to-r from-cyan-400 via-zinc-300 to-amber-400"></div>
                             </div>
 
@@ -51,7 +57,7 @@
                 </section>
             </div>
 
-            <footer class="pt-8 text-center text-xs font-medium text-zinc-500">
+            <footer class="pt-8 text-center text-xs font-medium text-[var(--color-muted)]">
                 {!! $brandingSettings['footer_text'] ?? 'JTMK Go! &mdash; Version: pulut-sekaya' !!}
             </footer>
         </main>

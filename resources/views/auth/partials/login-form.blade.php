@@ -17,26 +17,28 @@
 
     <div class="flex items-center justify-between gap-4">
         <label for="remember_me" class="inline-flex items-center">
-            <input id="remember_me" type="checkbox" class="rounded border-zinc-300 text-zinc-900 shadow-sm focus:ring-zinc-900" name="remember">
-            <span class="ms-2 text-sm text-zinc-600">Remember me</span>
+            <input id="remember_me" type="checkbox" class="rounded border-[var(--color-border)] text-[var(--color-accent)] shadow-sm focus:ring-[var(--color-accent)]" name="remember">
+            <span class="ms-2 text-sm text-[var(--color-muted)]">Remember me</span>
         </label>
 
         @if (Route::has('password.request'))
-            <a class="rounded-md text-sm font-medium text-zinc-500 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2" href="{{ route('password.request') }}">
+            <a class="rounded-md text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2" href="{{ route('password.request') }}">
                 Forgot password?
             </a>
         @endif
     </div>
 
-    <x-primary-button class="w-full justify-center">
-        Log in
-    </x-primary-button>
+    <div class="pt-2">
+        <x-primary-button class="w-full justify-center py-3 text-sm">
+            LOG IN
+        </x-primary-button>
+    </div>
 </form>
 
 @if (Route::has('register'))
-    <p class="mt-6 text-center text-sm text-zinc-500">
+    <p class="mt-6 text-center text-sm text-[var(--color-muted)]">
         New staff account?
-        <a href="{{ route('register') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-4 hover:text-zinc-700">
+        <a href="{{ route('register') }}" class="font-medium text-[var(--color-text)] underline decoration-[var(--color-border)] underline-offset-4 hover:text-[var(--color-accent-text)]">
             Register
         </a>
     </p>

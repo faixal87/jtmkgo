@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Support\SafeArrayCache;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -155,6 +156,235 @@ class AccessControlController extends Controller
             'userFilter' => $userFilter,
             'moduleFilter' => $moduleFilter,
             'isSearchingUsers' => $userSearch !== '',
+            'usersData' => $users->map(fn (User $user) => $this->serializeUserForAccessControl($user))->values(),
+            'modulesData' => $modules->map(fn (Module $module) => [
+                'id' => $module->id,
+                'name' => $module->name,
+                'slug' => $module->slug,
+                'description' => $module->description ?: 'Module access management',
+            ])->values(),
+        ]);
+    }
+
+    public function searchUsers(Request $request): JsonResponse
+    {
+        $search = trim((string) $request->query('q'));
+        $userFilter = (string) $request->query('user_filter', 'all');
+        $moduleFilter = (string) $request->query('module_filter', 'all');
+        $limit = (int) $request->query('limit', 30);
+
+        $userFilter = in_array($userFilter, ['all', 'normal', 'module_admins', 'super_admins'], true)
+            ? $userFilter
+            : 'all';
+        $limit = in_array($limit, [10, 20, 30], true) ? $limit : 30;
+
+        $activeModuleSlugs = Module::query()
+            ->where('is_active', true)
+            ->pluck('slug');
+
+        if ($moduleFilter !== 'all' && ! $activeModuleSlugs->contains($moduleFilter)) {
+            $moduleFilter = 'all';
+        }
+
+        $users = $this->accessControlUserQuery($search, $userFilter, $moduleFilter)
+            ->limit($search !== '' ? 50 : $limit)
+            ->get()
+            ->map(fn (User $user) => $this->serializeUserForAccessControl($user))
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'users' => $users,
+        ]);
+    }
+
+    public function toggleModuleAccess(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'module_id' => ['required', 'integer', 'exists:modules,id'],
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        $user = User::query()
+            ->where('account_status', 'approved')
+            ->findOrFail($validated['user_id']);
+        $module = Module::query()
+            ->where('is_active', true)
+            ->findOrFail($validated['module_id']);
+        $enabled = $request->boolean('enabled');
+
+        if ($user->is_super_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Super admin accounts have platform-wide access and do not need module access assignments.',
+            ], 422);
+        }
+
+        if ($enabled) {
+            ModuleUserAccess::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'module_id' => $module->id,
+                ],
+                [
+                    'granted_by' => $request->user()->id,
+                    'granted_at' => now(),
+                    'is_active' => true,
+                ]
+            );
+
+            $message = 'Access granted';
+        } else {
+            ModuleUserAccess::query()
+                ->where('user_id', $user->id)
+                ->where('module_id', $module->id)
+                ->where('is_active', true)
+                ->update(['is_active' => false, 'updated_at' => now()]);
+
+            $message = 'Access removed';
+        }
+
+        $this->clearUserAccessCaches([$user->id]);
+        $user = $this->freshAccessControlUser($user->id);
+
+        return response()->json([
+            'success' => true,
+            'access_state' => $enabled,
+            'message' => $message,
+            'user' => $this->serializeUserForAccessControl($user),
+        ]);
+    }
+
+    public function toggleModuleAdmin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'module_id' => ['required', 'integer', 'exists:modules,id'],
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        $user = User::query()
+            ->where('account_status', 'approved')
+            ->findOrFail($validated['user_id']);
+        $module = Module::query()
+            ->where('is_active', true)
+            ->findOrFail($validated['module_id']);
+        $enabled = $request->boolean('enabled');
+
+        if ($user->is_super_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Super admin privileges are managed at platform level, not through module admin assignments.',
+            ], 422);
+        }
+
+        if ($enabled) {
+            ModuleAdmin::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'module_id' => $module->id,
+                ],
+                [
+                    'assigned_by' => $request->user()->id,
+                    'assigned_at' => now(),
+                    'is_active' => true,
+                ]
+            );
+
+            ModuleUserAccess::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'module_id' => $module->id,
+                ],
+                [
+                    'granted_by' => $request->user()->id,
+                    'granted_at' => now(),
+                    'is_active' => true,
+                ]
+            );
+
+            $message = 'Module admin enabled';
+        } else {
+            ModuleAdmin::query()
+                ->where('user_id', $user->id)
+                ->where('module_id', $module->id)
+                ->where('is_active', true)
+                ->update(['is_active' => false, 'updated_at' => now()]);
+
+            $message = 'Module admin removed';
+        }
+
+        $this->clearUserAccessCaches([$user->id]);
+        $user = $this->freshAccessControlUser($user->id);
+
+        return response()->json([
+            'success' => true,
+            'access_state' => $enabled,
+            'message' => $message,
+            'user' => $this->serializeUserForAccessControl($user),
+        ]);
+    }
+
+    public function bulkModuleAccess(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_ids' => ['required', 'array', 'min:1'],
+            'user_ids.*' => ['integer', 'exists:users,id'],
+            'module_id' => ['required', 'integer', 'exists:modules,id'],
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        $module = Module::query()
+            ->where('is_active', true)
+            ->findOrFail($validated['module_id']);
+        $enabled = $request->boolean('enabled');
+        $users = User::query()
+            ->whereIn('id', $validated['user_ids'])
+            ->where('account_status', 'approved')
+            ->where('is_super_admin', false)
+            ->get();
+
+        if ($users->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Select at least one approved non-super-admin user.',
+            ], 422);
+        }
+
+        foreach ($users as $user) {
+            if ($enabled) {
+                ModuleUserAccess::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'module_id' => $module->id,
+                    ],
+                    [
+                        'granted_by' => $request->user()->id,
+                        'granted_at' => now(),
+                        'is_active' => true,
+                    ]
+                );
+            } else {
+                ModuleUserAccess::query()
+                    ->where('user_id', $user->id)
+                    ->where('module_id', $module->id)
+                    ->where('is_active', true)
+                    ->update(['is_active' => false, 'updated_at' => now()]);
+            }
+        }
+
+        $userIds = $users->pluck('id')->all();
+        $this->clearUserAccessCaches($userIds);
+
+        return response()->json([
+            'success' => true,
+            'message' => $enabled
+                ? "Access granted to {$users->count()} user(s)."
+                : "Access removed from {$users->count()} user(s).",
+            'users' => $users
+                ->map(fn (User $user) => $this->serializeUserForAccessControl($this->freshAccessControlUser($user->id)))
+                ->values(),
         ]);
     }
 
@@ -336,6 +566,73 @@ class AccessControlController extends Controller
                 });
             }
         });
+    }
+
+    private function accessControlUserQuery(string $search, string $userFilter, string $moduleFilter): Builder
+    {
+        return User::query()
+            ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
+            ->with([
+                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->with('module')->latest('granted_at'),
+                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->orderBy('modules.name'),
+            ])
+            ->withCount([
+                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true),
+                'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
+            ])
+            ->where('account_status', 'approved')
+            ->when($userFilter === 'normal', fn ($query) => $query
+                ->where('is_super_admin', false)
+                ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true)))
+            ->when($userFilter === 'module_admins', fn ($query) => $query
+                ->where('is_super_admin', false)
+                ->whereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true)))
+            ->when($userFilter === 'super_admins', fn ($query) => $query->where('is_super_admin', true))
+            ->when($moduleFilter !== 'all', fn ($query) => $query->whereHas('adminModules', function ($query) use ($moduleFilter): void {
+                $query
+                    ->where('module_admins.is_active', true)
+                    ->where('modules.slug', $moduleFilter);
+            }))
+            ->when($search !== '', fn ($query) => $this->applyUserPanelSearch($query, $search))
+            ->orderBy('name');
+    }
+
+    private function freshAccessControlUser(int $userId): User
+    {
+        return User::query()
+            ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
+            ->with([
+                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->with('module')->latest('granted_at'),
+                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->orderBy('modules.name'),
+            ])
+            ->withCount([
+                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true),
+                'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
+            ])
+            ->findOrFail($userId);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeUserForAccessControl(User $user): array
+    {
+        $isModuleAdmin = $user->adminModules->isNotEmpty();
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'ic_number' => $user->ic_number,
+            'profile_photo_url' => $user->profilePhotoUrl(),
+            'initials' => $user->initials(),
+            'is_super_admin' => (bool) $user->is_super_admin,
+            'role_label' => $user->is_super_admin ? 'Super Admin' : ($isModuleAdmin ? 'Module Admin' : 'Staff'),
+            'module_access_ids' => $user->moduleAccesses->pluck('module_id')->map(fn ($id) => (int) $id)->values()->all(),
+            'admin_module_ids' => $user->adminModules->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+            'active_module_access_count' => (int) ($user->active_module_access_count ?? $user->moduleAccesses->count()),
+            'pending_module_access_request_count' => (int) ($user->pending_module_access_request_count ?? 0),
+        ];
     }
 
     private function perPage(Request $request, string $key): int

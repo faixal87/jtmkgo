@@ -248,12 +248,22 @@
     background-color: var(--color-accent);
     border: 1px solid var(--color-accent);
     color: #ffffff;
-    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+    cursor: pointer;
+    opacity: 1;
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-accent) 22%, transparent);
+    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, opacity 150ms ease;
 }
 
-.theme-button-primary:hover {
+.theme-button-primary:hover:not(:disabled) {
     background-color: var(--color-accent-strong);
     border-color: var(--color-accent-strong);
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--color-accent) 28%, transparent);
+    transform: translateY(-1px);
+}
+
+.theme-button-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 7px 16px color-mix(in srgb, var(--color-accent) 22%, transparent);
 }
 
 .theme-button-primary:focus {
@@ -265,7 +275,15 @@
 .theme-button-primary:disabled,
 .theme-button-secondary:disabled {
     cursor: not-allowed;
-    opacity: 0.55;
+    opacity: 0.65;
+    transform: none;
+    box-shadow: none;
+}
+
+.theme-button-primary:disabled {
+    background-color: #94a3b8;
+    border-color: #94a3b8;
+    color: #f8fafc;
 }
 
 .theme-button-secondary {
@@ -295,7 +313,35 @@
 
 .theme-dark .theme-button-primary {
     color: #04111a;
-    box-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
+    border-color: rgba(165, 243, 252, 0.75);
+    box-shadow: 0 0 0 1px rgba(165, 243, 252, 0.22), 0 0 18px rgba(34, 211, 238, 0.28);
+}
+
+.theme-dark .theme-button-primary:hover:not(:disabled) {
+    box-shadow: 0 0 0 1px rgba(165, 243, 252, 0.34), 0 0 26px rgba(34, 211, 238, 0.38);
+}
+
+.theme-dark .theme-button-primary:disabled {
+    background-color: #334155;
+    border-color: #475569;
+    color: #94a3b8;
+    box-shadow: none;
+}
+
+.theme-purple-matcha .theme-button-primary {
+    color: #ffffff;
+    box-shadow: 0 10px 22px rgba(124, 58, 237, 0.18);
+}
+
+.theme-purple-matcha .theme-button-primary:hover:not(:disabled) {
+    box-shadow: 0 14px 28px rgba(124, 58, 237, 0.24);
+}
+
+.theme-purple-matcha .theme-button-primary:disabled {
+    background-color: #94a3b8;
+    border-color: #94a3b8;
+    color: #f8fafc;
+    box-shadow: none;
 }
 
 .theme-dark .theme-button-secondary {

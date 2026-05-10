@@ -181,7 +181,7 @@
 
                     <div class="flex items-center justify-end gap-3 border-t border-[var(--color-border)] pt-5">
                         <a href="{{ route('photo-repository.dashboard') }}" class="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-secondary-bg)]">Cancel</a>
-                        <button class="theme-button-primary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold" :disabled="processing" :class="processing ? 'cursor-wait opacity-75' : ''">
+                        <button type="submit" class="theme-button-primary inline-flex min-w-44 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold shadow-sm" :disabled="processing">
                             <span x-show="!processing">Submit for Review</span>
                             <span x-show="processing" x-cloak class="inline-flex items-center gap-2">
                                 <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
