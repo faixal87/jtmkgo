@@ -8,19 +8,17 @@
     $subActive = 'bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)]';
     $subDisabled = 'cursor-not-allowed text-[var(--color-sidebar-disabled)]';
     $gantiGoModule = $sidebarModules->firstWhere('slug', 'ganti-go');
-    $passportModule = $sidebarModules->firstWhere('slug', 'passport-photo');
     $photoRepositoryModule = $sidebarModules->firstWhere('slug', 'photo-repository');
-    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'passport-photo', 'photo-repository'], true));
+    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository'], true));
     $isSuperAdmin = (bool) $user?->is_super_admin;
     $canManageGantiGo = $gantiGoModule && $managedModuleIds->contains($gantiGoModule->id);
     $canViewGantiGoAnalytics = $isSuperAdmin || $canManageGantiGo;
-    $canManagePassport = $passportModule && $managedModuleIds->contains($passportModule->id);
     $canManagePhotoRepository = $photoRepositoryModule && ! $isSuperAdmin && $managedModuleIds->contains($photoRepositoryModule->id);
     $canViewPhotoRepositoryAnalytics = $photoRepositoryModule && ($isSuperAdmin || $canManagePhotoRepository);
     $canManageAnyModule = $isSuperAdmin || $managedModuleIds->isNotEmpty();
-    $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
-    $workspaceBrandText = $brandingSettings['workspace_brand_text'] ?? 'JTMK';
-    $logoSize = in_array($brandingSettings['logo_size'] ?? 'medium', ['large', 'medium', 'small'], true) ? $brandingSettings['logo_size'] : 'medium';
+    $workspaceLogo = $branding->asset($brandingSettings['sidebar_logo'] ?? null);
+    $workspaceBrandText = $brandingSettings['sidebar_brand_text'] ?? $brandingSettings['workspace_brand_text'] ?? 'JTMK';
+    $logoSize = in_array($brandingSettings['sidebar_logo_size'] ?? 'medium', ['large', 'medium', 'small'], true) ? $brandingSettings['sidebar_logo_size'] : 'medium';
     $sidebarLogoClasses = [
         'large' => 'h-11 max-h-14 max-w-44',
         'medium' => 'h-6 max-h-7 max-w-[5.5rem]',
@@ -95,37 +93,20 @@
 
                     <a href="{{ route('ganti-go.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
                     @unless ($isSuperAdmin)
-                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.index') || request()->routeIs('ganti-go.replacements.show') || request()->routeIs('ganti-go.replacements.edit') ? $subActive : $subIdle }}">My Replacements</a>
-                        <a href="{{ route('ganti-go.replacements.create') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">Create Replacement</a>
+                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.*') ? $subActive : $subIdle }}">Replacements</a>
                     @endunless
                     @if ($canViewGantiGoAnalytics)
-                        <a href="{{ route('ganti-go.admin.monitoring') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">Monitoring</a>
+                        <a href="{{ route('ganti-go.analytics') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.analytics') || request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">Analytics</a>
                     @endif
                     @if ($canManageGantiGo)
                         <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">Review Queue</a>
                         <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">Admin</span>
-                        <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $subActive : $subIdle }}">Semesters</a>
                         <a href="{{ route('ganti-go.courses.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">Courses</a>
-                        <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.programmes.*') ? $subActive : $subIdle }}">Programmes</a>
                         <a href="{{ route('ganti-go.classes.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.classes.*') ? $subActive : $subIdle }}">Classes</a>
+                        <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $subActive : $subIdle }}">Semester</a>
+                        <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.programmes.*') ? $subActive : $subIdle }}">Programmes</a>
                         <a href="{{ route('ganti-go.settings.edit') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.settings.*') ? $subActive : $subIdle }}">Settings</a>
                     @endif
-                </x-sidebar.collapsible-submenu>
-            @endif
-
-            @if ($passportModule)
-                <x-sidebar.collapsible-submenu id="passport-photo" title="Passport Photo System" :active="request()->routeIs('passport-photo.*')" :badge="$canManagePassport ? 'Admin' : null">
-                    <x-slot name="icon">
-                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
-                            <path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                        </svg>
-                    </x-slot>
-
-                    <a href="{{ route('passport-photo.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('passport-photo.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
-                    <span class="{{ $subItem }} {{ $subDisabled }}">Upload Photos</span>
-                    <span class="{{ $subItem }} {{ $subDisabled }}">Gallery</span>
-                    <span class="{{ $subItem }} {{ $subDisabled }}">Management</span>
                 </x-sidebar.collapsible-submenu>
             @endif
 
@@ -313,37 +294,20 @@
 
                     <a href="{{ route('ganti-go.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
                     @unless ($isSuperAdmin)
-                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.index') || request()->routeIs('ganti-go.replacements.show') || request()->routeIs('ganti-go.replacements.edit') ? $subActive : $subIdle }}">My Replacements</a>
-                        <a href="{{ route('ganti-go.replacements.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">Create Replacement</a>
+                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.*') ? $subActive : $subIdle }}">Replacements</a>
                     @endunless
                     @if ($canViewGantiGoAnalytics)
-                        <a href="{{ route('ganti-go.admin.monitoring') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">Monitoring</a>
+                        <a href="{{ route('ganti-go.analytics') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.analytics') || request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">Analytics</a>
                     @endif
                     @if ($canManageGantiGo)
                         <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">Review Queue</a>
                         <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">Admin</span>
-                        <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $subActive : $subIdle }}">Semesters</a>
                         <a href="{{ route('ganti-go.courses.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">Courses</a>
-                        <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.programmes.*') ? $subActive : $subIdle }}">Programmes</a>
                         <a href="{{ route('ganti-go.classes.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.classes.*') ? $subActive : $subIdle }}">Classes</a>
+                        <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $subActive : $subIdle }}">Semester</a>
+                        <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.programmes.*') ? $subActive : $subIdle }}">Programmes</a>
                         <a href="{{ route('ganti-go.settings.edit') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.settings.*') ? $subActive : $subIdle }}">Settings</a>
                     @endif
-                </x-sidebar.collapsible-submenu>
-            @endif
-
-            @if ($passportModule)
-                <x-sidebar.collapsible-submenu id="mobile-passport-photo" title="Passport Photo System" :active="request()->routeIs('passport-photo.*')" :badge="$canManagePassport ? 'Admin' : null">
-                    <x-slot name="icon">
-                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
-                            <path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                        </svg>
-                    </x-slot>
-
-                    <a href="{{ route('passport-photo.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('passport-photo.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
-                    <span class="{{ $mobileSubItem }} {{ $subDisabled }}">Upload Photos</span>
-                    <span class="{{ $mobileSubItem }} {{ $subDisabled }}">Gallery</span>
-                    <span class="{{ $mobileSubItem }} {{ $subDisabled }}">Management</span>
                 </x-sidebar.collapsible-submenu>
             @endif
 

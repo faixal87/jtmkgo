@@ -23,11 +23,6 @@
                             <path d="M4 9h16" />
                             <path d="M5 5h14a1 1 0 0 1 1 1v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1Z" />
                         </svg>
-                    @elseif ($module->slug === 'passport-photo')
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
-                            <path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                        </svg>
                     @else
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M4 6h16" />

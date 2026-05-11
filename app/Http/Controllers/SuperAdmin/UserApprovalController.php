@@ -35,7 +35,7 @@ class UserApprovalController extends Controller
     public function create(): View
     {
         return view('super-admin.users.create', [
-            'modules' => Module::query()->where('is_active', true)->orderBy('name')->get(),
+            'modules' => $this->activeModules(),
         ]);
     }
 
@@ -89,7 +89,7 @@ class UserApprovalController extends Controller
     {
         return view('super-admin.users.edit', [
             'user' => $user,
-            'modules' => Module::query()->where('is_active', true)->orderBy('name')->get(),
+            'modules' => $this->activeModules(),
             'activeAccessIds' => $user->moduleAccesses()->where('is_active', true)->pluck('module_id')->all(),
             'activeAdminIds' => ModuleAdmin::query()
                 ->where('user_id', $user->id)
@@ -257,8 +257,9 @@ class UserApprovalController extends Controller
      */
     private function syncModuleAssignments(User $user, array $accessModuleIds, array $adminModuleIds): void
     {
-        $accessModuleIds = collect($accessModuleIds)->map(fn ($id) => (int) $id)->unique();
-        $adminModuleIds = collect($adminModuleIds)->map(fn ($id) => (int) $id)->unique();
+        $validModuleIds = $this->activeModules()->pluck('id');
+        $accessModuleIds = collect($accessModuleIds)->map(fn ($id) => (int) $id)->intersect($validModuleIds)->unique();
+        $adminModuleIds = collect($adminModuleIds)->map(fn ($id) => (int) $id)->intersect($validModuleIds)->unique();
 
         ModuleUserAccess::query()
             ->where('user_id', $user->id)
@@ -283,5 +284,14 @@ class UserApprovalController extends Controller
                 ['assigned_by' => auth()->id(), 'assigned_at' => now(), 'is_active' => true]
             );
         }
+    }
+
+    private function activeModules()
+    {
+        return Module::query()
+            ->where('is_active', true)
+            ->where('slug', '!=', 'passport-photo')
+            ->orderBy('name')
+            ->get();
     }
 }

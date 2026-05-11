@@ -2,8 +2,6 @@
     $user = auth()->user();
     $branding = app(\App\Support\BrandingSettings::class);
     $brandingSettings = $branding->all();
-    $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
-    $logoSize = $brandingSettings['logo_size'] ?? 'medium';
     $availableModules = $availableModules ?? collect();
     $managedModuleIds = $managedModuleIds ?? collect();
 
@@ -14,13 +12,6 @@
             'accent' => 'blue',
             'icon' => 'ganti-go',
             'href' => route('ganti-go.dashboard'),
-        ],
-        'passport-photo' => [
-            'title' => 'Passport Photo System',
-            'subtitle' => 'Lecturer passport photo management',
-            'accent' => 'purple',
-            'icon' => 'passport-photo',
-            'href' => route('passport-photo.dashboard'),
         ],
         'photo-repository' => [
             'title' => 'Photo Repository',
@@ -36,20 +27,15 @@
         ['title' => 'Access Control', 'description' => 'Assign module access and administrative responsibility.', 'href' => route('super-admin.access-control.index'), 'accent' => 'emerald', 'icon' => 'shield'],
         ['title' => 'Access Requests', 'description' => 'Review module access requests from staff.', 'href' => route('admin.module-access-requests.index'), 'accent' => 'blue', 'icon' => 'shield'],
         ['title' => 'Notifications', 'description' => 'Send intranet notifications to users and module groups.', 'href' => route('admin.notifications.create'), 'accent' => 'amber', 'icon' => 'activity'],
-        ['title' => 'Branding Settings', 'description' => 'Manage workspace logos, footer text, title, and default theme.', 'href' => route('super-admin.settings.branding.edit'), 'accent' => 'purple', 'icon' => 'activity'],
+        ['title' => 'Branding Settings', 'description' => 'Manage landing logos, sidebar branding, footer text, and default theme.', 'href' => route('super-admin.settings.branding.edit'), 'accent' => 'purple', 'icon' => 'activity'],
     ];
 @endphp
 
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center gap-3">
-            @if ($workspaceLogo)
-                <x-branding-logo :src="$workspaceLogo" :alt="($brandingSettings['system_title'] ?? 'JTMK Go!').' logo'" :size="$logoSize" context="dashboard" class="shrink-0" />
-            @endif
-            <div>
-                <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">Dashboard</h1>
-                <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }} &mdash; {{ $brandingSettings['version_name'] ?? 'pulut-sekaya' }}</p>
-            </div>
+        <div>
+            <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">Dashboard</h1>
+            <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }} &mdash; {{ $brandingSettings['version_name'] ?? 'pulut-sekaya' }}</p>
         </div>
     </x-slot>
 

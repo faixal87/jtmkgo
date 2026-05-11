@@ -30,10 +30,11 @@
                         >
                             <span class="flex items-center gap-3">
                                 <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]">
-                                    @if ($module->slug === 'passport-photo')
+                                    @if ($module->slug === 'photo-repository')
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                             <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
-                                            <path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                                            <path d="M8 15s1.5-2 4-2 4 2 4 2" />
+                                            <path d="M12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
                                         </svg>
                                     @else
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

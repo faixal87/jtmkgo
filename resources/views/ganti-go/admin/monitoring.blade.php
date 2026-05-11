@@ -10,13 +10,15 @@
     $programmeMax = max(collect($programmeCounts)->max('total') ?? 1, 1);
     $reasonMax = max(collect($reasonBreakdown)->max('total') ?? 1, 1);
     $firstReplacementId = $replacements->first()?->id;
+    $analyticsRouteName = $analyticsRouteName ?? (request()->routeIs('ganti-go.analytics') ? 'ganti-go.analytics' : 'ganti-go.admin.monitoring');
+    $analyticsRoute = route($analyticsRouteName);
 @endphp
 
 <x-app-layout>
     <x-slot name="header">
         <x-ganti.section-header
-            title="Monitoring Dashboard"
-            :description="$isSuperAdminReadOnly ? 'Read-only analytics for Ganti Go trends and lecturer activity.' : 'Module admin view for Ganti Go verification, trends, and lecturer activity.'"
+            :title="$pageTitle ?? 'Monitoring Dashboard'"
+            :description="$pageDescription ?? ($isSuperAdminReadOnly ? 'Read-only analytics for Ganti Go trends and lecturer activity.' : 'Module admin view for Ganti Go verification, trends, and lecturer activity.')"
         >
             @if ($canReviewImplementations)
                 <x-slot name="actions">
@@ -39,6 +41,13 @@
                 <x-ganti.stat-card title="Rejected Replacement" :value="$stats['rejected']" accent="purple" />
                 <x-ganti.stat-card title="Overdue Replacements" :value="$stats['overdue']" accent="red" />
                 <x-ganti.stat-card title="Upcoming Classes" :value="$stats['upcoming']" accent="slate" />
+            </section>
+
+            <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <x-ganti.stat-card title="Submitted for Verification" :value="$verificationStats['submitted'] ?? 0" accent="blue" />
+                <x-ganti.stat-card title="Reviews Completed" :value="$verificationStats['reviewed'] ?? 0" accent="emerald" />
+                <x-ganti.stat-card title="Verification Rate" :value="($verificationStats['verificationRate'] ?? 0).'%'" accent="purple" />
+                <x-ganti.stat-card title="Review Completion" :value="($verificationStats['completionRate'] ?? 0).'%'" accent="amber" />
             </section>
 
             <section class="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
@@ -129,13 +138,14 @@
             <section class="grid gap-6 xl:grid-cols-[1fr_0.75fr]">
                 <x-ganti.card padding="p-0">
                     <div class="border-b border-slate-200 px-5 py-4">
-                        <x-ganti.section-header title="Lecturer Monitoring" description="Workload and verification status by lecturer." />
+                        <x-ganti.section-header title="Top Lecturer Activity" description="Highest replacement activity and verification status by lecturer." />
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200">
                             <thead class="bg-slate-50">
                                 <tr>
                                     <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Lecturer</th>
+                                    <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Total</th>
                                     <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Planned</th>
                                     <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Verified</th>
                                     <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Pending</th>
@@ -147,6 +157,7 @@
                                 @forelse ($lecturerStats as $row)
                                     <tr>
                                         <td class="px-5 py-4 text-sm font-medium text-slate-950">{{ $row->lecturer_name }}</td>
+                                        <td class="px-5 py-4 text-center text-sm font-semibold text-slate-900">{{ (int) $row->total }}</td>
                                         <td class="px-5 py-4 text-center text-sm text-slate-700">{{ (int) $row->planned }}</td>
                                         <td class="px-5 py-4 text-center text-sm text-emerald-700">{{ (int) $row->verified }}</td>
                                         <td class="px-5 py-4 text-center text-sm text-blue-700">{{ (int) $row->pending }}</td>
@@ -155,7 +166,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6">
+                                        <td colspan="7">
                                             <x-ganti.empty-state title="No lecturer records yet" message="Lecturer monitoring appears when replacements are created." />
                                         </td>
                                     </tr>
@@ -199,7 +210,7 @@
             </section>
 
             <x-ganti.card>
-                <form method="GET" action="{{ route('ganti-go.admin.monitoring') }}" class="grid gap-4 lg:grid-cols-[1fr_1fr_1.5fr_auto] lg:items-end">
+                <form method="GET" action="{{ $analyticsRoute }}" class="grid gap-4 lg:grid-cols-[1fr_1fr_1.5fr_auto] lg:items-end">
                     <div>
                         <x-input-label for="semester_id" value="Semester" />
                         <select id="semester_id" name="semester_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
@@ -228,7 +239,7 @@
                         <button type="submit" class="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-slate-800">
                             Filter
                         </button>
-                        <a href="{{ route('ganti-go.admin.monitoring') }}" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition duration-200 hover:bg-slate-50">
+                        <a href="{{ $analyticsRoute }}" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition duration-200 hover:bg-slate-50">
                             Reset
                         </a>
                     </div>

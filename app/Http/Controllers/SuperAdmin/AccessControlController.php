@@ -39,6 +39,7 @@ class AccessControlController extends Controller
         $modules = Module::query()
             ->select(['id', 'name', 'slug', 'description', 'is_active'])
             ->where('is_active', true)
+            ->where('slug', '!=', 'passport-photo')
             ->orderBy('name')
             ->get();
 
@@ -49,21 +50,21 @@ class AccessControlController extends Controller
         $usersPaginator = User::query()
             ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
             ->with([
-                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->with('module')->latest('granted_at'),
-                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->orderBy('modules.name'),
-                'moduleAccessRequests' => fn ($query) => $query->with('module')->latest('requested_at')->latest(),
+                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
+                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
+                'moduleAccessRequests' => fn ($query) => $query->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('requested_at')->latest(),
             ])
             ->withCount([
-                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true),
+                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                 'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
             ])
             ->where('account_status', 'approved')
             ->when($userFilter === 'normal', fn ($query) => $query
                 ->where('is_super_admin', false)
-                ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true)))
+                ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true)->where('modules.slug', '!=', 'passport-photo')))
             ->when($userFilter === 'module_admins', fn ($query) => $query
                 ->where('is_super_admin', false)
-                ->whereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true)))
+                ->whereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true)->where('modules.slug', '!=', 'passport-photo')))
             ->when($userFilter === 'super_admins', fn ($query) => $query->where('is_super_admin', true))
             ->when($moduleFilter !== 'all', fn ($query) => $query->whereHas('adminModules', function ($query) use ($moduleFilter): void {
                 $query
@@ -82,12 +83,12 @@ class AccessControlController extends Controller
             $selectedUser = User::query()
                 ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
                 ->with([
-                    'moduleAccesses' => fn ($query) => $query->where('is_active', true)->with('module')->latest('granted_at'),
-                    'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->orderBy('modules.name'),
-                    'moduleAccessRequests' => fn ($query) => $query->with('module')->latest('requested_at')->latest(),
+                    'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
+                    'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
+                    'moduleAccessRequests' => fn ($query) => $query->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('requested_at')->latest(),
                 ])
                 ->withCount([
-                    'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true),
+                    'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                     'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
                 ])
                 ->where('account_status', 'approved')
@@ -110,13 +111,14 @@ class AccessControlController extends Controller
             'activeTab' => (string) $request->query('tab', 'access'),
             'kpis' => SafeArrayCache::remember("access-control.kpis.{$request->user()->id}", now()->addSeconds(30), fn () => [
                 'totalUsers' => User::query()->approvedStaff()->count(),
-                'activeModuleUsers' => ModuleUserAccess::query()->where('is_active', true)->distinct('user_id')->count('user_id'),
-                'moduleAdmins' => ModuleAdmin::query()->where('is_active', true)->distinct('user_id')->count('user_id'),
-                'pendingRequests' => ModuleAccessRequest::query()->where('status', ModuleAccessRequest::STATUS_PENDING)->count(),
+                'activeModuleUsers' => ModuleUserAccess::query()->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->distinct('user_id')->count('user_id'),
+                'moduleAdmins' => ModuleAdmin::query()->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->distinct('user_id')->count('user_id'),
+                'pendingRequests' => ModuleAccessRequest::query()->where('status', ModuleAccessRequest::STATUS_PENDING)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->count(),
                 'unreadNotifications' => $request->user()->notifications()->whereNull('read_at')->count(),
             ], ['totalUsers', 'activeModuleUsers', 'moduleAdmins', 'pendingRequests', 'unreadNotifications']),
             'accessRequests' => ModuleAccessRequest::query()
                 ->with(['user', 'module'])
+                ->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))
                 ->when(
                     in_array($requestStatus, [
                         ModuleAccessRequest::STATUS_PENDING,
@@ -180,6 +182,7 @@ class AccessControlController extends Controller
 
         $activeModuleSlugs = Module::query()
             ->where('is_active', true)
+            ->where('slug', '!=', 'passport-photo')
             ->pluck('slug');
 
         if ($moduleFilter !== 'all' && ! $activeModuleSlugs->contains($moduleFilter)) {
@@ -211,6 +214,7 @@ class AccessControlController extends Controller
             ->findOrFail($validated['user_id']);
         $module = Module::query()
             ->where('is_active', true)
+            ->where('slug', '!=', 'passport-photo')
             ->findOrFail($validated['module_id']);
         $enabled = $request->boolean('enabled');
 
@@ -269,6 +273,7 @@ class AccessControlController extends Controller
             ->findOrFail($validated['user_id']);
         $module = Module::query()
             ->where('is_active', true)
+            ->where('slug', '!=', 'passport-photo')
             ->findOrFail($validated['module_id']);
         $enabled = $request->boolean('enabled');
 
@@ -337,6 +342,7 @@ class AccessControlController extends Controller
 
         $module = Module::query()
             ->where('is_active', true)
+            ->where('slug', '!=', 'passport-photo')
             ->findOrFail($validated['module_id']);
         $enabled = $request->boolean('enabled');
         $users = User::query()
@@ -555,14 +561,14 @@ class AccessControlController extends Controller
             }
 
             if (str_contains($normalizedSearch, 'module admin') || (! $isSuperSearch && str_contains($normalizedSearch, 'admin'))) {
-                $query->orWhereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true));
+                $query->orWhereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true)->where('modules.slug', '!=', 'passport-photo'));
             }
 
             if (str_contains($normalizedSearch, 'normal') || str_contains($normalizedSearch, 'staff')) {
                 $query->orWhere(function (Builder $query): void {
                     $query
                         ->where('is_super_admin', false)
-                        ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true));
+                        ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true)->where('modules.slug', '!=', 'passport-photo'));
                 });
             }
         });
@@ -573,20 +579,20 @@ class AccessControlController extends Controller
         return User::query()
             ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
             ->with([
-                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->with('module')->latest('granted_at'),
-                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->orderBy('modules.name'),
+                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
+                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
             ])
             ->withCount([
-                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true),
+                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                 'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
             ])
             ->where('account_status', 'approved')
             ->when($userFilter === 'normal', fn ($query) => $query
                 ->where('is_super_admin', false)
-                ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true)))
+                ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true)->where('modules.slug', '!=', 'passport-photo')))
             ->when($userFilter === 'module_admins', fn ($query) => $query
                 ->where('is_super_admin', false)
-                ->whereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true)))
+                ->whereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true)->where('modules.slug', '!=', 'passport-photo')))
             ->when($userFilter === 'super_admins', fn ($query) => $query->where('is_super_admin', true))
             ->when($moduleFilter !== 'all', fn ($query) => $query->whereHas('adminModules', function ($query) use ($moduleFilter): void {
                 $query
@@ -602,11 +608,11 @@ class AccessControlController extends Controller
         return User::query()
             ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
             ->with([
-                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->with('module')->latest('granted_at'),
-                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->orderBy('modules.name'),
+                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
+                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
             ])
             ->withCount([
-                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true),
+                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                 'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
             ])
             ->findOrFail($userId);

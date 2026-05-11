@@ -114,11 +114,15 @@ class NotificationComposerController extends Controller
     private function manageableModuleIds(User $user)
     {
         if ($user->is_super_admin) {
-            return Module::query()->where('is_active', true)->pluck('id');
+            return Module::query()
+                ->where('is_active', true)
+                ->where('slug', '!=', 'passport-photo')
+                ->pluck('id');
         }
 
         return $user->adminModules()
             ->wherePivot('is_active', true)
+            ->where('modules.slug', '!=', 'passport-photo')
             ->pluck('modules.id');
     }
 
@@ -126,6 +130,7 @@ class NotificationComposerController extends Controller
     {
         return Module::query()
             ->where('is_active', true)
+            ->where('slug', '!=', 'passport-photo')
             ->whereIn('id', $manageableModuleIds)
             ->orderBy('name');
     }

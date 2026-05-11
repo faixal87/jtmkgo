@@ -71,6 +71,7 @@ Route::get('/dashboard', function (Request $request) {
                 Module::query()
                     ->select(['id', 'name', 'slug', 'icon', 'route_prefix', 'description', 'is_active'])
                     ->where('is_active', true)
+                    ->where('slug', '!=', 'passport-photo')
                     ->orderBy('name')
                     ->get()
                     ->map(fn (Module $module) => $module->only(['id', 'name', 'slug', 'icon', 'route_prefix', 'description', 'is_active']))
@@ -89,6 +90,7 @@ Route::get('/dashboard', function (Request $request) {
             $user->accessibleModules()
                 ->select(['modules.id', 'modules.name', 'modules.slug', 'modules.icon', 'modules.route_prefix', 'modules.description', 'modules.is_active'])
                 ->where('modules.is_active', true)
+                ->where('modules.slug', '!=', 'passport-photo')
                 ->wherePivot('is_active', true)
                 ->orderBy('modules.name')
                 ->get()
@@ -161,6 +163,7 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
     ->name('ganti-go.')
     ->group(function () {
         Route::get('/', GantiGoDashboardController::class)->name('dashboard');
+        Route::get('analytics', [GantiGoAdminReplacementController::class, 'analytics'])->name('analytics');
         Route::get('replacements', [GantiGoClassReplacementController::class, 'index'])->name('replacements.index');
         Route::get('replacements/create', [GantiGoClassReplacementController::class, 'create'])->name('replacements.create');
         Route::post('replacements', [GantiGoClassReplacementController::class, 'store'])->name('replacements.store');
@@ -197,13 +200,6 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
             Route::get('import', [GantiGoImportController::class, 'index'])->name('import.index');
             Route::post('import/preview', [GantiGoImportController::class, 'preview'])->name('import.preview');
         });
-    });
-
-Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.access:passport-photo'])
-    ->prefix('passport-photo')
-    ->name('passport-photo.')
-    ->group(function () {
-        Route::view('/', 'passport-photo.placeholder')->name('dashboard');
     });
 
 Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.access:photo-repository'])

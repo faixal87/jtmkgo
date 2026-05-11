@@ -19,6 +19,11 @@ use Illuminate\View\View;
 
 class AdminReplacementController extends Controller
 {
+    public function analytics(Request $request, SemesterActivationService $semesterActivation, ClassReplacementWorkflowService $workflow): View
+    {
+        return $this->monitoring($request, $semesterActivation, $workflow);
+    }
+
     public function monitoring(Request $request, SemesterActivationService $semesterActivation, ClassReplacementWorkflowService $workflow): View
     {
         abort_unless($request->user()?->is_super_admin || Gate::allows('manage-ganti-go'), 403);
@@ -26,8 +31,9 @@ class AdminReplacementController extends Controller
 
         $activeSemester = $semesterActivation->autoActivateForToday();
         $selectedSemesterId = $request->integer('semester_id') ?: $activeSemester?->id;
+        $isAnalyticsRoute = $request->routeIs('ganti-go.analytics');
         $query = $this->filteredQuery($request, $selectedSemesterId);
-        $widgetKeys = ['stats', 'statusBreakdown', 'monthlyCounts', 'semesterTrend', 'programmeCounts', 'reasonBreakdown'];
+        $widgetKeys = ['stats', 'statusBreakdown', 'monthlyCounts', 'semesterTrend', 'programmeCounts', 'reasonBreakdown', 'verificationStats'];
         $widgets = SafeArrayCache::remember("ganti-go.monitoring.widgets.".($selectedSemesterId ?? 'all'), now()->addSeconds(30), function () use ($selectedSemesterId) {
             $statusBreakdown = $this->statusBreakdown($selectedSemesterId);
 
@@ -38,6 +44,7 @@ class AdminReplacementController extends Controller
                 'semesterTrend' => $this->semesterTrend(),
                 'programmeCounts' => $this->programmeCounts($selectedSemesterId),
                 'reasonBreakdown' => $this->reasonBreakdown($selectedSemesterId),
+                'verificationStats' => $this->verificationStats($statusBreakdown),
             ];
         }, $widgetKeys);
 
@@ -48,6 +55,11 @@ class AdminReplacementController extends Controller
             'statusOptions' => ClassReplacement::STATUSES,
             'canReviewImplementations' => ! $request->user()->is_super_admin && Gate::allows('manage-ganti-go'),
             'isSuperAdminReadOnly' => $request->user()->is_super_admin,
+            'pageTitle' => $isAnalyticsRoute ? 'Analytics Dashboard' : 'Monitoring Dashboard',
+            'pageDescription' => $request->user()->is_super_admin
+                ? 'Read-only analytics for Ganti Go trends, verification, and lecturer activity.'
+                : 'Module admin analytics for Ganti Go verification, trends, and lecturer activity.',
+            'analyticsRouteName' => $isAnalyticsRoute ? 'ganti-go.analytics' : 'ganti-go.admin.monitoring',
             'lecturerStats' => $this->lecturerStats($selectedSemesterId),
             'attentionItems' => $this->attentionItems($selectedSemesterId),
         ]);
@@ -276,6 +288,29 @@ class AdminReplacementController extends Controller
     }
 
     /**
+     * @param  array<string, int>  $statusBreakdown
+     * @return array<string, int>
+     */
+    private function verificationStats(array $statusBreakdown): array
+    {
+        $pending = $statusBreakdown[ClassReplacement::STATUS_PENDING_VERIFICATION] ?? 0;
+        $verified = $statusBreakdown[ClassReplacement::STATUS_VERIFIED] ?? 0;
+        $rejected = $statusBreakdown[ClassReplacement::STATUS_REJECTED] ?? 0;
+        $reviewed = $verified + $rejected;
+        $submitted = $pending + $reviewed;
+
+        return [
+            'submitted' => $submitted,
+            'pending' => $pending,
+            'reviewed' => $reviewed,
+            'verified' => $verified,
+            'rejected' => $rejected,
+            'verificationRate' => $submitted > 0 ? (int) round(($verified / $submitted) * 100) : 0,
+            'completionRate' => $submitted > 0 ? (int) round(($reviewed / $submitted) * 100) : 0,
+        ];
+    }
+
+    /**
      * @return \Illuminate\Support\Collection<int, object>
      */
     private function lecturerStats(?int $semesterId)
@@ -285,6 +320,7 @@ class AdminReplacementController extends Controller
             ->selectRaw("
                 users.id,
                 users.name as lecturer_name,
+                COUNT(*) as total,
                 SUM(status = 'planned') as planned,
                 SUM(status = 'verified') as verified,
                 SUM(status = 'pending_verification') as pending,
@@ -293,6 +329,7 @@ class AdminReplacementController extends Controller
             ")
             ->when($semesterId, fn ($query) => $query->where('class_replacements.semester_id', $semesterId))
             ->groupBy('users.id', 'users.name')
+            ->orderByDesc('total')
             ->orderBy('users.name')
             ->limit(20)
             ->get();

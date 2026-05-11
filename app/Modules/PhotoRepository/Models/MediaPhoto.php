@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MediaPhoto extends Model
 {
@@ -110,13 +111,23 @@ class MediaPhoto extends Model
         return $this->thumbnail_path ? Storage::url($this->thumbnail_path) : $this->photoUrl();
     }
 
-    public function downloadFilename(): string
+    public function downloadFilename(string $format = 'webp'): string
     {
-        $extension = pathinfo($this->photo_path, PATHINFO_EXTENSION) ?: 'webp';
-        $profile = str($this->profile?->name ?? 'photo')->slug();
-        $category = str($this->category?->name ?? 'portrait')->slug();
+        $format = strtolower($format);
+        $extension = in_array($format, ['jpg', 'webp'], true)
+            ? $format
+            : strtolower(pathinfo($this->photo_path, PATHINFO_EXTENSION) ?: 'webp');
+        $profile = $this->filenameSegment($this->profile?->name, 'PHOTO');
+        $category = $this->filenameSegment($this->category?->name, 'PORTRAIT');
 
-        return "{$profile}-{$category}.{$extension}";
+        return "{$profile}_{$category}.{$extension}";
+    }
+
+    private function filenameSegment(?string $value, string $fallback): string
+    {
+        $segment = strtoupper((string) Str::of($value ?: $fallback)->ascii()->replaceMatches('/[^A-Za-z0-9]+/', '_')->trim('_'));
+
+        return $segment !== '' ? $segment : $fallback;
     }
 
     protected function casts(): array

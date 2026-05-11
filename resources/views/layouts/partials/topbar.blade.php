@@ -10,8 +10,8 @@
             </button>
 
             @php
-                $topbarLogo = isset($branding, $brandingSettings) ? $branding->asset($brandingSettings['workspace_logo'] ?? null) : null;
-                $topbarLogoSize = isset($brandingSettings) ? ($brandingSettings['logo_size'] ?? 'medium') : 'medium';
+                $topbarLogo = isset($branding, $brandingSettings) ? $branding->asset($brandingSettings['sidebar_logo'] ?? null) : null;
+                $topbarLogoSize = isset($brandingSettings) ? ($brandingSettings['sidebar_logo_size'] ?? 'medium') : 'medium';
             @endphp
 
             @if ($topbarLogo)

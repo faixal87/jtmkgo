@@ -15,8 +15,11 @@
     @php
         $branding = app(\App\Support\BrandingSettings::class);
         $brandingSettings = $branding->all();
-        $workspaceLogo = $branding->asset($brandingSettings['workspace_logo'] ?? null);
-        $logoSize = $brandingSettings['logo_size'] ?? 'medium';
+        $landingLogos = collect([
+            $branding->asset($brandingSettings['landing_page_logo_1'] ?? null),
+            $branding->asset($brandingSettings['landing_page_logo_2'] ?? null),
+        ])->filter();
+        $logoSize = $brandingSettings['landing_logo_size'] ?? $brandingSettings['logo_size'] ?? 'medium';
         $theme = match ($brandingSettings['default_theme'] ?? 'default') {
             'blue' => 'blue',
             'dark' => 'dark',
@@ -28,10 +31,12 @@
         <div class="jtmk-login-shell flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
             <main class="flex flex-1 items-center justify-center">
                 <div class="w-full {{ request()->routeIs('register') ? 'sm:max-w-2xl' : 'sm:max-w-md' }}">
-                    @if ($workspaceLogo)
-                        <div class="mb-8 flex justify-center">
-                            <a href="{{ url('/') }}" aria-label="JTMK Go! home" class="flex max-w-full items-center justify-center">
-                                <x-branding-logo :src="$workspaceLogo" :alt="($brandingSettings['system_title'] ?? 'JTMK Go!').' logo'" :size="$logoSize" context="login" />
+                    @if ($landingLogos->isNotEmpty())
+                        <div class="mb-8 flex flex-wrap items-center justify-center gap-5">
+                            <a href="{{ url('/') }}" aria-label="JTMK Go! home" class="flex max-w-full flex-wrap items-center justify-center gap-5">
+                                @foreach ($landingLogos as $logo)
+                                    <x-branding-logo :src="$logo" :alt="($brandingSettings['system_title'] ?? 'JTMK Go!').' logo'" :size="$logoSize" context="login" />
+                                @endforeach
                             </a>
                         </div>
                     @endif

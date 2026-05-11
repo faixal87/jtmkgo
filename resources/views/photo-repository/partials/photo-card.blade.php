@@ -48,14 +48,40 @@
         @endif
 
         @if ($photo->status === 'approved')
-            <a href="{{ route('photo-repository.photos.download', $photo) }}" class="theme-button-primary inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold">
-                Download
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M12 3v12" />
-                    <path d="m7 10 5 5 5-5" />
-                    <path d="M5 21h14" />
-                </svg>
-            </a>
+            <div x-data="{ open: false }" class="relative">
+                <div class="flex w-full overflow-hidden rounded-lg shadow-sm">
+                    <a href="{{ route('photo-repository.photos.download', ['mediaPhoto' => $photo, 'format' => 'jpg']) }}" class="theme-button-primary inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-none px-3 py-2 text-sm font-semibold">
+                        Download JPG
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M12 3v12" />
+                            <path d="m7 10 5 5 5-5" />
+                            <path d="M5 21h14" />
+                        </svg>
+                    </a>
+                    <button type="button" @click="open = ! open" class="theme-button-primary inline-flex w-11 items-center justify-center rounded-none border-l border-white/25 px-3 py-2 text-sm font-semibold" aria-label="Choose download format">
+                        <svg class="h-4 w-4 transition duration-150" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div
+                    x-show="open"
+                    x-cloak
+                    x-transition
+                    @click.outside="open = false"
+                    class="theme-card absolute bottom-full right-0 z-20 mb-2 w-48 overflow-hidden rounded-xl border p-1 shadow-xl"
+                >
+                    <a href="{{ route('photo-repository.photos.download', ['mediaPhoto' => $photo, 'format' => 'jpg']) }}" class="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent-text)]">
+                        <span>Download JPG</span>
+                        <span class="text-[0.65rem] uppercase tracking-wide text-[var(--color-muted)]">Default</span>
+                    </a>
+                    <a href="{{ route('photo-repository.photos.download', ['mediaPhoto' => $photo, 'format' => 'webp']) }}" class="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-accent-soft)] hover:text-[var(--color-accent-text)]">
+                        <span>Download WEBP</span>
+                        <span class="text-[0.65rem] uppercase tracking-wide text-[var(--color-muted)]">Optimized</span>
+                    </a>
+                </div>
+            </div>
         @endif
     </div>
 </article>

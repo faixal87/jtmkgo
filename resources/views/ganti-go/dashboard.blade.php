@@ -129,8 +129,8 @@
                             title="Analytics Access"
                             description="Super admin has read-only visibility into Ganti Go dashboard and analytics."
                         />
-                        <a href="{{ route('ganti-go.admin.monitoring') }}" class="mt-5 inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-slate-800">
-                            Open Monitoring
+                        <a href="{{ route('ganti-go.analytics') }}" class="mt-5 inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-slate-800">
+                            Open Analytics
                         </a>
                     </x-ganti.card>
                 @endif
@@ -139,7 +139,7 @@
                     @if ($adminStats && $canManageGantiGo)
                         <section class="grid gap-4 sm:grid-cols-2">
                             <x-ganti.stat-card title="Review Queue" :value="$adminStats['reviewQueue']" accent="blue" :href="route('ganti-go.admin.review-queue')" />
-                            <x-ganti.stat-card title="Verified" :value="$adminStats['implemented']" accent="emerald" :href="route('ganti-go.admin.monitoring', ['status' => 'verified'])" />
+                            <x-ganti.stat-card title="Verified" :value="$adminStats['implemented']" accent="emerald" :href="route('ganti-go.analytics', ['status' => 'verified'])" />
                         </section>
 
                         <x-ganti.card>
@@ -153,7 +153,7 @@
                             </x-ganti.section-header>
 
                             <div class="mt-5 grid gap-3 sm:grid-cols-3">
-                                <a href="{{ route('ganti-go.admin.monitoring') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800">Monitoring</a>
+                                <a href="{{ route('ganti-go.analytics') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800">Analytics</a>
                                 <a href="{{ route('ganti-go.semesters.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">Semesters</a>
                                 <a href="{{ route('ganti-go.courses.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">Courses</a>
                                 <a href="{{ route('ganti-go.programmes.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-800">Programmes</a>
@@ -168,7 +168,7 @@
                                 description="Operational lecturer workflows and verification actions are hidden for super admin."
                             />
                             <div class="mt-5 grid gap-3">
-                                <a href="{{ route('ganti-go.admin.monitoring') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:bg-slate-50">Analytics / Monitoring</a>
+                                <a href="{{ route('ganti-go.analytics') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:bg-slate-50">Analytics</a>
                             </div>
                         </x-ganti.card>
                     @else

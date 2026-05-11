@@ -32,6 +32,12 @@ class BrandingSettings
             $settings['logo_size'] = in_array($settings['logo_size'] ?? 'medium', ['large', 'medium', 'small'], true)
                 ? $settings['logo_size']
                 : 'medium';
+            $settings['landing_logo_size'] = in_array($settings['landing_logo_size'] ?? 'medium', ['large', 'medium', 'small'], true)
+                ? $settings['landing_logo_size']
+                : 'medium';
+            $settings['sidebar_logo_size'] = in_array($settings['sidebar_logo_size'] ?? 'medium', ['large', 'medium', 'small'], true)
+                ? $settings['sidebar_logo_size']
+                : 'medium';
 
             return $settings;
         }, array_keys($this->defaults()));
@@ -83,7 +89,7 @@ class BrandingSettings
     public function resetToDefaults(): void
     {
         Setting::query()
-            ->whereIn('setting_key', ['login_logo_primary', 'login_logo_secondary'])
+            ->whereIn('setting_key', ['login_logo_primary', 'login_logo_secondary', 'workspace_logo'])
             ->delete();
 
         foreach ($this->defaults() as $key => $value) {
@@ -107,7 +113,12 @@ class BrandingSettings
             'version_name' => 'pulut-sekaya',
             'footer_text' => 'JTMK Go! &mdash; Version: pulut-sekaya',
             'workspace_brand_text' => 'JTMK',
-            'workspace_logo' => null,
+            'sidebar_brand_text' => 'JTMK',
+            'landing_page_logo_1' => null,
+            'landing_page_logo_2' => null,
+            'landing_logo_size' => 'medium',
+            'sidebar_logo' => null,
+            'sidebar_logo_size' => 'medium',
             'logo_size' => 'medium',
             'default_theme' => 'default',
         ];

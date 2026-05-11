@@ -25,18 +25,7 @@ class DefaultModulesSeeder extends Seeder
             ]
         );
 
-        Module::updateOrCreate(
-            ['slug' => 'passport-photo'],
-            [
-                'name' => 'Passport Photo System',
-                'icon' => 'PP',
-                'route_prefix' => null,
-                'description' => 'Manage lecturer passport photo records.',
-                'is_active' => true,
-            ]
-        );
-
-        Module::updateOrCreate(
+        $photoRepository = Module::updateOrCreate(
             ['slug' => 'photo-repository'],
             [
                 'name' => 'Photo Repository',
@@ -47,21 +36,27 @@ class DefaultModulesSeeder extends Seeder
             ]
         );
 
+        $this->retireModule('class-replacement', $gantiGo);
+        $this->retireModule('passport-photo', $photoRepository);
+    }
+
+    private function retireModule(string $slug, Module $replacement): void
+    {
         $retiredModule = Module::query()
-            ->where('slug', 'class-replacement')
+            ->where('slug', $slug)
             ->first();
 
-        if (! $retiredModule || $retiredModule->is($gantiGo)) {
+        if (! $retiredModule || $retiredModule->is($replacement)) {
             return;
         }
 
         ModuleUserAccess::query()
             ->where('module_id', $retiredModule->id)
             ->get()
-            ->each(function (ModuleUserAccess $access) use ($gantiGo): void {
+            ->each(function (ModuleUserAccess $access) use ($replacement): void {
                 $target = ModuleUserAccess::firstOrNew([
                     'user_id' => $access->user_id,
-                    'module_id' => $gantiGo->id,
+                    'module_id' => $replacement->id,
                 ]);
 
                 $target->fill([
@@ -74,10 +69,10 @@ class DefaultModulesSeeder extends Seeder
         ModuleAdmin::query()
             ->where('module_id', $retiredModule->id)
             ->get()
-            ->each(function (ModuleAdmin $admin) use ($gantiGo): void {
+            ->each(function (ModuleAdmin $admin) use ($replacement): void {
                 $target = ModuleAdmin::firstOrNew([
                     'user_id' => $admin->user_id,
-                    'module_id' => $gantiGo->id,
+                    'module_id' => $replacement->id,
                 ]);
 
                 $target->fill([

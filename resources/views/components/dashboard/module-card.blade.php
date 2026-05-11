@@ -32,13 +32,6 @@
                         <path d="m9 15 2 2 4-4" />
                     </svg>
                     @break
-                @case('passport-photo')
-                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />
-                        <path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                        <path d="M7 8h.01" />
-                    </svg>
-                    @break
                 @case('photo-repository')
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <path d="M4 7a2 2 0 0 1 2-2h2l1.5-2h5L16 5h2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" />

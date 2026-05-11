@@ -14,8 +14,15 @@ class BrandingSettingsController extends Controller
 {
     public function edit(BrandingSettings $branding): View
     {
+        $settings = $branding->all();
+
         return view('super-admin.settings.branding', [
-            'branding' => $branding->all(),
+            'branding' => $settings,
+            'landingLogoAssets' => [
+                1 => $branding->asset($settings['landing_page_logo_1'] ?? null),
+                2 => $branding->asset($settings['landing_page_logo_2'] ?? null),
+            ],
+            'sidebarLogoAsset' => $branding->asset($settings['sidebar_logo'] ?? null),
         ]);
     }
 
@@ -27,37 +34,56 @@ class BrandingSettingsController extends Controller
             'version_name' => ['required', 'string', 'max:80'],
             'footer_text' => ['required', 'string', 'max:160'],
             'workspace_brand_text' => ['nullable', 'string', 'max:40'],
-            'logo_size' => ['required', Rule::in(['large', 'medium', 'small'])],
+            'sidebar_brand_text' => ['nullable', 'string', 'max:40'],
+            'landing_logo_size' => ['required', Rule::in(['large', 'medium', 'small'])],
+            'sidebar_logo_size' => ['required', Rule::in(['large', 'medium', 'small'])],
             'default_theme' => ['required', Rule::in(['default', 'blue', 'dark', 'purple-matcha'])],
-            'workspace_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
-            'remove_workspace_logo' => ['nullable', 'boolean'],
+            'landing_page_logo_1' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
+            'landing_page_logo_2' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
+            'sidebar_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
+            'remove_landing_page_logo_1' => ['nullable', 'boolean'],
+            'remove_landing_page_logo_2' => ['nullable', 'boolean'],
+            'remove_sidebar_logo' => ['nullable', 'boolean'],
         ]);
 
         $settings = collect($validated)
-            ->except(['workspace_logo', 'remove_workspace_logo'])
+            ->except([
+                'landing_page_logo_1',
+                'landing_page_logo_2',
+                'sidebar_logo',
+                'remove_landing_page_logo_1',
+                'remove_landing_page_logo_2',
+                'remove_sidebar_logo',
+            ])
             ->all();
 
-        if ($request->boolean('remove_workspace_logo')) {
-            $settings['workspace_logo'] = null;
-        }
-
-        if ($request->hasFile('workspace_logo')) {
-            $storedPath = $request->file('workspace_logo')->store('branding', 'public');
-
-            if (! $storedPath) {
-                return back()
-                    ->withErrors(['workspace_logo' => 'The logo could not be uploaded. Please try again.'])
-                    ->withInput();
+        foreach (['landing_page_logo_1', 'landing_page_logo_2', 'sidebar_logo'] as $logoKey) {
+            if ($request->boolean("remove_{$logoKey}")) {
+                $settings[$logoKey] = null;
             }
 
-            $current = $branding->get('workspace_logo');
+            if ($request->hasFile($logoKey)) {
+                $storedPath = $request->file($logoKey)->store('branding', 'public');
 
-            if ($current && ! str_starts_with($current, 'images/')) {
-                Storage::disk('public')->delete($current);
+                if (! $storedPath) {
+                    return back()
+                        ->withErrors([$logoKey => 'The logo could not be uploaded. Please try again.'])
+                        ->withInput();
+                }
+
+                $current = $branding->get($logoKey);
+
+                if ($current && ! str_starts_with($current, 'images/')) {
+                    Storage::disk('public')->delete($current);
+                }
+
+                $settings[$logoKey] = $storedPath;
             }
-
-            $settings['workspace_logo'] = $storedPath;
         }
+
+        $settings['sidebar_brand_text'] = $settings['sidebar_brand_text'] ?? 'JTMK';
+        $settings['workspace_brand_text'] = $settings['sidebar_brand_text'] ?: 'JTMK';
+        $settings['logo_size'] = $settings['landing_logo_size'];
 
         $branding->update($settings);
 

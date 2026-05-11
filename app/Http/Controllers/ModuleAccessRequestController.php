@@ -18,9 +18,10 @@ class ModuleAccessRequestController extends Controller
     {
         $user = $request->user();
         $activeAccessIds = $user->is_super_admin
-            ? Module::query()->where('is_active', true)->pluck('id')
+            ? Module::query()->where('is_active', true)->where('slug', '!=', 'passport-photo')->pluck('id')
             : $user->accessibleModules()
                 ->where('modules.is_active', true)
+                ->where('modules.slug', '!=', 'passport-photo')
                 ->wherePivot('is_active', true)
                 ->pluck('modules.id');
 
@@ -32,12 +33,14 @@ class ModuleAccessRequestController extends Controller
         return view('module-access-requests.index', [
             'modules' => Module::query()
                 ->where('is_active', true)
+                ->where('slug', '!=', 'passport-photo')
                 ->whereNotIn('id', $activeAccessIds)
                 ->orderBy('name')
                 ->get(),
             'pendingModuleIds' => $pendingRequests,
             'recentRequests' => $user->moduleAccessRequests()
                 ->with('module')
+                ->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))
                 ->latest()
                 ->take(6)
                 ->get(),
@@ -53,6 +56,7 @@ class ModuleAccessRequestController extends Controller
         $user = $request->user();
         $module = Module::query()
             ->where('is_active', true)
+            ->where('slug', '!=', 'passport-photo')
             ->findOrFail($validated['module_id']);
 
         if ($user->is_super_admin || $this->hasActiveAccess($user, $module)) {
@@ -197,11 +201,12 @@ class ModuleAccessRequestController extends Controller
     private function manageableModuleIds(User $user)
     {
         if ($user->is_super_admin) {
-            return Module::query()->where('is_active', true)->pluck('id');
+            return Module::query()->where('is_active', true)->where('slug', '!=', 'passport-photo')->pluck('id');
         }
 
         return $user->adminModules()
             ->wherePivot('is_active', true)
+            ->where('modules.slug', '!=', 'passport-photo')
             ->pluck('modules.id');
     }
 
