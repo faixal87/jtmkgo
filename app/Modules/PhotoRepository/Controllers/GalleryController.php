@@ -37,6 +37,7 @@ class GalleryController extends Controller
             'categories' => MediaCategory::active()->orderBy('name')->get(),
             'selectedCategory' => $selectedCategory,
             'search' => $search,
+            'canManagePhotos' => $request->user()?->is_super_admin || Gate::allows('manage-photo-repository'),
         ]);
     }
 }

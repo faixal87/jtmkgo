@@ -1,6 +1,7 @@
 @props([
     'photo',
     'showStatus' => false,
+    'showAdminActions' => false,
 ])
 
 @php
@@ -47,6 +48,10 @@
             <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">{{ $photo->rejection_remarks }}</p>
         @endif
 
+        <a href="{{ route('photo-repository.photos.show', $photo) }}" class="theme-button-secondary inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold">
+            View Details
+        </a>
+
         @if ($photo->status === 'approved')
             <div x-data="{ open: false }" class="relative">
                 <div class="flex w-full overflow-hidden rounded-lg shadow-sm">
@@ -82,6 +87,10 @@
                     </a>
                 </div>
             </div>
+        @endif
+
+        @if ($showAdminActions)
+            @include('photo-repository.partials.admin-photo-actions', ['photo' => $photo, 'canManagePhotos' => true])
         @endif
     </div>
 </article>

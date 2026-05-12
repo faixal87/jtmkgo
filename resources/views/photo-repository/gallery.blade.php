@@ -8,6 +8,8 @@
 
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+            <x-toast />
+
             <form method="GET" action="{{ route('photo-repository.gallery') }}" class="enterprise-card rounded-xl border p-4 shadow-sm">
                 <div class="grid gap-3 md:grid-cols-[1fr_16rem_auto]">
                     <input name="q" value="{{ $search }}" placeholder="Search name, category, designation" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
@@ -26,7 +28,7 @@
             @else
                 <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     @foreach ($photos as $photo)
-                        @include('photo-repository.partials.photo-card', ['photo' => $photo])
+                        @include('photo-repository.partials.photo-card', ['photo' => $photo, 'showAdminActions' => $canManagePhotos])
                     @endforeach
                 </div>
 

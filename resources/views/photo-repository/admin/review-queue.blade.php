@@ -84,6 +84,12 @@
                                         <p class="text-sm leading-6 text-[var(--color-muted)]">{{ $photo->caption }}</p>
                                     @endif
 
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="{{ route('photo-repository.photos.show', $photo) }}" class="theme-button-secondary inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold">
+                                            View Details
+                                        </a>
+                                    </div>
+
                                     @if ($photo->status === 'approved')
                                         <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
                                             Approved by {{ $photo->approver?->name ?? 'Unknown' }}{{ $photo->approved_at ? ' on '.$photo->approved_at->format('d M Y, g:i A') : '' }}.
@@ -123,6 +129,8 @@
                                             </form>
                                         </div>
                                     @endif
+
+                                    @include('photo-repository.partials.admin-photo-actions', ['photo' => $photo, 'canManagePhotos' => true])
                                 </div>
                             </div>
                         </article>

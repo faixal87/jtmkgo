@@ -23,11 +23,13 @@ use App\Modules\GantiGo\Controllers\ProgrammeController as GantiGoProgrammeContr
 use App\Modules\GantiGo\Controllers\SemesterController as GantiGoSemesterController;
 use App\Modules\PhotoRepository\Controllers\Admin\CategoryController as PhotoRepositoryCategoryController;
 use App\Modules\PhotoRepository\Controllers\Admin\AnalyticsController as PhotoRepositoryAnalyticsController;
+use App\Modules\PhotoRepository\Controllers\Admin\PhotoManagementController as PhotoRepositoryPhotoManagementController;
 use App\Modules\PhotoRepository\Controllers\Admin\ProfileController as PhotoRepositoryProfileController;
 use App\Modules\PhotoRepository\Controllers\Admin\ReviewQueueController as PhotoRepositoryReviewQueueController;
 use App\Modules\PhotoRepository\Controllers\DashboardController as PhotoRepositoryDashboardController;
 use App\Modules\PhotoRepository\Controllers\GalleryController as PhotoRepositoryGalleryController;
 use App\Modules\PhotoRepository\Controllers\MyPhotosController as PhotoRepositoryMyPhotosController;
+use App\Modules\PhotoRepository\Controllers\PhotoController as PhotoRepositoryPhotoController;
 use App\Modules\PhotoRepository\Controllers\PhotoDownloadController as PhotoRepositoryPhotoDownloadController;
 use App\Modules\PhotoRepository\Controllers\UploadPhotoController as PhotoRepositoryUploadPhotoController;
 use Illuminate\Http\Request;
@@ -211,6 +213,7 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
         Route::get('/my-photos', [PhotoRepositoryMyPhotosController::class, 'index'])->name('my-photos');
         Route::get('/upload', [PhotoRepositoryUploadPhotoController::class, 'create'])->name('upload.create');
         Route::post('/upload', [PhotoRepositoryUploadPhotoController::class, 'store'])->name('upload.store');
+        Route::get('/photos/{mediaPhoto}', [PhotoRepositoryPhotoController::class, 'show'])->name('photos.show');
         Route::get('/photos/{mediaPhoto}/download', PhotoRepositoryPhotoDownloadController::class)->name('photos.download');
 
         Route::middleware('module.admin:photo-repository')->group(function () {
@@ -218,6 +221,8 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
             Route::get('/admin/review-queue', [PhotoRepositoryReviewQueueController::class, 'index'])->name('admin.review-queue');
             Route::patch('/admin/photos/{mediaPhoto}/approve', [PhotoRepositoryReviewQueueController::class, 'approve'])->name('admin.photos.approve');
             Route::patch('/admin/photos/{mediaPhoto}/reject', [PhotoRepositoryReviewQueueController::class, 'reject'])->name('admin.photos.reject');
+            Route::patch('/admin/photos/{mediaPhoto}/archive', [PhotoRepositoryPhotoManagementController::class, 'archive'])->name('admin.photos.archive');
+            Route::delete('/admin/photos/{mediaPhoto}', [PhotoRepositoryPhotoManagementController::class, 'destroy'])->name('admin.photos.destroy');
 
             Route::get('/admin/profiles', [PhotoRepositoryProfileController::class, 'index'])->name('admin.profiles');
             Route::post('/admin/profiles', [PhotoRepositoryProfileController::class, 'store'])->name('admin.profiles.store');

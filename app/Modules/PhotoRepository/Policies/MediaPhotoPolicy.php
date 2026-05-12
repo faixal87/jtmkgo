@@ -37,6 +37,17 @@ class MediaPhotoPolicy
             && $this->isModuleAdmin($user);
     }
 
+    public function archive(User $user, MediaPhoto $photo): bool
+    {
+        return $photo->status !== MediaPhoto::STATUS_ARCHIVED
+            && ($user->is_super_admin || $this->isModuleAdmin($user));
+    }
+
+    public function forceDelete(User $user, MediaPhoto $photo): bool
+    {
+        return $user->is_super_admin || $this->isModuleAdmin($user);
+    }
+
     private function isModuleAdmin(User $user): bool
     {
         return $user->adminModules()
