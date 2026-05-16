@@ -12,7 +12,7 @@
                 method="POST"
                 action="{{ route('photo-repository.upload.store') }}"
                 enctype="multipart/form-data"
-                class="grid gap-6 lg:grid-cols-[22rem_1fr]"
+                class="grid min-w-0 gap-6 lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]"
                 x-data="{
                     preview: null,
                     fileError: '',
@@ -48,7 +48,7 @@
             >
                 @csrf
 
-                <section class="enterprise-card rounded-xl border p-5 shadow-sm">
+                <section class="enterprise-card min-w-0 rounded-xl border p-5 shadow-sm">
                     <div class="aspect-[4/5] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-secondary-bg)]">
                         <template x-if="preview">
                             <img :src="preview" alt="Selected photo preview" class="h-full w-full object-cover">
@@ -67,7 +67,7 @@
                     <p class="mt-4 text-xs leading-5 text-[var(--color-muted)]">Images are resized to a maximum 1600px long edge, optimized below 5MB where possible, and a gallery thumbnail is generated automatically.</p>
                 </section>
 
-                <section class="enterprise-card space-y-5 rounded-xl border p-5 shadow-sm">
+                <section class="enterprise-card min-w-0 space-y-5 rounded-xl border p-5 shadow-sm">
                     @if ($errors->any())
                         <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                             {{ $errors->first() }}

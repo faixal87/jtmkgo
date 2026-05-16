@@ -17,7 +17,7 @@
             @include('ganti-go.partials.flash')
 
             <x-ganti.card>
-                <form method="GET" action="{{ route('ganti-go.courses.index') }}" class="grid gap-4 lg:grid-cols-[1fr_1.5fr_auto] lg:items-end">
+                <form method="GET" action="{{ route('ganti-go.courses.index') }}" class="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto] lg:items-end">
                     <div>
                         <x-input-label for="semester_id" value="Semester" />
                         <select id="semester_id" name="semester_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">

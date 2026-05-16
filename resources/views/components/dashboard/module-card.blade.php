@@ -9,7 +9,7 @@
 ])
 
 @php
-    $baseClass = 'theme-card group relative overflow-hidden rounded-xl border p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg';
+    $baseClass = 'theme-card group relative min-w-0 overflow-hidden rounded-xl border p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg';
     $isLink = $href && ! $disabled;
 @endphp
 
@@ -20,7 +20,7 @@
 @endif
     <div class="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-[var(--color-accent-soft)]"></div>
 
-    <div class="relative flex items-start justify-between gap-4">
+    <div class="relative flex min-w-0 items-start justify-between gap-4">
         <span class="module-icon flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-accent-soft)] text-[var(--color-accent-text)] shadow-sm">
             @switch($icon)
                 @case('ganti-go')
@@ -53,12 +53,12 @@
         </span>
     </div>
 
-    <div class="relative mt-8">
-        <h3 class="text-xl font-semibold tracking-tight">{{ $title }}</h3>
-        <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">{{ $subtitle }}</p>
+    <div class="relative mt-8 min-w-0">
+        <h3 class="break-words text-xl font-semibold tracking-tight">{{ $title }}</h3>
+        <p class="mt-2 break-words text-sm leading-6 text-[var(--color-muted)]">{{ $subtitle }}</p>
     </div>
 
-    <div class="relative mt-7 flex items-center justify-between gap-4">
+    <div class="relative mt-7 flex flex-wrap items-center justify-between gap-4">
         <span class="text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">Module</span>
         <span class="theme-button-primary module-action inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition duration-200">
             {{ $disabled ? 'Coming Soon' : 'Open System' }}

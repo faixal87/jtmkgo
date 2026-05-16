@@ -1,5 +1,5 @@
 @php
-    $firstUserId = $users->first()?->id;
+    $firstUserId = $selectedUserId ?? $users->first()?->id;
     $statusTone = [
         'pending' => 'amber',
         'approved' => 'emerald',
@@ -30,7 +30,20 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8" x-data="{ selectedUser: @js($firstUserId), userSearch: '' }">
+        <div
+            class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8"
+            x-data="{
+                selectedUser: @js($firstUserId),
+                userSearch: @js($search ?? ''),
+                selectUser(userId) {
+                    this.selectedUser = userId;
+
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('user_id', userId);
+                    window.history.replaceState({}, '', url);
+                },
+            }"
+        >
             <x-toast />
 
             <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -44,19 +57,23 @@
             </section>
 
             <x-split-panel-layout>
-                <x-searchable-list-panel title="Staff Directory" placeholder="Search name or IC" model="userSearch">
+                <form x-ref="userSearchForm" method="GET" action="{{ route('super-admin.users.index') }}" class="contents">
+                    <input type="hidden" name="user_id" :value="selectedUser">
+                    <input type="hidden" name="per_page" value="{{ $perPage }}">
+                    <x-searchable-list-panel title="Staff Directory" placeholder="Search all users" model="userSearch" name="q" submit-on-input form-ref="userSearchForm">
+                        @if (($search ?? '') !== '')
+                            <p class="mb-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs text-[var(--color-muted)]">
+                                Showing global results for "{{ $search }}".
+                            </p>
+                        @endif
                     @forelse ($users as $user)
-                        @php
-                            $searchableUser = strtolower($user->name.' '.$user->ic_number.' '.$user->email.' '.$user->phone);
-                        @endphp
                         <button
                             type="button"
-                            x-show="@js($searchableUser).includes(userSearch.toLowerCase())"
-                            @click="selectedUser = {{ $user->id }}"
-                            class="w-full rounded-xl border px-3 py-3 text-left transition duration-200"
+                            @click="selectUser({{ $user->id }})"
+                            class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
                             :class="selectedUser === {{ $user->id }} ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                         >
-                            <span class="flex items-center gap-3">
+                            <span class="flex min-w-0 items-center gap-3">
                                 @if ($user->profile_photo)
                                     <img src="{{ $user->profilePhotoUrl() }}" alt="{{ $user->name }}" class="h-10 w-10 rounded-full object-cover">
                                 @else
@@ -66,7 +83,6 @@
                                 @endif
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate text-sm font-semibold text-[var(--color-text)]">{{ $user->name }}</span>
-                                    <span class="mt-0.5 block truncate text-xs text-[var(--color-muted)]">IC: {{ $user->ic_number }}</span>
                                 </span>
                                 @if ($user->is_super_admin)
                                     <span class="theme-badge shrink-0">Super</span>
@@ -87,12 +103,13 @@
                         </div>
                     @endif
                 </x-searchable-list-panel>
+                </form>
 
                 <x-context-detail-panel>
                     @forelse ($users as $user)
                         <section x-show="selectedUser === {{ $user->id }}" x-cloak class="space-y-6">
                             <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
-                                <div class="flex items-center gap-4">
+                                <div class="flex min-w-0 items-center gap-4">
                                     @if ($user->profile_photo)
                                         <img src="{{ $user->profilePhotoUrl() }}" alt="{{ $user->name }}" class="h-16 w-16 rounded-2xl object-cover">
                                     @else
@@ -100,14 +117,14 @@
                                             {{ $user->initials() ?: 'JG' }}
                                         </span>
                                     @endif
-                                    <div>
+                                    <div class="min-w-0">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <h3 class="text-lg font-semibold text-[var(--color-text)]">{{ $user->name }}</h3>
+                                            <h3 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $user->name }}</h3>
                                             @if ($user->is_super_admin)
                                                 <span class="theme-badge">Super Admin</span>
                                             @endif
                                         </div>
-                                        <p class="mt-1 text-sm text-[var(--color-muted)]">IC: {{ $user->ic_number }}</p>
+                                        <p class="mt-1 break-all text-sm text-[var(--color-muted)]">IC: {{ $user->ic_number }}</p>
                                     </div>
                                 </div>
 
@@ -117,44 +134,44 @@
                             </div>
 
                             <div class="grid gap-4 lg:grid-cols-3">
-                                <article class="enterprise-card rounded-xl border p-4">
+                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Contact</p>
                                     <dl class="mt-4 space-y-3 text-sm">
                                         <div>
                                             <dt class="text-[var(--color-muted)]">Email</dt>
-                                            <dd class="mt-1 font-medium text-[var(--color-text)]">{{ $user->email ?: 'Not provided' }}</dd>
+                                            <dd class="mt-1 break-all font-medium text-[var(--color-text)]">{{ $user->email ?: 'Not provided' }}</dd>
                                         </div>
                                         <div>
                                             <dt class="text-[var(--color-muted)]">Phone</dt>
-                                            <dd class="mt-1 font-medium text-[var(--color-text)]">{{ $user->phone ?: 'Not provided' }}</dd>
+                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $user->phone ?: 'Not provided' }}</dd>
                                         </div>
                                     </dl>
                                 </article>
 
-                                <article class="enterprise-card rounded-xl border p-4">
+                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Staff Profile</p>
                                     <dl class="mt-4 space-y-3 text-sm">
                                         <div>
                                             <dt class="text-[var(--color-muted)]">Department</dt>
-                                            <dd class="mt-1 font-medium text-[var(--color-text)]">{{ $user->department ?: 'Not set' }}</dd>
+                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $user->department ?: 'Not set' }}</dd>
                                         </div>
                                         <div>
                                             <dt class="text-[var(--color-muted)]">Position / Grade</dt>
-                                            <dd class="mt-1 font-medium text-[var(--color-text)]">{{ collect([$user->position, $user->grade])->filter()->join(' / ') ?: 'Not set' }}</dd>
+                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ collect([$user->position, $user->grade])->filter()->join(' / ') ?: 'Not set' }}</dd>
                                         </div>
                                     </dl>
                                 </article>
 
-                                <article class="enterprise-card rounded-xl border p-4">
+                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Approval</p>
                                     <dl class="mt-4 space-y-3 text-sm">
                                         <div>
                                             <dt class="text-[var(--color-muted)]">Approved By</dt>
-                                            <dd class="mt-1 font-medium text-[var(--color-text)]">{{ $user->approvedBy?->name ?: 'Not approved' }}</dd>
+                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $user->approvedBy?->name ?: 'Not approved' }}</dd>
                                         </div>
                                         <div>
                                             <dt class="text-[var(--color-muted)]">Approved At</dt>
-                                            <dd class="mt-1 font-medium text-[var(--color-text)]">{{ $user->approved_at?->format('d M Y, h:i A') ?: 'Not recorded' }}</dd>
+                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $user->approved_at?->format('d M Y, h:i A') ?: 'Not recorded' }}</dd>
                                         </div>
                                     </dl>
                                 </article>

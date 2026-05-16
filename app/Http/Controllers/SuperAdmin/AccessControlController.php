@@ -178,7 +178,7 @@ class AccessControlController extends Controller
         $userFilter = in_array($userFilter, ['all', 'normal', 'module_admins', 'super_admins'], true)
             ? $userFilter
             : 'all';
-        $limit = in_array($limit, [10, 20, 30], true) ? $limit : 30;
+        $limit = in_array($limit, [10, 20, 30, 80], true) ? $limit : 30;
 
         $activeModuleSlugs = Module::query()
             ->where('is_active', true)

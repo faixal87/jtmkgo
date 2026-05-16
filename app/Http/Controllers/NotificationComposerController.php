@@ -20,7 +20,7 @@ class NotificationComposerController extends Controller
 
         return view('notifications.compose', [
             'users' => $this->eligibleUsers($request->user(), $manageableModuleIds)
-                ->select(['id', 'name', 'ic_number'])
+                ->select(['id', 'name'])
                 ->orderBy('name')
                 ->get(),
             'modules' => $this->manageableModules($request->user(), $manageableModuleIds)->get(),

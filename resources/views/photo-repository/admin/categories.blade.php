@@ -7,7 +7,7 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[24rem_1fr] lg:px-8">
+        <div class="mx-auto grid max-w-7xl min-w-0 gap-6 px-4 sm:px-6 lg:grid-cols-[minmax(16rem,24rem)_minmax(0,1fr)] lg:px-8">
             <section class="enterprise-card h-fit rounded-xl border p-5 shadow-sm">
                 <x-toast />
 
@@ -42,7 +42,7 @@
             <section class="space-y-4">
                 @foreach ($categories as $category)
                     <article class="enterprise-card rounded-xl border p-5 shadow-sm">
-                        <form method="POST" action="{{ route('photo-repository.admin.categories.update', $category) }}" class="grid gap-4 lg:grid-cols-[1fr_14rem_auto] lg:items-start">
+                        <form method="POST" action="{{ route('photo-repository.admin.categories.update', $category) }}" class="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_14rem_auto] lg:items-start">
                             @csrf
                             @method('PATCH')
                             <div class="grid gap-4 md:grid-cols-2">

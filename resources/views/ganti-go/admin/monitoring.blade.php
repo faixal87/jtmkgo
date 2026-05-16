@@ -210,7 +210,7 @@
             </section>
 
             <x-ganti.card>
-                <form method="GET" action="{{ $analyticsRoute }}" class="grid gap-4 lg:grid-cols-[1fr_1fr_1.5fr_auto] lg:items-end">
+                <form method="GET" action="{{ $analyticsRoute }}" class="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] lg:items-end">
                     <div>
                         <x-input-label for="semester_id" value="Semester" />
                         <select id="semester_id" name="semester_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
@@ -257,10 +257,10 @@
                                 type="button"
                                 x-show="@js($searchableReplacement).includes(replacementSearch.toLowerCase())"
                                 @click="selectedReplacement = {{ $replacement->id }}"
-                                class="w-full rounded-xl border px-3 py-3 text-left transition duration-200"
+                                class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
                                 :class="selectedReplacement === {{ $replacement->id }} ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                             >
-                                <span class="block text-sm font-semibold text-[var(--color-text)]">{{ $replacement->lecturer?->name }}</span>
+                                <span class="block truncate text-sm font-semibold text-[var(--color-text)]">{{ $replacement->lecturer?->name }}</span>
                                 <span class="mt-1 block truncate text-xs text-[var(--color-muted)]">{{ $replacement->course?->course_code }} - {{ $replacement->formattedClassGroups() }}</span>
                                 <span class="mt-3 flex items-center justify-between gap-3">
                                     <span class="text-xs font-medium text-[var(--color-muted)]">{{ $replacement->replacement_date->format('d M Y') }}</span>
@@ -285,28 +285,28 @@
                             @endphp
                             <section x-show="selectedReplacement === {{ $replacement->id }}" x-cloak class="space-y-6">
                                 <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <h3 class="text-lg font-semibold text-[var(--color-text)]">{{ $replacement->course?->course_code }} - {{ $replacement->course?->course_name }}</h3>
-                                        <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $replacement->lecturer?->name }} - {{ $replacement->semester?->session_code }}</p>
+                                    <div class="min-w-0">
+                                        <h3 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $replacement->course?->course_code }} - {{ $replacement->course?->course_name }}</h3>
+                                        <p class="mt-1 break-words text-sm text-[var(--color-muted)]">{{ $replacement->lecturer?->name }} - {{ $replacement->semester?->session_code }}</p>
                                     </div>
                                     <x-ganti.status-badge :status="$replacement->status" />
                                 </div>
 
                                 <div class="grid gap-4 lg:grid-cols-3">
-                                    <article class="enterprise-card rounded-xl border p-4">
+                                    <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Lecturer</p>
-                                        <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $replacement->lecturer?->name }}</p>
-                                        <p class="mt-1 text-xs text-[var(--color-muted)]">IC: {{ $replacement->lecturer?->ic_number ?: 'Not recorded' }}</p>
+                                        <p class="mt-3 break-words text-sm font-semibold text-[var(--color-text)]">{{ $replacement->lecturer?->name }}</p>
+                                        <p class="mt-1 break-all text-xs text-[var(--color-muted)]">IC: {{ $replacement->lecturer?->ic_number ?: 'Not recorded' }}</p>
                                     </article>
-                                    <article class="enterprise-card rounded-xl border p-4">
+                                    <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Programme / Classes</p>
-                                        <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $replacement->programme?->code ?: 'Not set' }}</p>
-                                        <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $replacement->formattedClassGroups() }}</p>
+                                        <p class="mt-3 break-words text-sm font-semibold text-[var(--color-text)]">{{ $replacement->programme?->code ?: 'Not set' }}</p>
+                                        <p class="mt-1 break-words text-xs text-[var(--color-muted)]">{{ $replacement->formattedClassGroups() }}</p>
                                     </article>
-                                    <article class="enterprise-card rounded-xl border p-4">
+                                    <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Method</p>
-                                        <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $replacement->replacement_method }}</p>
-                                        <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $replacement->reasonLabel() }}</p>
+                                        <p class="mt-3 break-words text-sm font-semibold text-[var(--color-text)]">{{ $replacement->replacement_method }}</p>
+                                        <p class="mt-1 break-words text-xs text-[var(--color-muted)]">{{ $replacement->reasonLabel() }}</p>
                                     </article>
                                 </div>
 

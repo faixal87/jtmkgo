@@ -7,7 +7,7 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[24rem_1fr] lg:px-8">
+        <div class="mx-auto grid max-w-7xl min-w-0 gap-6 px-4 sm:px-6 lg:grid-cols-[minmax(16rem,24rem)_minmax(0,1fr)] lg:px-8">
             <section class="enterprise-card h-fit rounded-xl border p-5 shadow-sm">
                 <x-toast />
 

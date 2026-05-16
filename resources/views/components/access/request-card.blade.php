@@ -11,11 +11,11 @@
     ][$requestRecord->status] ?? 'border-slate-200 bg-slate-50 text-slate-600';
 @endphp
 
-<article class="enterprise-card rounded-xl border p-4 shadow-sm">
+<article class="enterprise-card min-w-0 rounded-xl border p-4 shadow-sm">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
-                <p class="font-semibold text-[var(--color-text)]">{{ $requestRecord->module?->name }}</p>
+                <p class="break-words font-semibold text-[var(--color-text)]">{{ $requestRecord->module?->name }}</p>
                 <span class="rounded-full border px-2.5 py-1 text-xs font-semibold {{ $statusClass }}">{{ str($requestRecord->status)->title() }}</span>
             </div>
             <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $requestRecord->requested_at?->format('d M Y, h:i A') ?: 'No request date' }}</p>

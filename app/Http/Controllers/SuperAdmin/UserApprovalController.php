@@ -18,13 +18,42 @@ use Illuminate\View\View;
 
 class UserApprovalController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('super-admin.users.index', [
-            'users' => User::query()
+        $search = trim((string) $request->query('q'));
+        $perPage = $this->perPage($request);
+        $selectedUserId = $request->integer('user_id');
+
+        $users = User::query()
+            ->with('approvedBy')
+            ->when($search !== '', fn ($query) => $query->searchIdentity($search))
+            ->orderBy('name')
+            ->paginate($search !== '' ? 50 : $perPage)
+            ->withQueryString();
+
+        $visibleUsers = $users->getCollection();
+
+        if ($search === '' && $selectedUserId && ! $visibleUsers->contains('id', $selectedUserId)) {
+            $selectedUser = User::query()
                 ->with('approvedBy')
-                ->orderBy('name')
-                ->paginate(20),
+                ->find($selectedUserId);
+
+            if ($selectedUser) {
+                $visibleUsers->prepend($selectedUser);
+            }
+        }
+
+        if (! $selectedUserId || ! $visibleUsers->contains('id', $selectedUserId)) {
+            $selectedUserId = $visibleUsers->first()?->id;
+        }
+
+        $users->setCollection($visibleUsers);
+
+        return view('super-admin.users.index', [
+            'users' => $users,
+            'search' => $search,
+            'perPage' => $perPage,
+            'selectedUserId' => $selectedUserId,
             'statusCounts' => User::query()
                 ->selectRaw('account_status, count(*) as total')
                 ->groupBy('account_status')
@@ -293,5 +322,12 @@ class UserApprovalController extends Controller
             ->where('slug', '!=', 'passport-photo')
             ->orderBy('name')
             ->get();
+    }
+
+    private function perPage(Request $request): int
+    {
+        $perPage = (int) $request->query('per_page', 20);
+
+        return in_array($perPage, [10, 20, 30, 50], true) ? $perPage : 20;
     }
 }

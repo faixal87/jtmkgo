@@ -10,7 +10,7 @@
                 <p class="mt-1 text-sm text-[var(--color-muted)]">Review pending requests with user context before approving access.</p>
             </div>
             <form method="GET" action="{{ route('admin.module-access-requests.index') }}" class="flex flex-wrap gap-2">
-                <input name="q" value="{{ $search }}" placeholder="Search name or IC" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                <input name="q" value="{{ $search }}" placeholder="Search name, IC, or email" class="min-w-0 rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                 <select name="per_page" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                     @foreach ([10, 20, 30] as $size)
                         <option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}</option>
@@ -41,13 +41,12 @@
                             type="button"
                             x-show="@js($searchableRequest).includes(requestSearch.toLowerCase())"
                             @click="selectedRequest = {{ $requestRecord->id }}"
-                            class="w-full rounded-xl border px-3 py-3 text-left transition duration-200"
+                            class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
                             :class="selectedRequest === {{ $requestRecord->id }} ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                         >
-                            <span class="block text-sm font-semibold text-[var(--color-text)]">{{ $requestRecord->user?->name }}</span>
-                            <span class="mt-1 block text-xs text-[var(--color-muted)]">IC: {{ $requestRecord->user?->ic_number }}</span>
-                            <span class="mt-3 inline-flex rounded-full bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-accent-text)]">
-                                {{ $requestRecord->module?->name }}
+                            <span class="block truncate text-sm font-semibold text-[var(--color-text)]">{{ $requestRecord->user?->name }}</span>
+                            <span class="mt-3 inline-flex max-w-full rounded-full bg-[var(--color-accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--color-accent-text)]">
+                                <span class="truncate">{{ $requestRecord->module?->name }}</span>
                             </span>
                         </button>
                     @empty
@@ -65,9 +64,9 @@
                     @forelse ($requests as $requestRecord)
                         <section x-show="selectedRequest === {{ $requestRecord->id }}" x-cloak class="space-y-6">
                             <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-[var(--color-text)]">{{ $requestRecord->user?->name }}</h3>
-                                    <p class="mt-1 text-sm text-[var(--color-muted)]">IC: {{ $requestRecord->user?->ic_number }}</p>
+                                <div class="min-w-0">
+                                    <h3 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $requestRecord->user?->name }}</h3>
+                                    <p class="mt-1 break-all text-sm text-[var(--color-muted)]">IC: {{ $requestRecord->user?->ic_number }}</p>
                                     <p class="mt-3 text-sm text-[var(--color-muted)]">
                                         Requested access to <span class="font-semibold text-[var(--color-text)]">{{ $requestRecord->module?->name }}</span>
                                     </p>
@@ -76,19 +75,19 @@
                             </div>
 
                             <div class="grid gap-4 lg:grid-cols-3">
-                                <article class="enterprise-card rounded-xl border p-4">
+                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Module</p>
-                                    <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $requestRecord->module?->name }}</p>
-                                    <p class="mt-1 text-xs leading-5 text-[var(--color-muted)]">{{ $requestRecord->module?->description ?: 'No module description set.' }}</p>
+                                    <p class="mt-3 break-words text-sm font-semibold text-[var(--color-text)]">{{ $requestRecord->module?->name }}</p>
+                                    <p class="mt-1 break-words text-xs leading-5 text-[var(--color-muted)]">{{ $requestRecord->module?->description ?: 'No module description set.' }}</p>
                                 </article>
-                                <article class="enterprise-card rounded-xl border p-4">
+                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Requested At</p>
-                                    <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $requestRecord->requested_at?->format('d M Y, h:i A') ?: 'Not recorded' }}</p>
+                                    <p class="mt-3 break-words text-sm font-semibold text-[var(--color-text)]">{{ $requestRecord->requested_at?->format('d M Y, h:i A') ?: 'Not recorded' }}</p>
                                 </article>
-                                <article class="enterprise-card rounded-xl border p-4">
+                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Contact</p>
-                                    <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $requestRecord->user?->email ?: 'No email' }}</p>
-                                    <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $requestRecord->user?->phone ?: 'No phone number' }}</p>
+                                    <p class="mt-3 break-all text-sm font-semibold text-[var(--color-text)]">{{ $requestRecord->user?->email ?: 'No email' }}</p>
+                                    <p class="mt-1 break-words text-xs text-[var(--color-muted)]">{{ $requestRecord->user?->phone ?: 'No phone number' }}</p>
                                 </article>
                             </div>
 

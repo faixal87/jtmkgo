@@ -13,7 +13,7 @@
     ][$photo->status] ?? 'bg-slate-100 text-slate-700 border-slate-200';
 @endphp
 
-<article {{ $attributes->merge(['class' => 'enterprise-card overflow-hidden rounded-xl border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md']) }}>
+<article {{ $attributes->merge(['class' => 'enterprise-card min-w-0 overflow-hidden rounded-xl border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md']) }}>
     <div class="aspect-[4/5] bg-[var(--color-secondary-bg)]">
         @if ($photo->thumbnailUrl())
             <img src="{{ $photo->thumbnailUrl() }}" alt="{{ $photo->profile?->name ?? 'Portrait photo' }}" class="h-full w-full object-cover">
@@ -22,15 +22,15 @@
         @endif
     </div>
 
-    <div class="space-y-3 p-4">
-        <div>
-            <div class="flex items-start justify-between gap-3">
-                <h3 class="text-sm font-semibold text-[var(--color-text)]">{{ $photo->profile?->name ?? 'Unnamed Profile' }}</h3>
+    <div class="min-w-0 space-y-3 p-4">
+        <div class="min-w-0">
+            <div class="flex min-w-0 items-start justify-between gap-3">
+                <h3 class="min-w-0 break-words text-sm font-semibold text-[var(--color-text)]">{{ $photo->profile?->name ?? 'Unnamed Profile' }}</h3>
                 @if ($showStatus)
                     <span class="shrink-0 rounded-full border px-2 py-0.5 text-[0.68rem] font-semibold capitalize {{ $statusTone }}">{{ str($photo->status)->replace('_', ' ') }}</span>
                 @endif
             </div>
-            <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $photo->profile?->designation ?: $photo->profile?->department ?: 'Official portrait' }}</p>
+            <p class="mt-1 break-words text-xs text-[var(--color-muted)]">{{ $photo->profile?->designation ?: $photo->profile?->department ?: 'Official portrait' }}</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -45,7 +45,7 @@
         @endif
 
         @if ($showStatus && $photo->status === 'rejected' && $photo->rejection_remarks)
-            <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">{{ $photo->rejection_remarks }}</p>
+            <p class="break-words rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">{{ $photo->rejection_remarks }}</p>
         @endif
 
         <a href="{{ route('photo-repository.photos.show', $photo) }}" class="theme-button-secondary inline-flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold">
@@ -56,7 +56,7 @@
             <div x-data="{ open: false }" class="relative">
                 <div class="flex w-full overflow-hidden rounded-lg shadow-sm">
                     <a href="{{ route('photo-repository.photos.download', ['mediaPhoto' => $photo, 'format' => 'jpg']) }}" class="theme-button-primary inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-none px-3 py-2 text-sm font-semibold">
-                        Download JPG
+                        <span class="truncate">Download JPG</span>
                         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M12 3v12" />
                             <path d="m7 10 5 5 5-5" />

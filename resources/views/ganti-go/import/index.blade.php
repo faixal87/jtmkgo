@@ -22,7 +22,7 @@
                 @endforeach
             </section>
 
-            <section class="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+            <section class="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
                 <x-ganti.form-section
                     title="Legacy Excel Preparation"
                     description="Upload is limited to preview preparation in this phase. Real parsing will be connected later."

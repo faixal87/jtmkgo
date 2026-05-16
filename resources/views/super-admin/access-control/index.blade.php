@@ -107,7 +107,7 @@
                     this.setOrDelete(url, 'q', this.userSearch);
                     this.setOrDelete(url, 'user_filter', this.userFilter);
                     this.setOrDelete(url, 'module_filter', this.moduleFilter);
-                    this.setOrDelete(url, 'limit', this.userPerPage);
+                    this.setOrDelete(url, 'limit', this.userSearch.trim() ? 80 : this.userPerPage);
 
                     const response = await fetch(url, {
                         headers: {
@@ -361,8 +361,8 @@
                     </div>
                 </div>
 
-                <div class="grid min-h-[42rem] lg:grid-cols-[20rem_1fr]">
-                    <aside class="border-b border-[var(--color-border)] bg-[var(--color-secondary-bg)] lg:border-b-0 lg:border-r">
+                <div class="grid min-h-[42rem] min-w-0 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)]">
+                    <aside class="min-w-0 border-b border-[var(--color-border)] bg-[var(--color-secondary-bg)] lg:border-b-0 lg:border-r">
                         <div class="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-4">
                             <label for="access_user_search" class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Users</label>
                             <div class="mt-2 space-y-2">
@@ -396,16 +396,16 @@
                                         <option value="30">30 users</option>
                                     </select>
                                 </div>
-                                <p class="text-xs text-[var(--color-muted)]">Search is global across name, email, and role labels.</p>
+                                <p class="text-xs text-[var(--color-muted)]">Search is global across name, IC number, email, and role labels.</p>
                             </div>
                         </div>
 
-                        <div class="max-h-[34rem] space-y-1 overflow-y-auto p-3">
+                        <div class="max-h-[34rem] min-w-0 space-y-1 overflow-y-auto p-3">
                             <template x-for="user in users" :key="user.id">
                                 <button
                                     type="button"
                                     @click="selectUser(user.id)"
-                                    class="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition duration-200 hover:bg-[var(--color-accent-soft)]"
+                                    class="group flex min-w-0 w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition duration-200 hover:bg-[var(--color-accent-soft)]"
                                     :class="Number(selectedUser) === Number(user.id) ? 'bg-[var(--color-accent-soft)] ring-1 ring-[var(--color-accent)]' : ''"
                                 >
                                     <span class="relative inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-accent-soft)] text-sm font-semibold text-[var(--color-accent-text)] ring-1 ring-[var(--color-border)]">
@@ -448,8 +448,13 @@
                             <template x-if="selectedUserRecord">
                                 <div class="space-y-6">
                                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                        <div>
-                                            <h3 class="text-lg font-semibold text-[var(--color-text)]" x-text="selectedUserRecord.name"></h3>
+                                        <div class="min-w-0">
+                                            <h3 class="break-words text-lg font-semibold text-[var(--color-text)]" x-text="selectedUserRecord.name"></h3>
+                                            <p class="mt-1 break-all text-sm text-[var(--color-muted)]">
+                                                <span>IC: </span><span x-text="selectedUserRecord.ic_number || 'Not recorded'"></span>
+                                                <span class="mx-1">|</span>
+                                                <span x-text="selectedUserRecord.email || 'No email recorded'"></span>
+                                            </p>
                                             <p class="mt-1 text-sm text-[var(--color-muted)]">Toggle access instantly. No save button needed.</p>
                                         </div>
                                         <span class="theme-badge"><span x-text="moduleAccessCount()"></span>&nbsp;active module(s)</span>
@@ -462,9 +467,9 @@
                                     <template x-if="!selectedUserRecord.is_super_admin">
                                         <div class="space-y-5">
                                             <div class="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-4 sm:flex-row sm:items-center sm:justify-between">
-                                                <div>
+                                                <div class="min-w-0">
                                                     <h4 class="text-sm font-semibold text-[var(--color-text)]">Instant Module Access</h4>
-                                                    <p class="mt-1 text-sm text-[var(--color-muted)]">Switch cards on or off to grant or revoke access immediately.</p>
+                                                    <p class="mt-1 break-words text-sm text-[var(--color-muted)]">Switch cards on or off to grant or revoke access immediately.</p>
                                                 </div>
                                                 <button type="button" @click="bulkMode = !bulkMode" class="theme-button-secondary rounded-lg px-3 py-2 text-sm font-semibold">
                                                     <span x-text="bulkMode ? 'Hide Bulk Mode' : 'Bulk Mode'"></span>
@@ -512,7 +517,7 @@
                                                     >
                                                         <span class="flex items-start justify-between gap-3">
                                                             <span class="min-w-0">
-                                                                <span class="flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
+                                                                <span class="flex min-w-0 items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
                                                                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]">
                                                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                                                             <path d="M4 6h16" />
@@ -520,7 +525,7 @@
                                                                             <path d="M4 18h10" />
                                                                         </svg>
                                                                     </span>
-                                                                    <span class="truncate" x-text="module.name"></span>
+                                                                    <span class="min-w-0 break-words" x-text="module.name"></span>
                                                                 </span>
                                                                 <span class="mt-2 block line-clamp-2 text-xs leading-5 text-[var(--color-muted)]" x-text="module.description"></span>
                                                             </span>
@@ -528,7 +533,7 @@
                                                                 <span class="inline-block h-5 w-5 rounded-full bg-white shadow transition" :class="userHasAccess(module.id) ? 'translate-x-5' : 'translate-x-0.5'"></span>
                                                             </span>
                                                         </span>
-                                                        <span class="mt-4 flex items-center justify-between gap-3 text-xs font-medium">
+                                                        <span class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
                                                             <span :class="userHasAccess(module.id) ? 'text-emerald-600' : 'text-[var(--color-muted)]'" x-text="userHasAccess(module.id) ? 'ON - Access enabled' : 'OFF - No access'"></span>
                                                             <span x-show="isLoading('access', module.id)" class="inline-flex items-center gap-2 text-[var(--color-muted)]">
                                                                 <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -551,8 +556,13 @@
                             <template x-if="selectedUserRecord">
                                 <div class="space-y-6">
                                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                        <div>
-                                            <h3 class="text-lg font-semibold text-[var(--color-text)]" x-text="selectedUserRecord.name"></h3>
+                                        <div class="min-w-0">
+                                            <h3 class="break-words text-lg font-semibold text-[var(--color-text)]" x-text="selectedUserRecord.name"></h3>
+                                            <p class="mt-1 break-all text-sm text-[var(--color-muted)]">
+                                                <span>IC: </span><span x-text="selectedUserRecord.ic_number || 'Not recorded'"></span>
+                                                <span class="mx-1">|</span>
+                                                <span x-text="selectedUserRecord.email || 'No email recorded'"></span>
+                                            </p>
                                             <p class="mt-1 text-sm text-[var(--color-muted)]">Toggle module admin privileges instantly.</p>
                                         </div>
                                         <span class="theme-badge"><span x-text="moduleAdminCount()"></span>&nbsp;admin module(s)</span>
@@ -573,14 +583,14 @@
                                                 >
                                                     <span class="flex items-start justify-between gap-3">
                                                         <span class="min-w-0">
-                                                            <span class="flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
+                                                            <span class="flex min-w-0 items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
                                                                 <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]">
                                                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                                                         <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
                                                                         <path d="m9 12 2 2 4-4" />
                                                                     </svg>
                                                                 </span>
-                                                                <span class="truncate"><span x-text="module.name"></span> Admin</span>
+                                                                <span class="min-w-0 break-words"><span x-text="module.name"></span> Admin</span>
                                                             </span>
                                                             <span class="mt-2 block line-clamp-2 text-xs leading-5 text-[var(--color-muted)]">Administrative control for this module.</span>
                                                         </span>
@@ -588,7 +598,7 @@
                                                             <span class="inline-block h-5 w-5 rounded-full bg-white shadow transition" :class="userIsModuleAdmin(module.id) ? 'translate-x-5' : 'translate-x-0.5'"></span>
                                                         </span>
                                                     </span>
-                                                    <span class="mt-4 flex items-center justify-between gap-3 text-xs font-medium">
+                                                    <span class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
                                                         <span :class="userIsModuleAdmin(module.id) ? 'text-emerald-600' : 'text-[var(--color-muted)]'" x-text="userIsModuleAdmin(module.id) ? 'ON - Admin enabled' : 'OFF - Not an admin'"></span>
                                                         <span x-show="isLoading('admin', module.id)" class="inline-flex items-center gap-2 text-[var(--color-muted)]">
                                                             <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

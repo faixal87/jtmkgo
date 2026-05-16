@@ -14,10 +14,10 @@
     ][$tone] ?? 'bg-slate-500';
 @endphp
 
-<article {{ $attributes->merge(['class' => 'enterprise-card rounded-xl border p-4 shadow-sm']) }}>
+<article {{ $attributes->merge(['class' => 'enterprise-card min-w-0 rounded-xl border p-4 shadow-sm']) }}>
     <div class="flex items-center justify-between gap-3">
-        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">{{ $label }}</p>
+        <p class="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">{{ $label }}</p>
         <span class="h-2 w-2 rounded-full {{ $dot }}"></span>
     </div>
-    <p class="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-text)]">{{ $value }}</p>
+    <p class="mt-3 break-words text-2xl font-semibold tracking-tight text-[var(--color-text)]">{{ $value }}</p>
 </article>

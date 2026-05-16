@@ -52,16 +52,15 @@
                                         <input type="checkbox" name="users[]" value="{{ $user->id }}" class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900">
                                     </td>
                                     <td class="px-6 py-4">
-                                        <p class="font-semibold text-zinc-900">{{ $user->name }}</p>
-                                        <p class="mt-1 text-sm text-zinc-500">IC: {{ $user->ic_number }}</p>
+                                        <p class="break-words font-semibold text-zinc-900">{{ $user->name }}</p>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-zinc-600">
-                                        <p>{{ $user->email }}</p>
-                                        <p class="mt-1">{{ $user->phone ?: 'No phone number' }}</p>
+                                        <p class="break-all">{{ $user->email }}</p>
+                                        <p class="mt-1 break-words">{{ $user->phone ?: 'No phone number' }}</p>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-zinc-600">{{ $user->created_at?->format('d M Y, h:i A') }}</td>
                                     <td class="px-6 py-4">
-                                        <div class="flex justify-end gap-2">
+                                        <div class="flex flex-wrap justify-end gap-2">
                                             <button form="approve-user-{{ $user->id }}" type="submit" class="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-zinc-800">Approve</button>
                                             <button form="reject-user-{{ $user->id }}" type="submit" class="rounded-md border border-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50">Reject</button>
                                         </div>

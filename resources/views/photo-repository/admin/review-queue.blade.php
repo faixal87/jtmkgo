@@ -59,7 +59,7 @@
                         @endphp
 
                         <article class="enterprise-card overflow-hidden rounded-xl border shadow-sm">
-                            <div class="grid gap-0 md:grid-cols-[14rem_1fr]">
+                            <div class="grid min-w-0 gap-0 md:grid-cols-[14rem_minmax(0,1fr)]">
                                 <div class="aspect-[4/5] bg-[var(--color-secondary-bg)] md:aspect-auto">
                                     <img src="{{ $photo->thumbnailUrl() }}" alt="{{ $photo->profile?->name }}" class="h-full w-full object-cover">
                                 </div>

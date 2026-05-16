@@ -24,8 +24,8 @@
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             <x-toast />
 
-            <section class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                <article class="enterprise-card overflow-hidden rounded-xl border shadow-sm">
+            <section class="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <article class="enterprise-card min-w-0 overflow-hidden rounded-xl border shadow-sm">
                     <div class="bg-[var(--color-secondary-bg)]">
                         @if ($photo->photoUrl())
                             <img src="{{ $photo->photoUrl() }}" alt="{{ $photo->profile?->name ?? 'Portrait photo' }}" class="max-h-[42rem] w-full object-contain">
@@ -35,11 +35,11 @@
                     </div>
                 </article>
 
-                <article class="enterprise-card rounded-xl border p-6 shadow-sm">
+                <article class="enterprise-card min-w-0 rounded-xl border p-6 shadow-sm">
                     <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                            <h2 class="text-lg font-semibold text-[var(--color-text)]">{{ $photo->profile?->name ?? 'Unnamed Profile' }}</h2>
-                            <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $photo->profile?->designation ?: $photo->profile?->department ?: 'Official portrait profile' }}</p>
+                            <h2 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $photo->profile?->name ?? 'Unnamed Profile' }}</h2>
+                            <p class="mt-1 break-words text-sm text-[var(--color-muted)]">{{ $photo->profile?->designation ?: $photo->profile?->department ?: 'Official portrait profile' }}</p>
                         </div>
                         <span class="inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize {{ $statusTone }}">
                             {{ str($photo->status)->replace('_', ' ') }}
@@ -68,7 +68,7 @@
                     @if ($photo->caption)
                         <div class="mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Caption</p>
-                            <p class="mt-2 text-sm leading-6 text-[var(--color-text)]">{{ $photo->caption }}</p>
+                            <p class="mt-2 break-words text-sm leading-6 text-[var(--color-text)]">{{ $photo->caption }}</p>
                         </div>
                     @endif
 
@@ -86,7 +86,7 @@
                     @if ($photo->status === 'rejected' && $photo->rejection_remarks)
                         <div class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                             <p class="font-semibold">Rejection Remarks</p>
-                            <p class="mt-1">{{ $photo->rejection_remarks }}</p>
+                            <p class="mt-1 break-words">{{ $photo->rejection_remarks }}</p>
                         </div>
                     @endif
 

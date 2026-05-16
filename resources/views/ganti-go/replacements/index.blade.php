@@ -17,7 +17,7 @@
             @include('ganti-go.partials.flash')
 
             <x-ganti.card>
-                <form method="GET" action="{{ route('ganti-go.replacements.index') }}" class="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+                <form method="GET" action="{{ route('ganti-go.replacements.index') }}" class="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
                     <div>
                         <x-input-label for="q" value="Search" />
                         <x-text-input id="q" name="q" class="mt-1 block w-full" :value="request('q')" placeholder="Course, class, semester, method" />

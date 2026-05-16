@@ -15,21 +15,21 @@
         'slate' => 'border-slate-200 bg-white text-slate-950 [&_.stat-label]:text-slate-500',
     ][$accent] ?? 'border-slate-200 bg-white text-slate-950 [&_.stat-label]:text-slate-500';
 
-    $base = "group rounded-xl border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md {$classes}";
+    $base = "group min-w-0 rounded-xl border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md {$classes}";
 @endphp
 
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $base]) }}>
-        <p class="stat-label text-sm font-medium">{{ $title }}</p>
-        <p class="mt-3 text-3xl font-semibold tracking-tight">{{ $value }}</p>
+        <p class="stat-label break-words text-sm font-medium">{{ $title }}</p>
+        <p class="mt-3 break-words text-3xl font-semibold tracking-tight">{{ $value }}</p>
         @if ($slot->isNotEmpty())
             <div class="mt-3 text-sm opacity-75">{{ $slot }}</div>
         @endif
     </a>
 @else
     <div {{ $attributes->merge(['class' => $base]) }}>
-        <p class="stat-label text-sm font-medium">{{ $title }}</p>
-        <p class="mt-3 text-3xl font-semibold tracking-tight">{{ $value }}</p>
+        <p class="stat-label break-words text-sm font-medium">{{ $title }}</p>
+        <p class="mt-3 break-words text-3xl font-semibold tracking-tight">{{ $value }}</p>
         @if ($slot->isNotEmpty())
             <div class="mt-3 text-sm opacity-75">{{ $slot }}</div>
         @endif

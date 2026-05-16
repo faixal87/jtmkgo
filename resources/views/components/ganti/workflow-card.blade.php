@@ -17,7 +17,7 @@
 <button
     type="button"
     @click="selectWorkflow(@js($mode))"
-    class="group relative overflow-hidden rounded-2xl border p-6 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg {{ $palette }}"
+    class="group relative min-w-0 overflow-hidden rounded-2xl border p-6 text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg {{ $palette }}"
     :class="selectedWorkflow === @js($mode) ? 'ring-2 ring-[var(--color-accent)] ring-offset-2' : ''"
     style="--tw-ring-offset-color: var(--color-page);"
 >
@@ -42,8 +42,8 @@
         @endif
     </span>
 
-    <span class="mt-5 block text-lg font-semibold tracking-tight">{{ $title }}</span>
-    <span class="mt-2 block text-sm leading-6 opacity-75">{{ $description }}</span>
+    <span class="mt-5 block break-words text-lg font-semibold tracking-tight">{{ $title }}</span>
+    <span class="mt-2 block break-words text-sm leading-6 opacity-75">{{ $description }}</span>
 
     <span class="mt-6 inline-flex items-center text-sm font-semibold">
         Select workflow

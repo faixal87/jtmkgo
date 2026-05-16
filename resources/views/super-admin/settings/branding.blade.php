@@ -53,11 +53,11 @@
                             type="button"
                             x-show="@js($searchableSection).includes(settingsSearch.toLowerCase())"
                             @click="activeSection = @js($section['id'])"
-                            class="w-full rounded-xl border px-3 py-3 text-left transition duration-200"
+                            class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
                             :class="activeSection === @js($section['id']) ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                         >
-                            <span class="block text-sm font-semibold text-[var(--color-text)]">{{ $section['title'] }}</span>
-                            <span class="mt-1 block text-xs leading-5 text-[var(--color-muted)]">{{ $section['description'] }}</span>
+                            <span class="block break-words text-sm font-semibold text-[var(--color-text)]">{{ $section['title'] }}</span>
+                            <span class="mt-1 block break-words text-xs leading-5 text-[var(--color-muted)]">{{ $section['description'] }}</span>
                         </button>
                     @endforeach
                 </x-searchable-list-panel>

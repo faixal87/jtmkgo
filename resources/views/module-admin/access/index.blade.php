@@ -30,11 +30,10 @@
                             type="button"
                             x-show="@js($searchableAccess).includes(accessSearch.toLowerCase())"
                             @click="selectedAccess = {{ $access->id }}"
-                            class="w-full rounded-xl border px-3 py-3 text-left transition duration-200"
+                            class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
                             :class="selectedAccess === {{ $access->id }} ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                         >
                             <span class="block truncate text-sm font-semibold text-[var(--color-text)]">{{ $access->user?->name }}</span>
-                            <span class="mt-1 block truncate text-xs text-[var(--color-muted)]">IC: {{ $access->user?->ic_number ?: 'Not recorded' }}</span>
                             <span class="mt-2 block text-[0.68rem] font-medium text-[var(--color-muted)]">Granted {{ $access->granted_at?->format('d M Y') ?: 'not recorded' }}</span>
                         </button>
                     @empty
@@ -44,14 +43,14 @@
 
                 <x-context-detail-panel>
                     <section class="enterprise-card rounded-xl border p-5">
-                        <form method="POST" action="{{ route('module-admin.access.grant', $module->slug) }}" class="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                        <form method="POST" action="{{ route('module-admin.access.grant', $module->slug) }}" class="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                             @csrf
                             <div>
                                 <x-input-label for="user_id" value="Grant Access" />
                                 <select id="user_id" name="user_id" required class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                                     <option value="">Select approved staff member</option>
                                     @foreach ($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->name }} - {{ $user->ic_number }}</option>
+                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -66,26 +65,26 @@
                         @forelse ($accesses as $access)
                             <section x-show="selectedAccess === {{ $access->id }}" x-cloak class="space-y-6">
                                 <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <h3 class="text-lg font-semibold text-[var(--color-text)]">{{ $access->user?->name }}</h3>
-                                        <p class="mt-1 text-sm text-[var(--color-muted)]">IC: {{ $access->user?->ic_number ?: 'Not recorded' }}</p>
+                                    <div class="min-w-0">
+                                        <h3 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $access->user?->name }}</h3>
+                                        <p class="mt-1 break-all text-sm text-[var(--color-muted)]">IC: {{ $access->user?->ic_number ?: 'Not recorded' }}</p>
                                     </div>
                                     <span class="theme-badge">Active Access</span>
                                 </div>
 
                                 <div class="grid gap-4 lg:grid-cols-3">
-                                    <article class="enterprise-card rounded-xl border p-4">
+                                    <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Contact</p>
-                                        <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $access->user?->email ?: 'No email' }}</p>
-                                        <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $access->user?->phone ?: 'No phone number' }}</p>
+                                        <p class="mt-3 break-all text-sm font-semibold text-[var(--color-text)]">{{ $access->user?->email ?: 'No email' }}</p>
+                                        <p class="mt-1 break-words text-xs text-[var(--color-muted)]">{{ $access->user?->phone ?: 'No phone number' }}</p>
                                     </article>
-                                    <article class="enterprise-card rounded-xl border p-4">
+                                    <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Granted By</p>
-                                        <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $access->grantedBy?->name ?: 'System' }}</p>
+                                        <p class="mt-3 break-words text-sm font-semibold text-[var(--color-text)]">{{ $access->grantedBy?->name ?: 'System' }}</p>
                                     </article>
-                                    <article class="enterprise-card rounded-xl border p-4">
+                                    <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Granted At</p>
-                                        <p class="mt-3 text-sm font-semibold text-[var(--color-text)]">{{ $access->granted_at?->format('d M Y, h:i A') ?: 'Not recorded' }}</p>
+                                        <p class="mt-3 break-words text-sm font-semibold text-[var(--color-text)]">{{ $access->granted_at?->format('d M Y, h:i A') ?: 'Not recorded' }}</p>
                                     </article>
                                 </div>
 

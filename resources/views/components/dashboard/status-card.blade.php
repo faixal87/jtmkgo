@@ -7,7 +7,7 @@
 ])
 
 @php
-    $class = 'theme-card group block rounded-xl border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-[var(--color-accent-soft)]';
+    $class = 'theme-card group block min-w-0 rounded-xl border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-[var(--color-accent-soft)]';
 @endphp
 
 @if ($href)
@@ -15,7 +15,7 @@
 @else
     <article {{ $attributes->merge(['class' => $class]) }}>
 @endif
-    <div class="flex items-start gap-4">
+    <div class="flex min-w-0 items-start gap-4">
         <span class="status-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent-text)] transition duration-200">
             @switch($icon)
                 @case('users')
@@ -49,8 +49,8 @@
         </span>
 
         <span class="min-w-0">
-            <span class="block text-sm font-semibold text-[var(--color-text)]">{{ $title }}</span>
-            <span class="mt-1 block text-sm leading-6 text-[var(--color-muted)]">{{ $description }}</span>
+            <span class="block break-words text-sm font-semibold text-[var(--color-text)]">{{ $title }}</span>
+            <span class="mt-1 block break-words text-sm leading-6 text-[var(--color-muted)]">{{ $description }}</span>
         </span>
     </div>
 @if ($href)

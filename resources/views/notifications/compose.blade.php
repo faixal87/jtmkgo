@@ -29,11 +29,11 @@
                             type="button"
                             x-show="@js($searchableMode).includes(recipientSearch.toLowerCase())"
                             @click="mode = @js($mode)"
-                            class="w-full rounded-xl border px-3 py-3 text-left transition duration-200"
+                            class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
                             :class="mode === @js($mode) ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                         >
-                            <span class="block text-sm font-semibold text-[var(--color-text)]">{{ $meta['title'] }}</span>
-                            <span class="mt-1 block text-xs leading-5 text-[var(--color-muted)]">{{ $meta['description'] }}</span>
+                            <span class="block break-words text-sm font-semibold text-[var(--color-text)]">{{ $meta['title'] }}</span>
+                            <span class="mt-1 block break-words text-xs leading-5 text-[var(--color-muted)]">{{ $meta['description'] }}</span>
                         </button>
                     @endforeach
                 </x-searchable-list-panel>
@@ -55,13 +55,12 @@
                                     <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $users->count() }} users available in your permission scope.</p>
                                 </div>
                             </div>
-                            <div class="grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-[var(--color-border)] p-3 md:grid-cols-2">
+                            <div class="grid max-h-72 min-w-0 gap-2 overflow-y-auto rounded-xl border border-[var(--color-border)] p-3 md:grid-cols-2">
                                 @foreach ($users as $user)
-                                    <label class="flex items-start gap-3 rounded-lg px-2 py-2 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-accent-soft)]">
+                                    <label class="flex min-w-0 items-start gap-3 rounded-lg px-2 py-2 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-accent-soft)]">
                                         <input type="checkbox" name="user_ids[]" value="{{ $user->id }}" class="mt-0.5 rounded border-slate-300 text-[var(--color-accent)] focus:ring-[var(--color-accent)]">
-                                        <span>
-                                            <span class="block font-medium">{{ $user->name }}</span>
-                                            <span class="block text-xs text-[var(--color-muted)]">IC: {{ $user->ic_number }}</span>
+                                        <span class="min-w-0">
+                                            <span class="block truncate font-medium">{{ $user->name }}</span>
                                         </span>
                                     </label>
                                 @endforeach

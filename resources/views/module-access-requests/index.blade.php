@@ -25,10 +25,10 @@
                             type="button"
                             x-show="@js($searchableModule).includes(moduleSearch.toLowerCase())"
                             @click="selectedModule = {{ $module->id }}"
-                            class="w-full rounded-xl border px-3 py-3 text-left transition duration-200"
+                            class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
                             :class="selectedModule === {{ $module->id }} ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                         >
-                            <span class="flex items-center gap-3">
+                            <span class="flex min-w-0 items-center gap-3">
                                 <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]">
                                     @if ($module->slug === 'photo-repository')
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -64,8 +64,8 @@
                         @php($isPending = $pendingModuleIds->contains($module->id))
                         <section x-show="selectedModule === {{ $module->id }}" x-cloak class="space-y-6">
                             <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-[var(--color-text)]">{{ $module->name }}</h3>
+                                <div class="min-w-0">
+                                    <h3 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $module->name }}</h3>
                                     <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-muted)]">{{ $module->description ?: 'Request access to this JTMK internal system.' }}</p>
                                 </div>
                                 @if ($isPending)

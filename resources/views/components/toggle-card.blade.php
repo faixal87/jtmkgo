@@ -7,10 +7,10 @@
     'icon' => null,
 ])
 
-<label {{ $attributes->merge(['class' => 'enterprise-card group flex min-h-28 cursor-pointer flex-col justify-between rounded-xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md']) }}>
+<label {{ $attributes->merge(['class' => 'enterprise-card group flex min-h-28 min-w-0 cursor-pointer flex-col justify-between rounded-xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md']) }}>
     <span class="flex items-start justify-between gap-3">
         <span class="min-w-0">
-            <span class="flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
+            <span class="flex min-w-0 items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
                 <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]">
                     @if ($icon)
                         {{ $icon }}
@@ -20,7 +20,7 @@
                         </svg>
                     @endif
                 </span>
-                <span class="truncate">{{ $title }}</span>
+                <span class="min-w-0 break-words">{{ $title }}</span>
             </span>
             @if ($description)
                 <span class="mt-2 block line-clamp-2 text-xs leading-5 text-[var(--color-muted)]">{{ $description }}</span>
@@ -32,7 +32,7 @@
         </span>
     </span>
 
-    <span class="mt-4 flex items-center justify-between gap-3 text-xs font-medium">
+    <span class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
         <span class="{{ $state ? 'text-emerald-700' : 'text-[var(--color-muted)]' }}">{{ $state ? 'Enabled' : 'Disabled' }}</span>
         <span class="inline-flex items-center gap-2 text-[var(--color-muted)]">
             <input type="checkbox" name="{{ $name }}" value="{{ $value }}" class="rounded border-slate-300 text-[var(--color-accent)] focus:ring-[var(--color-accent)]">

@@ -37,10 +37,10 @@
                             type="button"
                             x-show="@js($searchableNotification).includes(notificationSearch.toLowerCase())"
                             @click="selectedNotification = {{ $notification->id }}"
-                            class="w-full rounded-xl border px-3 py-3 text-left transition duration-200"
+                            class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
                             :class="selectedNotification === {{ $notification->id }} ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                         >
-                            <span class="flex items-start gap-3">
+                            <span class="flex min-w-0 items-start gap-3">
                                 <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $notification->read_at ? 'bg-slate-300' : 'bg-[var(--color-accent)]' }}"></span>
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate text-sm font-semibold text-[var(--color-text)]">{{ $notification->title }}</span>
@@ -64,9 +64,9 @@
                     @forelse ($notifications as $notification)
                         <section x-show="selectedNotification === {{ $notification->id }}" x-cloak class="space-y-6">
                             <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
-                                <div>
+                                <div class="min-w-0">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <h3 class="text-lg font-semibold text-[var(--color-text)]">{{ $notification->title }}</h3>
+                                        <h3 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $notification->title }}</h3>
                                         <span class="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-muted)]">
                                             {{ $notification->read_at ? 'Read' : 'Unread' }}
                                         </span>
@@ -89,19 +89,19 @@
                                 </div>
                             </div>
 
-                            <article class="enterprise-card rounded-xl border p-5">
+                            <article class="enterprise-card min-w-0 rounded-xl border p-5">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Message</p>
-                                <p class="mt-4 whitespace-pre-line text-sm leading-6 text-[var(--color-text)]">{{ $notification->message }}</p>
+                                <p class="mt-4 whitespace-pre-line break-words text-sm leading-6 text-[var(--color-text)]">{{ $notification->message }}</p>
                             </article>
 
                             <div class="grid gap-4 sm:grid-cols-2">
-                                <article class="enterprise-card rounded-xl border p-4">
+                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Type</p>
-                                    <p class="mt-3 text-sm font-medium text-[var(--color-text)]">{{ $notification->type ? str($notification->type)->replace('-', ' ')->title() : 'System' }}</p>
+                                    <p class="mt-3 break-words text-sm font-medium text-[var(--color-text)]">{{ $notification->type ? str($notification->type)->replace('-', ' ')->title() : 'System' }}</p>
                                 </article>
-                                <article class="enterprise-card rounded-xl border p-4">
+                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Read At</p>
-                                    <p class="mt-3 text-sm font-medium text-[var(--color-text)]">{{ $notification->read_at?->format('d M Y, h:i A') ?: 'Not read yet' }}</p>
+                                    <p class="mt-3 break-words text-sm font-medium text-[var(--color-text)]">{{ $notification->read_at?->format('d M Y, h:i A') ?: 'Not read yet' }}</p>
                                 </article>
                             </div>
                         </section>
