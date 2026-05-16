@@ -9,12 +9,15 @@
     $subDisabled = 'cursor-not-allowed text-[var(--color-sidebar-disabled)]';
     $gantiGoModule = $sidebarModules->firstWhere('slug', 'ganti-go');
     $photoRepositoryModule = $sidebarModules->firstWhere('slug', 'photo-repository');
-    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository'], true));
+    $subjekGoModule = $sidebarModules->firstWhere('slug', 'subjek-go');
+    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'subjek-go'], true));
     $isSuperAdmin = (bool) $user?->is_super_admin;
     $canManageGantiGo = $gantiGoModule && $managedModuleIds->contains($gantiGoModule->id);
     $canViewGantiGoAnalytics = $isSuperAdmin || $canManageGantiGo;
     $canManagePhotoRepository = $photoRepositoryModule && ! $isSuperAdmin && $managedModuleIds->contains($photoRepositoryModule->id);
     $canViewPhotoRepositoryAnalytics = $photoRepositoryModule && ($isSuperAdmin || $canManagePhotoRepository);
+    $canManageSubjekGo = $subjekGoModule && ! $isSuperAdmin && $managedModuleIds->contains($subjekGoModule->id);
+    $canViewSubjekGoAnalytics = $subjekGoModule && ($isSuperAdmin || $canManageSubjekGo);
     $canManageAnyModule = $isSuperAdmin || $managedModuleIds->isNotEmpty();
     $workspaceLogo = $branding->asset($brandingSettings['sidebar_logo'] ?? null);
     $workspaceBrandText = $brandingSettings['sidebar_brand_text'] ?? $brandingSettings['workspace_brand_text'] ?? 'JTMK';
@@ -136,6 +139,34 @@
                         <a href="{{ route('photo-repository.admin.review-queue') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.review-queue') ? $subActive : $subIdle }}">Review Queue</a>
                         <a href="{{ route('photo-repository.admin.profiles') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.profiles*') ? $subActive : $subIdle }}">Profiles</a>
                         <a href="{{ route('photo-repository.admin.categories') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.categories*') ? $subActive : $subIdle }}">Categories</a>
+                    @endif
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($subjekGoModule)
+                <x-sidebar.collapsible-submenu id="subjek-go" title="SubjekGo" :active="request()->routeIs('subjek-go.*')" :badge="$canManageSubjekGo ? 'Admin' : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z" />
+                            <path d="M8 7h8" />
+                            <path d="M8 11h6" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('subjek-go.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('subjek-go.preferences.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.preferences.index') ? $subActive : $subIdle }}">Subject Preferences</a>
+                        <a href="{{ route('subjek-go.my-selections.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.my-selections.*') ? $subActive : $subIdle }}">My Selections</a>
+                    @endunless
+                    @if ($canManageSubjekGo)
+                        <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">Admin</span>
+                        <a href="{{ route('subjek-go.sessions.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.sessions.*') ? $subActive : $subIdle }}">Sessions</a>
+                        <a href="{{ route('subjek-go.offered-subjects.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.offered-subjects.*') ? $subActive : $subIdle }}">Offered Subjects</a>
+                        <a href="{{ route('subjek-go.subject-coordinators.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.subject-coordinators.*') ? $subActive : $subIdle }}">Subject Coordinators</a>
+                    @endif
+                    <a href="{{ route('subjek-go.teaching-history.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.teaching-history.*') ? $subActive : $subIdle }}">Teaching History</a>
+                    @if ($canViewSubjekGoAnalytics)
+                        <a href="{{ route('subjek-go.analytics') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.analytics') ? $subActive : $subIdle }}">Analytics</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
             @endif
@@ -337,6 +368,34 @@
                         <a href="{{ route('photo-repository.admin.review-queue') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.review-queue') ? $subActive : $subIdle }}">Review Queue</a>
                         <a href="{{ route('photo-repository.admin.profiles') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.profiles*') ? $subActive : $subIdle }}">Profiles</a>
                         <a href="{{ route('photo-repository.admin.categories') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.categories*') ? $subActive : $subIdle }}">Categories</a>
+                    @endif
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($subjekGoModule)
+                <x-sidebar.collapsible-submenu id="mobile-subjek-go" title="SubjekGo" :active="request()->routeIs('subjek-go.*')" :badge="$canManageSubjekGo ? 'Admin' : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z" />
+                            <path d="M8 7h8" />
+                            <path d="M8 11h6" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('subjek-go.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('subjek-go.preferences.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.preferences.index') ? $subActive : $subIdle }}">Subject Preferences</a>
+                        <a href="{{ route('subjek-go.my-selections.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.my-selections.*') ? $subActive : $subIdle }}">My Selections</a>
+                    @endunless
+                    @if ($canManageSubjekGo)
+                        <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">Admin</span>
+                        <a href="{{ route('subjek-go.sessions.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.sessions.*') ? $subActive : $subIdle }}">Sessions</a>
+                        <a href="{{ route('subjek-go.offered-subjects.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.offered-subjects.*') ? $subActive : $subIdle }}">Offered Subjects</a>
+                        <a href="{{ route('subjek-go.subject-coordinators.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.subject-coordinators.*') ? $subActive : $subIdle }}">Subject Coordinators</a>
+                    @endif
+                    <a href="{{ route('subjek-go.teaching-history.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.teaching-history.*') ? $subActive : $subIdle }}">Teaching History</a>
+                    @if ($canViewSubjekGoAnalytics)
+                        <a href="{{ route('subjek-go.analytics') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.analytics') ? $subActive : $subIdle }}">Analytics</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
             @endif

@@ -32,6 +32,15 @@ use App\Modules\PhotoRepository\Controllers\MyPhotosController as PhotoRepositor
 use App\Modules\PhotoRepository\Controllers\PhotoController as PhotoRepositoryPhotoController;
 use App\Modules\PhotoRepository\Controllers\PhotoDownloadController as PhotoRepositoryPhotoDownloadController;
 use App\Modules\PhotoRepository\Controllers\UploadPhotoController as PhotoRepositoryUploadPhotoController;
+use App\Modules\SubjekGo\Controllers\AdminPreferenceController as SubjekGoAdminPreferenceController;
+use App\Modules\SubjekGo\Controllers\AnalyticsController as SubjekGoAnalyticsController;
+use App\Modules\SubjekGo\Controllers\DashboardController as SubjekGoDashboardController;
+use App\Modules\SubjekGo\Controllers\MySelectionController as SubjekGoMySelectionController;
+use App\Modules\SubjekGo\Controllers\OfferedSubjectController as SubjekGoOfferedSubjectController;
+use App\Modules\SubjekGo\Controllers\PreferenceController as SubjekGoPreferenceController;
+use App\Modules\SubjekGo\Controllers\SessionController as SubjekGoSessionController;
+use App\Modules\SubjekGo\Controllers\SubjectCoordinatorController as SubjekGoSubjectCoordinatorController;
+use App\Modules\SubjekGo\Controllers\TeachingHistoryController as SubjekGoTeachingHistoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -232,6 +241,34 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
             Route::post('/admin/categories', [PhotoRepositoryCategoryController::class, 'store'])->name('admin.categories.store');
             Route::patch('/admin/categories/{mediaCategory}', [PhotoRepositoryCategoryController::class, 'update'])->name('admin.categories.update');
             Route::patch('/admin/categories/{mediaCategory}/toggle', [PhotoRepositoryCategoryController::class, 'toggle'])->name('admin.categories.toggle');
+        });
+    });
+
+Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.access:subjek-go'])
+    ->prefix('subjek-go')
+    ->name('subjek-go.')
+    ->group(function () {
+        Route::get('/', SubjekGoDashboardController::class)->name('dashboard');
+        Route::get('/subject-preferences', [SubjekGoPreferenceController::class, 'index'])->name('preferences.index');
+        Route::post('/subject-preferences', [SubjekGoPreferenceController::class, 'store'])->name('preferences.store');
+        Route::get('/my-selections', [SubjekGoMySelectionController::class, 'index'])->name('my-selections.index');
+        Route::get('/teaching-history', [SubjekGoTeachingHistoryController::class, 'index'])->name('teaching-history.index');
+        Route::get('/analytics', SubjekGoAnalyticsController::class)->name('analytics');
+
+        Route::middleware('module.admin:subjek-go')->group(function () {
+            Route::resource('sessions', SubjekGoSessionController::class)->except(['show', 'destroy']);
+            Route::patch('/sessions/{session}/status', [SubjekGoSessionController::class, 'status'])->name('sessions.status');
+            Route::patch('/sessions/{session}/reopen-all', [SubjekGoSessionController::class, 'reopenAll'])->name('sessions.reopen-all');
+
+            Route::patch('/offered-subjects/{offeredSubject}/toggle', [SubjekGoOfferedSubjectController::class, 'toggle'])->name('offered-subjects.toggle');
+            Route::resource('offered-subjects', SubjekGoOfferedSubjectController::class)->except(['show', 'destroy']);
+
+            Route::get('/subject-coordinators', [SubjekGoSubjectCoordinatorController::class, 'index'])->name('subject-coordinators.index');
+            Route::patch('/subject-coordinators/{offeredSubject}', [SubjekGoSubjectCoordinatorController::class, 'update'])->name('subject-coordinators.update');
+
+            Route::get('/admin/preferences', [SubjekGoAdminPreferenceController::class, 'index'])->name('admin.preferences.index');
+            Route::patch('/preferences/{preference}/reopen', [SubjekGoAdminPreferenceController::class, 'reopen'])->name('preferences.reopen');
+            Route::patch('/preferences/{preference}/lock', [SubjekGoAdminPreferenceController::class, 'lock'])->name('preferences.lock');
         });
     });
 

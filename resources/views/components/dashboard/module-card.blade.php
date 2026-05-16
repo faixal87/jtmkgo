@@ -39,6 +39,14 @@
                         <path d="M12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
                     </svg>
                     @break
+                @case('subjek-go')
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z" />
+                        <path d="M8 7h8" />
+                        <path d="M8 11h6" />
+                        <path d="m14 16 2 2 4-5" />
+                    </svg>
+                    @break
                 @default
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <path d="M4 6h16" />

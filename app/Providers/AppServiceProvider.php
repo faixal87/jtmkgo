@@ -8,6 +8,9 @@ use App\Modules\GantiGo\Policies\GantiGoPolicy;
 use App\Modules\PhotoRepository\Models\MediaPhoto;
 use App\Modules\PhotoRepository\Policies\MediaPhotoPolicy;
 use App\Modules\PhotoRepository\Policies\PhotoRepositoryPolicy;
+use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
+use App\Modules\SubjekGo\Policies\PreferencePolicy as SubjekGoPreferencePolicy;
+use App\Modules\SubjekGo\Policies\SubjekGoPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,11 +31,16 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(ClassReplacement::class, ClassReplacementPolicy::class);
         Gate::policy(MediaPhoto::class, MediaPhotoPolicy::class);
+        Gate::policy(SubjekGoPreference::class, SubjekGoPreferencePolicy::class);
 
         Gate::define('view-ganti-go', [GantiGoPolicy::class, 'view']);
         Gate::define('manage-ganti-go', [GantiGoPolicy::class, 'manage']);
         Gate::define('view-photo-repository', [PhotoRepositoryPolicy::class, 'view']);
         Gate::define('upload-photo-repository', [PhotoRepositoryPolicy::class, 'upload']);
         Gate::define('manage-photo-repository', [PhotoRepositoryPolicy::class, 'manage']);
+        Gate::define('view-subjek-go', [SubjekGoPolicy::class, 'view']);
+        Gate::define('select-subjek-go', [SubjekGoPolicy::class, 'select']);
+        Gate::define('manage-subjek-go', [SubjekGoPolicy::class, 'manage']);
+        Gate::define('view-subjek-go-analytics', [SubjekGoPolicy::class, 'viewAnalytics']);
     }
 }

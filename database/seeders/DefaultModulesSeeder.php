@@ -36,6 +36,17 @@ class DefaultModulesSeeder extends Seeder
             ]
         );
 
+        Module::updateOrCreate(
+            ['slug' => 'subjek-go'],
+            [
+                'name' => 'SubjekGo',
+                'icon' => 'SG',
+                'route_prefix' => '/subjek-go',
+                'description' => 'Lecturer subject preference management system.',
+                'is_active' => true,
+            ]
+        );
+
         $this->retireModule('class-replacement', $gantiGo);
         $this->retireModule('passport-photo', $photoRepository);
     }
