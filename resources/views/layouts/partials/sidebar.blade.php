@@ -160,6 +160,7 @@
                     @endunless
                     @if ($canManageSubjekGo)
                         <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">Admin</span>
+                        <a href="{{ route('subjek-go.admin.preferences.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.admin.preferences.*') ? $subActive : $subIdle }}">Lecturer Preferences</a>
                         <a href="{{ route('subjek-go.sessions.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.sessions.*') ? $subActive : $subIdle }}">Sessions</a>
                         <a href="{{ route('subjek-go.offered-subjects.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.offered-subjects.*') ? $subActive : $subIdle }}">Offered Subjects</a>
                         <a href="{{ route('subjek-go.subject-coordinators.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.subject-coordinators.*') ? $subActive : $subIdle }}">Subject Coordinators</a>
@@ -389,6 +390,7 @@
                     @endunless
                     @if ($canManageSubjekGo)
                         <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">Admin</span>
+                        <a href="{{ route('subjek-go.admin.preferences.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.admin.preferences.*') ? $subActive : $subIdle }}">Lecturer Preferences</a>
                         <a href="{{ route('subjek-go.sessions.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.sessions.*') ? $subActive : $subIdle }}">Sessions</a>
                         <a href="{{ route('subjek-go.offered-subjects.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.offered-subjects.*') ? $subActive : $subIdle }}">Offered Subjects</a>
                         <a href="{{ route('subjek-go.subject-coordinators.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.subject-coordinators.*') ? $subActive : $subIdle }}">Subject Coordinators</a>

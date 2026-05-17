@@ -136,6 +136,7 @@
                         <x-dashboard.status-card title="Analytics" description="Review popularity, completion, history, and workload signals." :href="route('subjek-go.analytics')" icon="activity" />
                     @endif
                     @if ($canManage)
+                        <x-dashboard.status-card title="Lecturer Preferences" description="Monitor selections, workload, and lecturer history." :href="route('subjek-go.admin.preferences.index')" icon="users" />
                         <x-dashboard.status-card title="Sessions" description="Open or close subject preference windows." :href="route('subjek-go.sessions.index')" icon="calendar" />
                         <x-dashboard.status-card title="Offered Subjects" description="Manage semester subject offerings." :href="route('subjek-go.offered-subjects.index')" icon="activity" />
                         <x-dashboard.status-card title="Coordinators" description="Maintain subject coordinator mapping." :href="route('subjek-go.subject-coordinators.index')" icon="users" />
