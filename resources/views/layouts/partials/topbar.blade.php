@@ -107,15 +107,15 @@
                 <div x-show="open" x-cloak @click.outside="open = false" x-transition class="theme-card absolute right-0 mt-2 w-96 max-w-[calc(100vw-2rem)] rounded-xl border p-3 shadow-lg">
                     <div class="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
                         <div>
-                            <p class="text-sm font-semibold text-[var(--color-text)]">Notifications</p>
-                            <p class="text-xs text-[var(--color-muted)]"><span x-text="unread"></span> unread</p>
+                            <p class="text-sm font-semibold text-[var(--color-text)]">{{ __('app.topbar.notifications') }}</p>
+                            <p class="text-xs text-[var(--color-muted)]"><span x-text="unread"></span> {{ __('app.topbar.unread') }}</p>
                         </div>
-                        <button type="button" @click="markAll()" class="text-xs font-semibold text-[var(--color-accent-text)] hover:underline">Mark all read</button>
+                        <button type="button" @click="markAll()" class="text-xs font-semibold text-[var(--color-accent-text)] hover:underline">{{ __('app.topbar.mark_all_read') }}</button>
                     </div>
 
                     <div class="max-h-96 overflow-y-auto py-2">
                         <template x-if="notifications.length === 0">
-                            <div class="py-8 text-center text-sm text-[var(--color-muted)]">No notifications yet.</div>
+                            <div class="py-8 text-center text-sm text-[var(--color-muted)]">{{ __('app.topbar.no_notifications') }}</div>
                         </template>
 
                         <template x-for="notification in notifications" :key="notification.id">
@@ -134,7 +134,7 @@
                     </div>
 
                     <a href="{{ route('notifications.index') }}" class="mt-2 block rounded-lg border border-[var(--color-border)] px-3 py-2 text-center text-sm font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-accent-soft)]">
-                        Open Notification Center
+                        {{ __('app.topbar.open_notification_center') }}
                     </a>
                 </div>
             </div>
@@ -179,12 +179,16 @@
                     </div>
 
                     <div class="py-2">
-                        <a href="{{ route('profile.edit') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]">Profile</a>
-                        <a href="{{ route('module-access-requests.index') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]">Request Module Access</a>
+                        <a href="{{ route('profile.edit') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]">{{ __('app.topbar.profile') }}</a>
+                        <a href="{{ route('module-access-requests.index') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]">{{ __('app.topbar.request_module_access') }}</a>
+                        <div class="px-3 py-2">
+                            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">{{ __('app.language.label') }}</p>
+                            <x-language-switcher compact />
+                        </div>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-accent-soft)]">
-                                Log Out
+                                {{ __('app.topbar.log_out') }}
                             </button>
                         </form>
                     </div>

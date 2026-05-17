@@ -1,18 +1,18 @@
 <section class="space-y-6">
     <header>
         <h2 class="text-lg font-medium text-zinc-900">
-            Deactivate Account
+            {{ __('app.profile.deactivate_account') }}
         </h2>
 
         <p class="mt-1 text-sm text-zinc-600">
-            Deactivating your account blocks future login without removing historical records.
+            {{ __('app.profile.deactivate_description') }}
         </p>
     </header>
 
     <x-danger-button
         x-data=""
         x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >Deactivate Account</x-danger-button>
+    >{{ __('app.profile.deactivate_account') }}</x-danger-button>
 
     <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
         <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
@@ -20,22 +20,22 @@
             @method('delete')
 
             <h2 class="text-lg font-medium text-zinc-900">
-                Are you sure you want to deactivate your account?
+                {{ __('app.profile.deactivate_confirm') }}
             </h2>
 
             <p class="mt-1 text-sm text-zinc-600">
-                Please enter your password to confirm account deactivation.
+                {{ __('app.profile.deactivate_password_confirm') }}
             </p>
 
             <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
+                <x-input-label for="password" value="{{ __('auth.login.password') }}" class="sr-only" />
 
                 <x-text-input
                     id="password"
                     name="password"
                     type="password"
                     class="mt-1 block w-3/4"
-                    placeholder="{{ __('Password') }}"
+                    placeholder="{{ __('auth.login.password') }}"
                 />
 
                 <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
@@ -43,11 +43,11 @@
 
             <div class="mt-6 flex justify-end">
                 <x-secondary-button x-on:click="$dispatch('close')">
-                    {{ __('Cancel') }}
+                    {{ __('app.profile.cancel') }}
                 </x-secondary-button>
 
                 <x-danger-button class="ms-3">
-                    Deactivate Account
+                    {{ __('app.profile.deactivate_account') }}
                 </x-danger-button>
             </div>
         </form>

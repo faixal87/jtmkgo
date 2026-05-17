@@ -40,6 +40,7 @@ class ProfileUpdateRequest extends FormRequest
             'mbot_membership' => ['nullable', 'string', 'max:255'],
             'bem_membership' => ['nullable', 'string', 'max:255'],
             'theme_preference' => ['required', Rule::in(['default', 'blue', 'dark', 'purple-matcha'])],
+            'language_preference' => ['required', Rule::in(['en', 'ms'])],
             'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ];
     }
@@ -50,9 +51,9 @@ class ProfileUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'profile_photo.image' => 'Please upload a valid profile photo image.',
-            'profile_photo.max' => 'Profile photos may be up to 10MB. The system will optimize the image automatically after upload.',
-            'profile_photo.mimes' => 'Profile photos must be JPG, JPEG, PNG, or WebP files.',
+            'profile_photo.image' => __('app.profile.validation.profile_photo_image'),
+            'profile_photo.max' => __('app.profile.validation.profile_photo_max'),
+            'profile_photo.mimes' => __('app.profile.validation.profile_photo_mimes'),
         ];
     }
 }

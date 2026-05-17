@@ -29,6 +29,10 @@
     @endphp
     <body class="theme-{{ $theme }} bg-[var(--color-page)] font-sans text-[var(--color-text)] antialiased" data-theme="{{ $theme }}">
         <main class="jtmk-login-shell flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
+            <div class="flex justify-end pb-4">
+                <x-language-switcher compact />
+            </div>
+
             <div class="flex flex-1 items-center justify-center">
                 <section class="w-full max-w-md">
                     @if ($landingLogos->isNotEmpty())
@@ -46,7 +50,7 @@
                                 <h1 class="jtmk-cyber-title mt-4 text-4xl font-semibold text-[var(--color-text)]">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }}</h1>
                                 <div class="mx-auto mt-4 h-px w-24 bg-gradient-to-r from-cyan-400 via-zinc-300 to-amber-400"></div>
                                 <a href="{{ route('dashboard') }}" class="theme-button-primary mt-8 inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold">
-                                    Open Dashboard
+                                    {{ __('app.landing.open_dashboard') }}
                                 </a>
                             </div>
                         @else

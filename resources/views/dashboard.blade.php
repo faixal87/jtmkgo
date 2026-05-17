@@ -8,33 +8,40 @@
     $moduleMeta = [
         'ganti-go' => [
             'title' => 'Ganti Go',
-            'subtitle' => 'Class replacement management',
+            'subtitle' => __('app.dashboard.modules_meta.ganti_go'),
             'accent' => 'blue',
             'icon' => 'ganti-go',
             'href' => route('ganti-go.dashboard'),
         ],
         'photo-repository' => [
             'title' => 'Photo Repository',
-            'subtitle' => 'Official portrait and profile photo repository',
+            'subtitle' => __('app.dashboard.modules_meta.photo_repository'),
             'accent' => 'emerald',
             'icon' => 'photo-repository',
             'href' => route('photo-repository.dashboard'),
         ],
+        'subjek-go' => [
+            'title' => 'SubjekGo',
+            'subtitle' => __('app.dashboard.modules_meta.subjek_go'),
+            'accent' => 'purple',
+            'icon' => 'module',
+            'href' => route('subjek-go.dashboard'),
+        ],
     ];
 
     $adminActions = [
-        ['title' => 'User Management', 'description' => 'Review pending staff registrations and user records.', 'href' => route('super-admin.users.index'), 'accent' => 'blue', 'icon' => 'users'],
-        ['title' => 'Access Control', 'description' => 'Assign module access and administrative responsibility.', 'href' => route('super-admin.access-control.index'), 'accent' => 'emerald', 'icon' => 'shield'],
-        ['title' => 'Access Requests', 'description' => 'Review module access requests from staff.', 'href' => route('admin.module-access-requests.index'), 'accent' => 'blue', 'icon' => 'shield'],
-        ['title' => 'Notifications', 'description' => 'Send intranet notifications to users and module groups.', 'href' => route('admin.notifications.create'), 'accent' => 'amber', 'icon' => 'activity'],
-        ['title' => 'Branding Settings', 'description' => 'Manage landing logos, sidebar branding, footer text, and default theme.', 'href' => route('super-admin.settings.branding.edit'), 'accent' => 'purple', 'icon' => 'activity'],
+        ['title' => __('app.dashboard.actions.user_management'), 'description' => __('app.dashboard.actions.user_management_description'), 'href' => route('super-admin.users.index'), 'accent' => 'blue', 'icon' => 'users'],
+        ['title' => __('app.dashboard.actions.access_control'), 'description' => __('app.dashboard.actions.access_control_description'), 'href' => route('super-admin.access-control.index'), 'accent' => 'emerald', 'icon' => 'shield'],
+        ['title' => __('app.dashboard.actions.access_requests'), 'description' => __('app.dashboard.actions.access_requests_description'), 'href' => route('admin.module-access-requests.index'), 'accent' => 'blue', 'icon' => 'shield'],
+        ['title' => __('app.dashboard.actions.notifications'), 'description' => __('app.dashboard.actions.notifications_description'), 'href' => route('admin.notifications.create'), 'accent' => 'amber', 'icon' => 'activity'],
+        ['title' => __('app.dashboard.actions.branding_settings'), 'description' => __('app.dashboard.actions.branding_settings_description'), 'href' => route('super-admin.settings.branding.edit'), 'accent' => 'purple', 'icon' => 'activity'],
     ];
 @endphp
 
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">Dashboard</h1>
+            <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">{{ __('app.dashboard.title') }}</h1>
             <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $brandingSettings['system_title'] ?? 'JTMK Go!' }} &mdash; {{ $brandingSettings['version_name'] ?? 'pulut-sekaya' }}</p>
         </div>
     </x-slot>
@@ -45,10 +52,10 @@
                 <section>
                     <div class="mb-4 flex items-center justify-between">
                         <div>
-                            <h2 class="text-sm font-semibold text-slate-950">Admin</h2>
-                            <p class="mt-1 text-sm text-slate-500">Core portal management shortcuts.</p>
+                            <h2 class="text-sm font-semibold text-slate-950">{{ __('app.dashboard.admin') }}</h2>
+                            <p class="mt-1 text-sm text-slate-500">{{ __('app.dashboard.admin_description') }}</p>
                         </div>
-                        <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm">Super admin</span>
+                        <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm">{{ __('app.topbar.super_admin') }}</span>
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -67,14 +74,14 @@
 
             <section>
                 <div class="mb-4">
-                    <h2 class="text-sm font-semibold text-slate-950">Modules</h2>
-                    <p class="mt-1 text-sm text-slate-500">Open the systems available to your account.</p>
+                    <h2 class="text-sm font-semibold text-slate-950">{{ __('app.dashboard.modules') }}</h2>
+                    <p class="mt-1 text-sm text-slate-500">{{ __('app.dashboard.modules_description') }}</p>
                 </div>
 
                 @if ($availableModules->isEmpty())
                     <div class="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
                         <p class="text-sm text-slate-500">
-                            No system access has been assigned to your account yet. Please contact the administrator.
+                            {{ __('app.dashboard.no_access') }}
                         </p>
                     </div>
                 @else
@@ -83,7 +90,7 @@
                             @php
                                 $meta = $moduleMeta[$module->slug] ?? [
                                     'title' => $module->name,
-                                    'subtitle' => $module->description ?: 'JTMK module',
+                                    'subtitle' => $module->description ?: __('app.dashboard.modules_meta.fallback'),
                                     'accent' => 'slate',
                                     'icon' => 'module',
                                     'href' => $module->route_prefix ? url($module->route_prefix) : null,
@@ -92,7 +99,7 @@
                                 $href = $meta['href'] ?? ($module->route_prefix ? url($module->route_prefix) : null);
                                 $isManagedModule = $managedModuleIds->contains($module->id);
                                 $isDisabled = ! $href;
-                                $badge = $isDisabled ? 'Coming soon' : ($isManagedModule ? 'Module admin' : 'Active');
+                                $badge = $isDisabled ? __('app.common.coming_soon') : ($isManagedModule ? __('app.common.module_admin') : __('app.common.active'));
                             @endphp
 
                             <x-dashboard.module-card

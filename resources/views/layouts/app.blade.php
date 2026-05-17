@@ -97,7 +97,7 @@
                 )
                 : ['count' => 0];
             $unreadNotificationsCount = (int) ($unreadNotificationsData['count'] ?? 0);
-            $userRole = $user?->is_super_admin ? 'Super Admin' : null;
+            $userRole = $user?->is_super_admin ? __('app.topbar.super_admin') : null;
         @endphp
 
         <div
@@ -135,10 +135,10 @@
                                 <path d="M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z" />
                             </svg>
                         </div>
-                        <h2 class="mt-5 text-lg font-semibold text-[var(--color-text)]">Password Update Required</h2>
-                        <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">You are currently using a temporary/default password. Please update your password to continue using the system securely.</p>
+                        <h2 class="mt-5 text-lg font-semibold text-[var(--color-text)]">{{ __('app.profile.password_modal_title') }}</h2>
+                        <p class="mt-3 text-sm leading-6 text-[var(--color-muted)]">{{ __('app.profile.password_modal_description') }}</p>
                         <a href="{{ route('profile.edit') }}#update-password" class="theme-button-primary mt-6 inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold">
-                            Update Password Now
+                            {{ __('app.profile.update_password_now') }}
                         </a>
                     </section>
                 </div>

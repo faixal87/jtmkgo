@@ -29,6 +29,10 @@
     @endphp
     <body class="theme-{{ $theme }} bg-[var(--color-page)] font-sans text-[var(--color-text)] antialiased" data-theme="{{ $theme }}">
         <div class="jtmk-login-shell flex min-h-screen flex-col px-4 py-8 sm:px-6 lg:px-8">
+            <div class="flex justify-end pb-4">
+                <x-language-switcher compact />
+            </div>
+
             <main class="flex flex-1 items-center justify-center">
                 <div class="w-full {{ request()->routeIs('register') ? 'sm:max-w-2xl' : 'sm:max-w-md' }}">
                     @if ($landingLogos->isNotEmpty())

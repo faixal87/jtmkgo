@@ -55,9 +55,14 @@ class ProfileController extends Controller
 
         $user->save();
 
+        if (isset($validated['language_preference'])) {
+            $request->session()->put('locale', $validated['language_preference']);
+            app()->setLocale($validated['language_preference']);
+        }
+
         return Redirect::route('profile.edit')
             ->with('status', 'profile-updated')
-            ->with('notification', 'Profile and theme preference have been updated.');
+            ->with('notification', __('app.profile.updated'));
     }
 
     public function destroyPhoto(Request $request): RedirectResponse
@@ -85,7 +90,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if ($user->is_super_admin) {
-            return Redirect::route('profile.edit')->with('error', 'Super administrator accounts cannot be deactivated.');
+            return Redirect::route('profile.edit')->with('error', __('app.profile.super_admin_cannot_deactivate'));
         }
 
         Auth::logout();

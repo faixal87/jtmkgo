@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ModuleAdmin\ModuleAccessController;
 use App\Http\Controllers\ModuleAccessRequestController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\NotificationComposerController;
 use App\Http\Controllers\ProfileController;
@@ -48,6 +49,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 Route::get('/pending-approval', function (Request $request) {
     $user = $request->user();

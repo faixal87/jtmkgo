@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureModuleAdmin;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureUserApproved;
 use App\Http\Middleware\HandleSessionTimeout;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Request;
 
@@ -18,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: SetLocale::class);
+
         $middleware->alias([
             'approved' => EnsureUserApproved::class,
             'module.access' => EnsureModuleAccess::class,

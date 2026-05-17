@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Storage;
     'approved_by',
     'is_super_admin',
     'theme_preference',
+    'language_preference',
     'theme',
 ])]
 #[Hidden(['password', 'remember_token'])]
