@@ -124,7 +124,8 @@
                                             <form method="POST" action="{{ route('photo-repository.admin.photos.reject', $photo) }}" class="space-y-2">
                                                 @csrf
                                                 @method('PATCH')
-                                                <textarea name="rejection_remarks" rows="2" required placeholder="Rejection remarks" class="block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]"></textarea>
+                                                <textarea name="rejection_remarks" rows="2" required placeholder="e.g. Please upload a clearer front-facing portrait." class="block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]"></textarea>
+                                                <x-form-helper>Give a short reason the uploader can act on.</x-form-helper>
                                                 <button class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">Reject Photo</button>
                                             </form>
                                         </div>

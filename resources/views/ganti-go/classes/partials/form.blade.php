@@ -29,6 +29,7 @@
 <div>
     <x-input-label for="class_name" value="Class Group Name" />
     <x-text-input id="class_name" name="class_name" class="mt-1 block w-full uppercase" :value="old('class_name', $classGroup->class_name ?? '')" placeholder="DIT1A" required />
+    <x-form-helper>Class group names are saved in uppercase automatically.</x-form-helper>
     <x-input-error :messages="$errors->get('class_name')" class="mt-2" />
 </div>
 

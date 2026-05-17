@@ -33,6 +33,7 @@
                         <div>
                             <x-input-label for="legacy_file" value="Legacy File" />
                             <input id="legacy_file" name="legacy_file" type="file" accept=".xls,.xlsx,.csv,.txt" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm file:me-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white focus:border-slate-900 focus:outline-none focus:ring-slate-900">
+                            <x-form-helper>Accepted formats: XLS, XLSX, CSV, or TXT for preview preparation.</x-form-helper>
                             <x-input-error :messages="$errors->get('legacy_file')" class="mt-2" />
                         </div>
 

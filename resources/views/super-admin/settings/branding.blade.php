@@ -88,7 +88,7 @@
                                         <div class="mt-4">
                                             <x-input-label :for="$landingLogoCard['key']" :value="'Landing Logo '.$landingLogoCard['number']" />
                                             <input id="{{ $landingLogoCard['key'] }}" name="{{ $landingLogoCard['key'] }}" type="file" accept="image/*" class="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] shadow-sm file:me-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white">
-                                            <p class="mt-2 text-xs text-[var(--color-muted)]">PNG, JPG, WebP, or SVG up to 5 MB.</p>
+                                            <x-form-helper>PNG, JPG, WebP, or SVG up to 5 MB.</x-form-helper>
                                             <x-input-error :messages="$errors->get($landingLogoCard['key'])" class="mt-2" />
                                         </div>
 
@@ -140,7 +140,7 @@
                                     <div>
                                         <x-input-label for="sidebar_logo" value="Sidebar Logo" />
                                         <input id="sidebar_logo" name="sidebar_logo" type="file" accept="image/*" class="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] shadow-sm file:me-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white">
-                                        <p class="mt-2 text-xs text-[var(--color-muted)]">If no sidebar logo is uploaded, the sidebar shows the fallback text.</p>
+                                        <x-form-helper>If no sidebar logo is uploaded, the sidebar shows the fallback text.</x-form-helper>
                                         <x-input-error :messages="$errors->get('sidebar_logo')" class="mt-2" />
                                     </div>
 
@@ -155,7 +155,8 @@
                                 <div class="mt-5 grid gap-5 md:grid-cols-2">
                                     <div>
                                         <x-input-label for="sidebar_brand_text" value="Sidebar Fallback Text" />
-                                        <x-text-input id="sidebar_brand_text" name="sidebar_brand_text" class="mt-1 block w-full" :value="old('sidebar_brand_text', $branding['sidebar_brand_text'] ?? $branding['workspace_brand_text'] ?? 'JTMK')" />
+                                        <x-text-input id="sidebar_brand_text" name="sidebar_brand_text" class="mt-1 block w-full" :value="old('sidebar_brand_text', $branding['sidebar_brand_text'] ?? $branding['workspace_brand_text'] ?? 'JTMK')" placeholder="e.g. JTMK" />
+                                        <x-form-helper>Shown only when no custom sidebar logo is uploaded.</x-form-helper>
                                         <x-input-error :messages="$errors->get('sidebar_brand_text')" class="mt-2" />
                                     </div>
 
@@ -184,25 +185,25 @@
                             <div class="grid gap-5 md:grid-cols-2">
                                 <div>
                                     <x-input-label for="system_title" value="System Title" />
-                                    <x-text-input id="system_title" name="system_title" class="mt-1 block w-full" :value="old('system_title', $branding['system_title'])" required />
+                                    <x-text-input id="system_title" name="system_title" class="mt-1 block w-full" :value="old('system_title', $branding['system_title'])" placeholder="e.g. JTMK Go!" required />
                                     <x-input-error :messages="$errors->get('system_title')" class="mt-2" />
                                 </div>
 
                                 <div>
                                     <x-input-label for="tagline" value="Tagline" />
-                                    <x-text-input id="tagline" name="tagline" class="mt-1 block w-full" :value="old('tagline', $branding['tagline'] ?? 'Developed by JTMK for JTMK')" required />
+                                    <x-text-input id="tagline" name="tagline" class="mt-1 block w-full" :value="old('tagline', $branding['tagline'] ?? 'Developed by JTMK for JTMK')" placeholder="e.g. Developed by JTMK for JTMK" required />
                                     <x-input-error :messages="$errors->get('tagline')" class="mt-2" />
                                 </div>
 
                                 <div>
                                     <x-input-label for="version_name" value="Version Name" />
-                                    <x-text-input id="version_name" name="version_name" class="mt-1 block w-full" :value="old('version_name', $branding['version_name'])" required />
+                                    <x-text-input id="version_name" name="version_name" class="mt-1 block w-full" :value="old('version_name', $branding['version_name'])" placeholder="e.g. pulut-sekaya" required />
                                     <x-input-error :messages="$errors->get('version_name')" class="mt-2" />
                                 </div>
 
                                 <div>
                                     <x-input-label for="footer_text" value="Footer Text" />
-                                    <x-text-input id="footer_text" name="footer_text" class="mt-1 block w-full" :value="old('footer_text', $branding['footer_text'])" required />
+                                    <x-text-input id="footer_text" name="footer_text" class="mt-1 block w-full" :value="old('footer_text', $branding['footer_text'])" placeholder="e.g. JTMK Go! - Version: pulut-sekaya" required />
                                     <x-input-error :messages="$errors->get('footer_text')" class="mt-2" />
                                 </div>
                             </div>

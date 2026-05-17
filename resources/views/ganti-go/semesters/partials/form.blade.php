@@ -9,7 +9,7 @@
     <div class="grid gap-5 md:grid-cols-2">
         <div>
             <x-input-label for="name" value="Semester Name" />
-            <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name', $semester->name ?? '')" required />
+            <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name', $semester->name ?? '')" placeholder="e.g. Semester I 2026/2027" required />
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
@@ -33,7 +33,7 @@
 
         <div class="md:col-span-2">
             <x-input-label for="remarks" value="Remarks" />
-            <textarea id="remarks" name="remarks" rows="4" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('remarks', $semester->remarks ?? '') }}</textarea>
+            <textarea id="remarks" name="remarks" rows="4" placeholder="Optional notes about the semester setup or academic calendar." class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('remarks', $semester->remarks ?? '') }}</textarea>
             <x-input-error :messages="$errors->get('remarks')" class="mt-2" />
         </div>
     </div>

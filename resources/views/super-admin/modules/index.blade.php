@@ -33,7 +33,8 @@
                             @method('PATCH')
                             <div>
                                 <x-input-label for="description_{{ $module->id }}" value="Description" />
-                                <textarea id="description_{{ $module->id }}" name="description" rows="3" class="mt-1 block w-full rounded-lg border-[var(--color-border)] text-sm shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">{{ old('description', $module->description) }}</textarea>
+                                <textarea id="description_{{ $module->id }}" name="description" rows="3" placeholder="e.g. Lecturer subject preference management system." class="mt-1 block w-full rounded-lg border-[var(--color-border)] text-sm shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">{{ old('description', $module->description) }}</textarea>
+                                <x-form-helper>This description appears in module cards and request-access screens.</x-form-helper>
                             </div>
                             <button class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">Save Description</button>
                         </form>

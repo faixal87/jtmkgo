@@ -21,15 +21,16 @@
                     @csrf
                     <div>
                         <x-input-label for="name" value="Name" />
-                        <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name')" required />
+                        <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name')" placeholder="e.g. Corporate" required />
                     </div>
                     <div>
                         <x-input-label for="slug" value="Slug" />
                         <x-text-input id="slug" name="slug" class="mt-1 block w-full" :value="old('slug')" placeholder="Auto generated if empty" />
+                        <x-form-helper>Leave empty to generate a URL-friendly slug automatically.</x-form-helper>
                     </div>
                     <div>
                         <x-input-label for="description" value="Description" />
-                        <textarea id="description" name="description" rows="3" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">{{ old('description') }}</textarea>
+                        <textarea id="description" name="description" rows="3" placeholder="e.g. Official corporate attire portraits." class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">{{ old('description') }}</textarea>
                     </div>
                     <label class="flex items-center gap-2 text-sm text-[var(--color-muted)]">
                         <input type="checkbox" name="is_active" value="1" checked class="rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]">

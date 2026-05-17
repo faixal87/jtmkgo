@@ -5,25 +5,26 @@
 <div class="grid gap-5 md:grid-cols-2">
     <div>
         <x-input-label for="name" value="Full Name" />
-        <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name', $user?->name)" required />
+        <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name', $user?->name)" placeholder="e.g. Ahmad Bin Ali" required />
         <x-input-error :messages="$errors->get('name')" class="mt-2" />
     </div>
 
     <div>
         <x-input-label for="ic_number" value="IC Number" />
-        <x-text-input id="ic_number" name="ic_number" class="mt-1 block w-full" :value="old('ic_number', $user?->ic_number)" required />
+        <x-text-input id="ic_number" name="ic_number" class="mt-1 block w-full" :value="old('ic_number', $user?->ic_number)" placeholder="e.g. 870318065795" required />
+        <x-form-helper>Users sign in with their IC number.</x-form-helper>
         <x-input-error :messages="$errors->get('ic_number')" class="mt-2" />
     </div>
 
     <div>
         <x-input-label for="email" value="Email" />
-        <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user?->email)" required />
+        <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user?->email)" placeholder="e.g. user@jtmk.local" required />
         <x-input-error :messages="$errors->get('email')" class="mt-2" />
     </div>
 
     <div>
         <x-input-label for="phone" value="Phone Number" />
-        <x-text-input id="phone" name="phone" class="mt-1 block w-full" :value="old('phone', $user?->phone)" />
+        <x-text-input id="phone" name="phone" class="mt-1 block w-full" :value="old('phone', $user?->phone)" placeholder="e.g. 0123456789" />
         <x-input-error :messages="$errors->get('phone')" class="mt-2" />
     </div>
 
@@ -35,19 +36,19 @@
 
     <div>
         <x-input-label for="department" value="Department" />
-        <x-text-input id="department" name="department" class="mt-1 block w-full" :value="old('department', $user?->department)" />
+        <x-text-input id="department" name="department" class="mt-1 block w-full" :value="old('department', $user?->department)" placeholder="e.g. JTMK" />
         <x-input-error :messages="$errors->get('department')" class="mt-2" />
     </div>
 
     <div>
         <x-input-label for="position" value="Position" />
-        <x-text-input id="position" name="position" class="mt-1 block w-full" :value="old('position', $user?->position)" />
+        <x-text-input id="position" name="position" class="mt-1 block w-full" :value="old('position', $user?->position)" placeholder="e.g. Lecturer" />
         <x-input-error :messages="$errors->get('position')" class="mt-2" />
     </div>
 
     <div>
         <x-input-label for="grade" value="Grade" />
-        <x-text-input id="grade" name="grade" class="mt-1 block w-full" :value="old('grade', $user?->grade)" />
+        <x-text-input id="grade" name="grade" class="mt-1 block w-full" :value="old('grade', $user?->grade)" placeholder="e.g. DH44" />
         <x-input-error :messages="$errors->get('grade')" class="mt-2" />
     </div>
 
@@ -81,6 +82,9 @@
     <div>
         <x-input-label for="password" :value="$isEditing ? 'New Password' : 'Password'" />
         <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" @required(! $isEditing) />
+        @if ($isEditing)
+            <x-form-helper>Leave empty to keep the current password unchanged.</x-form-helper>
+        @endif
         <x-input-error :messages="$errors->get('password')" class="mt-2" />
     </div>
 

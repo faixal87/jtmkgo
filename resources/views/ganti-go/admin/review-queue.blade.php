@@ -77,7 +77,8 @@
                                     @csrf
                                     @method('PATCH')
                                     <x-input-label for="approve_remarks_{{ $replacement->id }}" value="Verification Remarks" />
-                                    <textarea id="approve_remarks_{{ $replacement->id }}" name="implementation_admin_remarks" rows="3" class="mt-1 block w-full rounded-lg border-emerald-200 bg-white shadow-sm focus:border-emerald-700 focus:ring-emerald-700"></textarea>
+                                    <textarea id="approve_remarks_{{ $replacement->id }}" name="implementation_admin_remarks" rows="3" placeholder="e.g. Evidence reviewed and implementation confirmed." class="mt-1 block w-full rounded-lg border-emerald-200 bg-white shadow-sm focus:border-emerald-700 focus:ring-emerald-700"></textarea>
+                                    <x-form-helper>Optional note for the verification record.</x-form-helper>
                                     <x-input-error :messages="$errors->get('implementation_admin_remarks')" class="mt-2" />
                                     <button type="submit" class="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-emerald-800">
                                         Verify Implementation
@@ -88,7 +89,8 @@
                                     @csrf
                                     @method('PATCH')
                                     <x-input-label for="reject_remarks_{{ $replacement->id }}" value="Rejection Remarks" />
-                                    <textarea id="reject_remarks_{{ $replacement->id }}" name="implementation_admin_remarks" rows="3" required class="mt-1 block w-full rounded-lg border-purple-200 bg-white shadow-sm focus:border-purple-700 focus:ring-purple-700"></textarea>
+                                    <textarea id="reject_remarks_{{ $replacement->id }}" name="implementation_admin_remarks" rows="3" required placeholder="e.g. Please upload clearer evidence and resubmit." class="mt-1 block w-full rounded-lg border-purple-200 bg-white shadow-sm focus:border-purple-700 focus:ring-purple-700"></textarea>
+                                    <x-form-helper>Explain what the lecturer should correct before resubmission.</x-form-helper>
                                     <x-input-error :messages="$errors->get('implementation_admin_remarks')" class="mt-2" />
                                     <button type="submit" class="mt-3 rounded-lg bg-purple-700 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-purple-800">
                                         Reject Implementation

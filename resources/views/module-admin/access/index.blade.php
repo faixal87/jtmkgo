@@ -53,6 +53,7 @@
                                         <option value="{{ $user->id }}">{{ $user->name }}</option>
                                     @endforeach
                                 </select>
+                                <x-form-helper>Select an approved staff member assigned to your module scope.</x-form-helper>
                             </div>
 
                             <button type="submit" class="theme-button-primary rounded-lg px-4 py-2 text-sm font-semibold shadow-sm">

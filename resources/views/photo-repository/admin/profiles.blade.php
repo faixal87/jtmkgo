@@ -27,15 +27,16 @@
                                 <option value="{{ $staff->id }}" @selected((int) old('linked_user_id') === $staff->id)>{{ $staff->name }}</option>
                             @endforeach
                         </select>
+                        <x-form-helper>Leave empty for external, VIP, or management profiles without login accounts.</x-form-helper>
                     </div>
                     <div>
                         <x-input-label for="name" value="Name" />
-                        <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name')" required />
+                        <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name')" placeholder="e.g. Mohd Faizal Bin Yahaya" required />
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <x-input-label for="designation" value="Designation" />
-                            <x-text-input id="designation" name="designation" class="mt-1 block w-full" :value="old('designation')" />
+                            <x-text-input id="designation" name="designation" class="mt-1 block w-full" :value="old('designation')" placeholder="e.g. Senior Lecturer" />
                         </div>
                         <div>
                             <x-input-label for="profile_type" value="Profile Type" />
@@ -48,11 +49,11 @@
                     </div>
                     <div>
                         <x-input-label for="department" value="Department" />
-                        <x-text-input id="department" name="department" class="mt-1 block w-full" :value="old('department')" />
+                        <x-text-input id="department" name="department" class="mt-1 block w-full" :value="old('department')" placeholder="e.g. JTMK" />
                     </div>
                     <div>
                         <x-input-label for="organization" value="Organization" />
-                        <x-text-input id="organization" name="organization" class="mt-1 block w-full" :value="old('organization', 'JTMK POLIMAS')" />
+                        <x-text-input id="organization" name="organization" class="mt-1 block w-full" :value="old('organization', 'JTMK POLIMAS')" placeholder="e.g. JTMK POLIMAS" />
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
@@ -61,7 +62,7 @@
                         </div>
                         <div>
                             <x-input-label for="phone" value="Phone" />
-                            <x-text-input id="phone" name="phone" class="mt-1 block w-full" :value="old('phone')" />
+                            <x-text-input id="phone" name="phone" class="mt-1 block w-full" :value="old('phone')" placeholder="e.g. 0123456789" />
                         </div>
                     </div>
                     <button class="theme-button-primary w-full rounded-lg px-4 py-2 text-sm font-semibold">Create Profile</button>

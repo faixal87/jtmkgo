@@ -43,13 +43,14 @@
 
         <div>
             <x-input-label for="course_name" value="Course Name" />
-            <x-text-input id="course_name" name="course_name" class="mt-1 block w-full" :value="old('course_name', $course->course_name ?? '')" required />
+            <x-text-input id="course_name" name="course_name" class="mt-1 block w-full" :value="old('course_name', $course->course_name ?? '')" placeholder="e.g. Mobile Application Development" required />
             <x-input-error :messages="$errors->get('course_name')" class="mt-2" />
         </div>
 
         <div>
             <x-input-label for="class_name" value="Legacy Class Name" />
             <x-text-input id="class_name" name="class_name" class="mt-1 block w-full" :value="old('class_name', $course->class_name ?? '')" placeholder="Optional legacy class label" />
+            <x-form-helper>Use only when preserving old imported class labels.</x-form-helper>
             <x-input-error :messages="$errors->get('class_name')" class="mt-2" />
         </div>
     </div>

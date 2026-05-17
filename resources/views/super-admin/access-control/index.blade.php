@@ -690,11 +690,12 @@
                                         <div class="mt-5 grid gap-4 lg:grid-cols-2">
                                             <div>
                                                 <x-input-label for="title_{{ $user->id }}" value="Title" />
-                                                <x-text-input id="title_{{ $user->id }}" name="title" class="mt-1 block w-full" placeholder="Notification title" />
+                                                <x-text-input id="title_{{ $user->id }}" name="title" class="mt-1 block w-full" placeholder="e.g. Module access updated" />
                                             </div>
                                             <div>
                                                 <x-input-label for="message_{{ $user->id }}" value="Message" />
-                                                <textarea id="message_{{ $user->id }}" name="message" rows="2" class="mt-1 block w-full rounded-lg border-[var(--color-border)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]" placeholder="Write a short message"></textarea>
+                                                <textarea id="message_{{ $user->id }}" name="message" rows="2" class="mt-1 block w-full rounded-lg border-[var(--color-border)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]" placeholder="e.g. Your requested access has been reviewed."></textarea>
+                                                <x-form-helper>Keep direct notifications short and action-oriented.</x-form-helper>
                                             </div>
                                         </div>
                                     </form>
@@ -757,6 +758,7 @@
                         <h3 class="text-lg font-semibold text-[var(--color-text)]">Reject Access Request</h3>
                         <p class="mt-2 text-sm text-[var(--color-muted)]">Add optional remarks for {{ $requestRecord->user?->name }}.</p>
                         <textarea name="admin_remarks" rows="4" class="mt-5 block w-full rounded-lg border-[var(--color-border)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]" placeholder="Reason or guidance for the user"></textarea>
+                        <x-form-helper>Explain what is missing or what the user should do next.</x-form-helper>
                         <div class="mt-5 flex justify-end gap-3">
                             <button type="button" @click="rejectRequest = null" class="theme-button-secondary rounded-lg px-4 py-2 text-sm font-semibold">Cancel</button>
                             <button class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">Reject Request</button>

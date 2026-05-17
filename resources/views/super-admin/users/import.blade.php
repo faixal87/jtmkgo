@@ -31,7 +31,7 @@
                         <x-input-label for="csv_file" value="CSV File" />
                         <input id="csv_file" name="csv_file" type="file" accept=".csv,text/csv" required class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm file:me-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white focus:border-slate-900 focus:outline-none focus:ring-slate-900">
                         <x-input-error :messages="$errors->get('csv_file')" class="mt-2" />
-                        <p class="mt-2 text-xs text-slate-500">Existing users keep their current password. New users use the CSV password when supplied, otherwise their IC number.</p>
+                        <x-form-helper>Existing users keep their current password. New users use the CSV password when supplied, otherwise their IC number.</x-form-helper>
                     </div>
 
                     <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

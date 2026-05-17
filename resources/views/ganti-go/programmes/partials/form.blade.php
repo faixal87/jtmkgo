@@ -5,6 +5,7 @@
 <div>
     <x-input-label for="code" value="Programme Code" />
     <x-text-input id="code" name="code" class="mt-1 block w-full uppercase" :value="old('code', $programme->code ?? '')" placeholder="DIT" required />
+    <x-form-helper>Programme codes are stored in uppercase, for example DIT or DNS.</x-form-helper>
     <x-input-error :messages="$errors->get('code')" class="mt-2" />
 </div>
 

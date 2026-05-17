@@ -113,7 +113,7 @@
                         </option>
                     @endforeach
                 </select>
-                <p class="mt-2 text-xs text-slate-500">Hold Ctrl to select combined classes.</p>
+                <x-form-helper>Hold Ctrl to select combined classes.</x-form-helper>
                 <x-input-error :messages="$errors->get('class_ids')" class="mt-2" />
                 <x-input-error :messages="$errors->get('class_ids.*')" class="mt-2" />
             </div>
@@ -126,7 +126,8 @@
 
             <div>
                 <x-input-label for="original_venue" value="Original Venue" />
-                <x-text-input id="original_venue" name="original_venue" class="mt-1 block w-full" :value="old('original_venue', $replacement->original_venue ?? '')" placeholder="Lab / room / platform" />
+                <x-text-input id="original_venue" name="original_venue" class="mt-1 block w-full" :value="old('original_venue', $replacement->original_venue ?? '')" placeholder="e.g. BK 3 / Lab 2 / Online" />
+                <x-form-helper>Use the venue or delivery platform from the original timetable.</x-form-helper>
                 <x-input-error :messages="$errors->get('original_venue')" class="mt-2" />
             </div>
 
@@ -215,16 +216,17 @@
 
             <div x-show="venueRequired()" x-cloak>
                 <x-input-label for="replacement_venue" value="Replacement Venue" />
-                <x-text-input id="replacement_venue" name="replacement_venue" class="mt-1 block w-full" :value="old('replacement_venue', $replacement->replacement_venue ?? '')" placeholder="Lab / room" />
+                <x-text-input id="replacement_venue" name="replacement_venue" class="mt-1 block w-full" :value="old('replacement_venue', $replacement->replacement_venue ?? '')" placeholder="e.g. BK 3 / Lab 2" />
+                <x-form-helper>Required for face-to-face, hybrid, or combined class.</x-form-helper>
                 <x-input-error :messages="$errors->get('replacement_venue')" class="mt-2" />
             </div>
 
             <div>
                 <x-input-label for="evidence_file" value="Evidence Upload" />
                 <input id="evidence_file" name="evidence_file" type="file" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white">
-                <p class="mt-2 text-xs text-slate-500">
+                <x-form-helper>
                     {{ $evidenceRequired ? 'Evidence is required before implementation submission.' : 'Evidence is optional unless enabled by module settings.' }}
-                </p>
+                </x-form-helper>
                 <x-input-error :messages="$errors->get('evidence_file')" class="mt-2" />
             </div>
 
@@ -241,9 +243,9 @@
 
             <div class="md:col-span-2">
                 <x-input-label for="remarks" value="Remarks" />
-                <textarea id="remarks" name="remarks" rows="3" x-bind:required="remarksRequired()" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('remarks', $replacement->remarks ?? '') }}</textarea>
+                <textarea id="remarks" name="remarks" rows="3" x-bind:required="remarksRequired()" placeholder="Required if reason or method is Others." class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('remarks', $replacement->remarks ?? '') }}</textarea>
                 <p x-show="remarksRequired()" x-cloak class="mt-2 text-xs font-medium text-amber-700">Please provide remarks when selecting LAIN-LAIN.</p>
-                <p x-show="!remarksRequired()" x-cloak class="mt-2 text-xs text-slate-500">Optional supporting notes for the replacement record.</p>
+                <x-form-helper x-show="!remarksRequired()" x-cloak>Optional supporting notes for the replacement record.</x-form-helper>
                 <x-input-error :messages="$errors->get('remarks')" class="mt-2" />
             </div>
         </div>

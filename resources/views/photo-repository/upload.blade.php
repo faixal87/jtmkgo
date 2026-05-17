@@ -100,6 +100,7 @@
                                     <option value="{{ $staff->id }}" @selected((int) old('linked_user_id', $selectedUserId) === $staff->id)>{{ $staff->name }}{{ $staff->department ? ' - '.$staff->department : '' }}</option>
                                 @endforeach
                             </select>
+                            <x-form-helper>Select an existing staff account when uploading on behalf of a JTMK user.</x-form-helper>
                         </div>
 
                         <div x-show="targetType === 'profile'" x-cloak>
@@ -121,7 +122,7 @@
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div>
                                     <x-input-label for="external_name" value="Name" />
-                                    <x-text-input id="external_name" name="external_name" class="mt-1 block w-full" :value="old('external_name')" />
+                                    <x-text-input id="external_name" name="external_name" class="mt-1 block w-full" :value="old('external_name')" placeholder="e.g. Dr. Ahmad Rahman" />
                                 </div>
                                 <div>
                                     <x-input-label for="external_profile_type" value="Profile Type" />
@@ -133,15 +134,15 @@
                                 </div>
                                 <div>
                                     <x-input-label for="external_designation" value="Designation" />
-                                    <x-text-input id="external_designation" name="external_designation" class="mt-1 block w-full" :value="old('external_designation')" />
+                                    <x-text-input id="external_designation" name="external_designation" class="mt-1 block w-full" :value="old('external_designation')" placeholder="e.g. Director" />
                                 </div>
                                 <div>
                                     <x-input-label for="external_department" value="Department" />
-                                    <x-text-input id="external_department" name="external_department" class="mt-1 block w-full" :value="old('external_department')" />
+                                    <x-text-input id="external_department" name="external_department" class="mt-1 block w-full" :value="old('external_department')" placeholder="e.g. Department of Information Technology" />
                                 </div>
                                 <div>
                                     <x-input-label for="external_organization" value="Organization" />
-                                    <x-text-input id="external_organization" name="external_organization" class="mt-1 block w-full" :value="old('external_organization')" />
+                                    <x-text-input id="external_organization" name="external_organization" class="mt-1 block w-full" :value="old('external_organization')" placeholder="e.g. POLIMAS" />
                                 </div>
                                 <div>
                                     <x-input-label for="external_email" value="Email" />
@@ -149,7 +150,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="external_phone" value="Phone" />
-                                    <x-text-input id="external_phone" name="external_phone" class="mt-1 block w-full" :value="old('external_phone')" />
+                                    <x-text-input id="external_phone" name="external_phone" class="mt-1 block w-full" :value="old('external_phone')" placeholder="e.g. 0123456789" />
                                 </div>
                             </div>
                         </section>
@@ -165,17 +166,18 @@
                                 <option value="{{ $category->id }}" @selected((int) old('media_category_id') === $category->id)>{{ $category->name }}</option>
                             @endforeach
                         </select>
+                        <x-form-helper>Select the most suitable attire or photo category.</x-form-helper>
                     </div>
 
                     <div>
                         <x-input-label for="caption" value="Caption" />
-                        <x-text-input id="caption" name="caption" type="text" class="mt-1 block w-full" :value="old('caption')" placeholder="Optional short caption" />
+                        <x-text-input id="caption" name="caption" type="text" class="mt-1 block w-full" :value="old('caption')" placeholder="e.g. Corporate portrait for official use" />
                     </div>
 
                     <div>
                         <x-input-label for="photo" value="Photo File" />
                         <input id="photo" name="photo" type="file" required accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" x-on:change="handleFile($event)" class="mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] shadow-sm file:me-4 file:rounded-md file:border-0 file:bg-[var(--color-accent)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white focus:border-[var(--color-accent)] focus:outline-none focus:ring-[var(--color-accent)]">
-                        <p class="mt-2 text-xs text-[var(--color-muted)]">Allowed file types: JPG, JPEG, PNG, WebP. Maximum upload: 10MB.</p>
+                        <x-form-helper>Allowed file types: JPG, JPEG, PNG, WebP. Maximum upload: 10MB.</x-form-helper>
                         <p x-show="fileError" x-cloak x-text="fileError" class="mt-2 text-sm text-red-600"></p>
                     </div>
 
