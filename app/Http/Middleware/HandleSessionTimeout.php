@@ -22,12 +22,12 @@ class HandleSessionTimeout
         $lastActivity = $request->session()->get('last_activity_at');
 
         if ($lastActivity && now()->timestamp - $lastActivity > $timeoutSeconds) {
-            Auth::guard('web')->logout();
+            Auth::logout();
 
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->with('status', 'Your session has expired due to inactivity. Please log in again.');
+            return redirect()->route('login')->with('status', 'Your session has expired. Please log in again.');
         }
 
         $request->session()->put('last_activity_at', now()->timestamp);
