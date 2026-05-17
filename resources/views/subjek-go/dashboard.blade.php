@@ -6,8 +6,8 @@
                 <p class="mt-1 text-sm text-[var(--color-muted)]">Lecturer subject preference management.</p>
             </div>
             @if (! auth()->user()->is_super_admin)
-                <a href="{{ route('subjek-go.preferences.index') }}" class="theme-button-primary inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold">
-                    Open Preferences
+                <a href="{{ route('subjek-go.my-selections.index') }}" class="theme-button-primary inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold">
+                    Open My Selections
                 </a>
             @endif
         </div>
@@ -61,7 +61,7 @@
                                     <span class="theme-badge">{{ $subject->weekly_contact_hour ?? 0 }} h/week</span>
                                 </div>
                             @empty
-                                <x-empty-state title="No selection submitted" message="Open Subject Preferences to rank four offered subjects." />
+                                <x-empty-state title="No selection submitted" message="Open My Selections to rank four offered subjects." />
                             @endforelse
                         </div>
                     </article>
@@ -81,23 +81,25 @@
                     </article>
                 </section>
 
-                <section class="grid min-w-0 gap-6 xl:grid-cols-2">
-                    <article class="enterprise-card min-w-0 rounded-xl border p-5 shadow-sm">
-                        <h2 class="text-sm font-semibold text-[var(--color-text)]">Recently Selected Subjects</h2>
-                        <div class="mt-4 space-y-3">
-                            @forelse ($lecturerData['recentSelections'] as $selection)
-                                <div class="rounded-xl border border-[var(--color-border)] p-3">
-                                    <div class="flex flex-wrap items-center justify-between gap-2">
-                                        <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $selection->lecturer?->name }}</p>
-                                        <x-subjek.status-badge :status="$selection->status" />
+                <section class="grid min-w-0 gap-6 {{ $session?->visibility === \App\Modules\SubjekGo\Models\Session::VISIBILITY_PUBLIC ? 'xl:grid-cols-2' : '' }}">
+                    @if ($session?->visibility === \App\Modules\SubjekGo\Models\Session::VISIBILITY_PUBLIC)
+                        <article class="enterprise-card min-w-0 rounded-xl border p-5 shadow-sm">
+                            <h2 class="text-sm font-semibold text-[var(--color-text)]">Latest Public Selections</h2>
+                            <div class="mt-4 space-y-3">
+                                @forelse ($lecturerData['recentSelections'] as $selection)
+                                    <div class="rounded-xl border border-[var(--color-border)] p-3">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $selection->lecturer?->name }}</p>
+                                            <x-subjek.status-badge :status="$selection->status" />
+                                        </div>
+                                        <p class="mt-2 break-words text-sm text-[var(--color-muted)]">{{ $selection->choiceOne?->label }}</p>
                                     </div>
-                                    <p class="mt-2 break-words text-sm text-[var(--color-muted)]">{{ $selection->choiceOne?->label }}</p>
-                                </div>
-                            @empty
-                                <p class="text-sm text-[var(--color-muted)]">No recent submissions yet.</p>
-                            @endforelse
-                        </div>
-                    </article>
+                                @empty
+                                    <p class="text-sm text-[var(--color-muted)]">No recent submissions yet.</p>
+                                @endforelse
+                            </div>
+                        </article>
+                    @endif
 
                     <article class="enterprise-card min-w-0 rounded-xl border p-5 shadow-sm">
                         <div class="flex flex-wrap items-center justify-between gap-3">

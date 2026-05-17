@@ -30,7 +30,7 @@ class DashboardQueryService
         return [
             'preference' => $preference,
             'popularSubjects' => $session ? $this->subjectSelectionTotals($session)->take(5) : collect(),
-            'recentSelections' => $session
+            'recentSelections' => $session && $session->visibility === Session::VISIBILITY_PUBLIC
                 ? Preference::query()
                     ->with(['lecturer', 'choiceOne'])
                     ->where('session_id', $session->id)

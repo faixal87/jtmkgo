@@ -7,6 +7,7 @@ use App\Modules\SubjekGo\Models\Preference;
 use App\Modules\SubjekGo\Models\Session;
 use App\Modules\SubjekGo\Requests\StoreSessionRequest;
 use App\Modules\SubjekGo\Requests\UpdateSessionRequest;
+use App\Modules\SubjekGo\Services\SessionWindowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -35,11 +36,18 @@ class SessionController extends Controller
         ]);
     }
 
-    public function store(StoreSessionRequest $request): RedirectResponse
+    public function store(StoreSessionRequest $request, SessionWindowService $sessions): RedirectResponse
     {
-        $session = Session::query()->create($request->validated() + [
+        $validated = $request->validated();
+
+        if ($validated['status'] === Session::STATUS_OPEN) {
+            $this->closeOtherOpenSessions();
+        }
+
+        $session = Session::query()->create($validated + [
             'created_by' => $request->user()->id,
         ]);
+        $sessions->clearCache();
 
         return redirect()->route('subjek-go.sessions.edit', $session)->with('status', 'Session created.');
     }
@@ -51,14 +59,21 @@ class SessionController extends Controller
         return view('subjek-go.sessions.edit', compact('session'));
     }
 
-    public function update(UpdateSessionRequest $request, Session $session): RedirectResponse
+    public function update(UpdateSessionRequest $request, Session $session, SessionWindowService $sessions): RedirectResponse
     {
-        $session->update($request->validated());
+        $validated = $request->validated();
+
+        if ($validated['status'] === Session::STATUS_OPEN) {
+            $this->closeOtherOpenSessions($session);
+        }
+
+        $session->update($validated);
+        $sessions->clearCache();
 
         return back()->with('status', 'Session updated.');
     }
 
-    public function status(Request $request, Session $session): RedirectResponse
+    public function status(Request $request, Session $session, SessionWindowService $sessions): RedirectResponse
     {
         Gate::authorize('manage-subjek-go');
 
@@ -67,31 +82,35 @@ class SessionController extends Controller
         ]);
 
         if ($validated['status'] === Session::STATUS_OPEN) {
-            Session::query()
-                ->where('id', '!=', $session->id)
-                ->where('status', Session::STATUS_OPEN)
-                ->update(['status' => Session::STATUS_CLOSED]);
+            $this->closeOtherOpenSessions($session);
         }
 
         $session->update(['status' => $validated['status']]);
+        $sessions->clearCache();
 
         return back()->with('status', 'Session status updated.');
     }
 
-    public function reopenAll(Session $session): RedirectResponse
+    public function reopenAll(Session $session, SessionWindowService $sessions): RedirectResponse
     {
         Gate::authorize('manage-subjek-go');
 
-        Session::query()
-            ->where('id', '!=', $session->id)
-            ->where('status', Session::STATUS_OPEN)
-            ->update(['status' => Session::STATUS_CLOSED]);
+        $this->closeOtherOpenSessions($session);
 
         $session->update(['status' => Session::STATUS_OPEN]);
+        $sessions->clearCache();
         $count = $session->preferences()
             ->whereIn('status', [Preference::STATUS_SUBMITTED, Preference::STATUS_LOCKED])
             ->update(['status' => Preference::STATUS_DRAFT]);
 
         return back()->with('status', "{$count} submission(s) reopened.");
+    }
+
+    private function closeOtherOpenSessions(?Session $session = null): void
+    {
+        Session::query()
+            ->when($session, fn ($query) => $query->where('id', '!=', $session->id))
+            ->where('status', Session::STATUS_OPEN)
+            ->update(['status' => Session::STATUS_CLOSED]);
     }
 }

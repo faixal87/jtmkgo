@@ -47,8 +47,8 @@
             Coordinator: {{ $subject->coordinator?->name ?: 'Not assigned' }}
         </p>
 
-        @if (! empty($history['sessions']))
-            <p class="break-words text-xs text-[var(--color-muted)]">Previous semesters: {{ implode(', ', $history['sessions']) }}</p>
+        @if (! empty($history['last_session']))
+            <p class="break-words text-xs text-[var(--color-muted)]">Last taught semester: {{ $history['last_session'] }}</p>
         @endif
 
         @if ($selectable)

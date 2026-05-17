@@ -13,11 +13,23 @@ use Illuminate\Validation\ValidationException;
 
 class PreferenceSelectionService
 {
+    public function __construct(private readonly SessionWindowService $sessions)
+    {
+    }
+
     /**
      * @param  array<int, int>  $choiceIds
      */
     public function submit(User $user, Session $session, array $choiceIds): Preference
     {
+        $openSession = $this->sessions->openForSelection();
+
+        if (! $openSession || ! $session->is($openSession)) {
+            throw ValidationException::withMessages([
+                'session_id' => 'Selections can only be submitted for the current open session.',
+            ]);
+        }
+
         if (! $session->isOpenForSelection()) {
             throw ValidationException::withMessages([
                 'session_id' => 'Subject preference session is currently closed.',
