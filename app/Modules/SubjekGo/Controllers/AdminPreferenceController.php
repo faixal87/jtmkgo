@@ -3,6 +3,7 @@
 namespace App\Modules\SubjekGo\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\SubjekGo\Controllers\Concerns\RespondsWithSubjekGoFeedback;
 use App\Modules\SubjekGo\Models\Preference;
 use App\Modules\SubjekGo\Models\Session;
 use App\Modules\SubjekGo\Services\LecturerPreferenceMonitoringService;
@@ -14,6 +15,8 @@ use Illuminate\View\View;
 
 class AdminPreferenceController extends Controller
 {
+    use RespondsWithSubjekGoFeedback;
+
     public function index(
         Request $request,
         SessionWindowService $sessions,
@@ -69,7 +72,7 @@ class AdminPreferenceController extends Controller
 
         $preference->update(['status' => Preference::STATUS_DRAFT]);
 
-        return back()->with('status', 'Lecturer submission reopened.');
+        return $this->backWithSuccess('Lecturer submission reopened successfully.');
     }
 
     public function lock(Preference $preference): RedirectResponse
@@ -78,6 +81,6 @@ class AdminPreferenceController extends Controller
 
         $preference->update(['status' => Preference::STATUS_LOCKED]);
 
-        return back()->with('status', 'Lecturer submission locked.');
+        return $this->backWithSuccess('Lecturer submission locked successfully.');
     }
 }

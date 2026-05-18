@@ -58,7 +58,7 @@
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Choice {{ $index + 1 }}</p>
                                         <p class="mt-1 break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->label }}</p>
                                     </div>
-                                    <span class="theme-badge">{{ $subject->weekly_contact_hour ?? 0 }} h/week</span>
+                                    <span class="theme-badge">{{ $subject->subjectMaster?->weekly_contact_hour ?? 0 }} h/week</span>
                                 </div>
                             @empty
                                 <x-empty-state title="No selection submitted" message="Open My Selections to rank four offered subjects." />
@@ -138,7 +138,9 @@
                     @if ($canManage)
                         <x-dashboard.status-card title="Lecturer Preferences" description="Monitor selections, workload, and lecturer history." :href="route('subjek-go.admin.preferences.index')" icon="users" />
                         <x-dashboard.status-card title="Sessions" description="Open or close subject preference windows." :href="route('subjek-go.sessions.index')" icon="calendar" />
-                        <x-dashboard.status-card title="Offered Subjects" description="Manage semester subject offerings." :href="route('subjek-go.offered-subjects.index')" icon="activity" />
+                        <x-dashboard.status-card title="Subject Masters" description="Maintain reusable subject catalogue data." :href="route('subjek-go.subject-masters.index')" icon="activity" />
+                        <x-dashboard.status-card title="Offered Subjects" description="Attach subject masters to sessions and class groups." :href="route('subjek-go.offered-subjects.index')" icon="activity" />
+                        <x-dashboard.status-card title="Class Groups" description="Manage reusable groups and academic advisors." :href="route('subjek-go.class-groups.index')" icon="users" />
                         <x-dashboard.status-card title="Coordinators" description="Maintain subject coordinator mapping." :href="route('subjek-go.subject-coordinators.index')" icon="users" />
                     @endif
                 </section>

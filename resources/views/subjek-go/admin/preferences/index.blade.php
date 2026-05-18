@@ -178,7 +178,7 @@
                                         <div class="grid gap-4 lg:grid-cols-2">
                                             @forelse ($selectedPreference?->selectedSubjects() ?? [] as $index => $subject)
                                                 @php
-                                                    $history = $selectedLecturerDetail['historyByCourseCode']->get($subject->course_code);
+                                                    $history = $selectedLecturerDetail['historyByCourseCode']->get($subject->subjectMaster?->course_code);
                                                 @endphp
                                                 <article class="rounded-xl border border-[var(--color-border)] p-4">
                                                     <div class="flex flex-wrap items-start justify-between gap-2">
@@ -186,7 +186,7 @@
                                                             <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Choice {{ $index + 1 }}</p>
                                                             <p class="mt-2 break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->label }}</p>
                                                         </div>
-                                                        <span class="theme-badge">{{ $subject->weekly_contact_hour ?? 0 }} h/week</span>
+                                                        <span class="theme-badge">{{ $subject->subjectMaster?->weekly_contact_hour ?? 0 }} h/week</span>
                                                     </div>
                                                     <div class="mt-4 space-y-2 text-sm text-[var(--color-muted)]">
                                                         <p class="break-words">Coordinator: {{ $subject->coordinator?->name ?: 'Not assigned' }}</p>

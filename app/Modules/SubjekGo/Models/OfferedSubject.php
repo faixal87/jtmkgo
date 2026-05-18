@@ -3,7 +3,6 @@
 namespace App\Modules\SubjekGo\Models;
 
 use App\Models\User;
-use App\Modules\GantiGo\Models\ClassGroup;
 use App\Modules\GantiGo\Models\Programme;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -18,13 +17,9 @@ class OfferedSubject extends Model
     protected $fillable = [
         'session_id',
         'programme_id',
-        'course_code',
-        'course_name',
+        'subject_master_id',
         'curriculum_version',
         'offered_semester',
-        'credit_hour',
-        'weekly_contact_hour',
-        'total_class_groups',
         'subject_coordinator_user_id',
         'remarks',
         'is_active',
@@ -38,6 +33,11 @@ class OfferedSubject extends Model
     public function programme(): BelongsTo
     {
         return $this->belongsTo(Programme::class);
+    }
+
+    public function subjectMaster(): BelongsTo
+    {
+        return $this->belongsTo(SubjectMaster::class);
     }
 
     public function coordinator(): BelongsTo
@@ -57,7 +57,7 @@ class OfferedSubject extends Model
             'subjek_go_subject_class_groups',
             'offered_subject_id',
             'class_group_id'
-        )->withPivot(['academic_advisor_user_id'])->withTimestamps();
+        )->withTimestamps();
     }
 
     public function teachingHistories(): HasMany
@@ -98,8 +98,9 @@ class OfferedSubject extends Model
 
         return $query->where(function (Builder $query) use ($search): void {
             $query
-                ->where('course_code', 'like', "%{$search}%")
-                ->orWhere('course_name', 'like', "%{$search}%")
+                ->whereHas('subjectMaster', fn (Builder $query) => $query
+                    ->where('course_code', 'like', "%{$search}%")
+                    ->orWhere('course_name', 'like', "%{$search}%"))
                 ->orWhere('offered_semester', 'like', "%{$search}%")
                 ->orWhereHas('programme', fn (Builder $query) => $query
                     ->where('code', 'like', "%{$search}%")
@@ -109,19 +110,54 @@ class OfferedSubject extends Model
 
     public function getLabelAttribute(): string
     {
-        return "{$this->course_code} - {$this->course_name}";
+        return trim(($this->subjectMaster?->course_code ?? 'Unknown subject').' - '.($this->subjectMaster?->course_name ?? ''));
     }
 
-    public function setCourseCodeAttribute(?string $value): void
+    public function getCourseCodeAttribute(): ?string
     {
-        $this->attributes['course_code'] = $value === null ? null : strtoupper(trim($value));
+        return $this->subjectMaster?->course_code;
+    }
+
+    public function getCourseNameAttribute(): ?string
+    {
+        return $this->subjectMaster?->course_name;
+    }
+
+    public function getCreditHourAttribute(): ?string
+    {
+        return $this->subjectMaster?->credit_hour;
+    }
+
+    public function getWeeklyContactHourAttribute(): ?string
+    {
+        return $this->subjectMaster?->weekly_contact_hour;
+    }
+
+    public function getTotalClassGroupsAttribute(): int
+    {
+        if (array_key_exists('class_groups_count', $this->attributes)) {
+            return (int) $this->attributes['class_groups_count'];
+        }
+
+        if ($this->relationLoaded('classGroups')) {
+            return $this->classGroups->count();
+        }
+
+        return $this->classGroups()->count();
+    }
+
+    public function scopeOrderBySubjectCode(Builder $query): Builder
+    {
+        return $query->orderBy(
+            SubjectMaster::query()
+                ->select('course_code')
+                ->whereColumn('subjek_go_subject_masters.id', 'subjek_go_offered_subjects.subject_master_id')
+        );
     }
 
     protected function casts(): array
     {
         return [
-            'credit_hour' => 'decimal:2',
-            'weekly_contact_hour' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }

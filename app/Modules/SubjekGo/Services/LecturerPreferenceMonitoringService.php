@@ -35,7 +35,7 @@ class LecturerPreferenceMonitoringService
             ->with([
                 'subjekGoPreferences' => fn ($query) => $query
                     ->where('session_id', $session->id)
-                    ->with(['choiceOne', 'choiceTwo', 'choiceThree', 'choiceFour']),
+                    ->with(['choiceOne.subjectMaster', 'choiceTwo.subjectMaster', 'choiceThree.subjectMaster', 'choiceFour.subjectMaster']),
             ])
             ->withExists('subjekGoTeachingHistories as has_teaching_history')
             ->when(filled($filters['q'] ?? null), fn (Builder $query) => $query->searchIdentity($filters['q']))
@@ -128,12 +128,16 @@ class LecturerPreferenceMonitoringService
     {
         $preference = Preference::query()
             ->with([
+                'choiceOne.subjectMaster',
                 'choiceOne.coordinator',
                 'choiceOne.programme',
+                'choiceTwo.subjectMaster',
                 'choiceTwo.coordinator',
                 'choiceTwo.programme',
+                'choiceThree.subjectMaster',
                 'choiceThree.coordinator',
                 'choiceThree.programme',
+                'choiceFour.subjectMaster',
                 'choiceFour.coordinator',
                 'choiceFour.programme',
             ])
@@ -156,11 +160,11 @@ class LecturerPreferenceMonitoringService
             ]);
 
         $coordinatorSubjects = OfferedSubject::query()
-            ->with('programme')
+            ->with(['programme', 'subjectMaster'])
             ->where('session_id', $session->id)
             ->active()
             ->where('subject_coordinator_user_id', $lecturer->id)
-            ->orderBy('course_code')
+            ->orderBySubjectCode()
             ->get();
 
         return [

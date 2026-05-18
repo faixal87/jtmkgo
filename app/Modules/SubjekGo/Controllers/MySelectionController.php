@@ -23,15 +23,16 @@ class MySelectionController extends Controller
         $programmeId = $request->integer('programme_id');
         $currentPreference = $session
             ? Preference::query()
-                ->with(['session', 'choiceOne.coordinator', 'choiceTwo.coordinator', 'choiceThree.coordinator', 'choiceFour.coordinator'])
+                ->with(['session', 'choiceOne.subjectMaster', 'choiceOne.coordinator', 'choiceTwo.subjectMaster', 'choiceTwo.coordinator', 'choiceThree.subjectMaster', 'choiceThree.coordinator', 'choiceFour.subjectMaster', 'choiceFour.coordinator'])
                 ->where('session_id', $session->id)
                 ->where('user_id', $request->user()->id)
                 ->first()
             : null;
         $subjectOptions = $session
             ? $session->activeOfferedSubjects()
-                ->orderBy('course_code')
-                ->get(['id', 'course_code', 'course_name', 'weekly_contact_hour'])
+                ->with('subjectMaster')
+                ->orderBySubjectCode()
+                ->get(['id', 'subject_master_id'])
             : collect();
         $programmeIds = $session
             ? $session->activeOfferedSubjects()
@@ -43,7 +44,7 @@ class MySelectionController extends Controller
             ? collect()
             : TeachingHistory::query()
                 ->forLecturer($request->user())
-                ->whereIn('course_code', $subjectOptions->pluck('course_code'))
+                ->whereIn('course_code', $subjectOptions->pluck('subjectMaster.course_code')->filter())
                 ->select(['course_code', 'academic_session'])
                 ->latest('academic_session')
                 ->get()
@@ -60,10 +61,11 @@ class MySelectionController extends Controller
             'canEditCurrent' => $canEditCurrent,
             'subjects' => $session
                 ? $session->activeOfferedSubjects()
-                    ->with(['programme', 'coordinator'])
+                    ->with(['programme', 'subjectMaster', 'coordinator', 'classGroups'])
+                    ->withCount('classGroups')
                     ->search($search)
                     ->when($programmeId, fn ($query) => $query->where('programme_id', $programmeId))
-                    ->orderBy('course_code')
+                    ->orderBySubjectCode()
                     ->paginate(18)
                     ->withQueryString()
                 : collect(),
@@ -78,14 +80,14 @@ class MySelectionController extends Controller
             ]),
             'search' => $search,
             'mySelections' => Preference::query()
-                ->with(['session', 'choiceOne', 'choiceTwo', 'choiceThree', 'choiceFour'])
+                ->with(['session', 'choiceOne.subjectMaster', 'choiceTwo.subjectMaster', 'choiceThree.subjectMaster', 'choiceFour.subjectMaster'])
                 ->where('user_id', $request->user()->id)
                 ->when($session, fn ($query) => $query->where('session_id', '!=', $session->id))
                 ->latest()
                 ->paginate(10),
             'publicSelections' => $session && $session->visibility === 'public'
                 ? Preference::query()
-                    ->with(['lecturer:id,name', 'choiceOne', 'choiceTwo', 'choiceThree', 'choiceFour'])
+                    ->with(['lecturer:id,name', 'choiceOne.subjectMaster', 'choiceTwo.subjectMaster', 'choiceThree.subjectMaster', 'choiceFour.subjectMaster'])
                     ->where('session_id', $session->id)
                     ->submitted()
                     ->latest('submitted_at')

@@ -3,6 +3,7 @@
 namespace App\Modules\SubjekGo\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\SubjekGo\Controllers\Concerns\RespondsWithSubjekGoFeedback;
 use App\Modules\SubjekGo\Requests\StorePreferenceRequest;
 use App\Modules\SubjekGo\Services\PreferenceSelectionService;
 use Illuminate\Http\RedirectResponse;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Gate;
 
 class PreferenceController extends Controller
 {
+    use RespondsWithSubjekGoFeedback;
+
     public function index(Request $request): RedirectResponse
     {
         Gate::authorize('select-subjek-go');
@@ -29,8 +32,10 @@ class PreferenceController extends Controller
             $request->integer('choice_4_subject_id'),
         ]);
 
-        return redirect()
-            ->route('subjek-go.my-selections.index')
-            ->with('status', 'Subject preferences submitted successfully.');
+        return $this->safeListWithSuccess(
+            $request,
+            route('subjek-go.my-selections.index'),
+            'Subject preferences saved successfully.'
+        );
     }
 }

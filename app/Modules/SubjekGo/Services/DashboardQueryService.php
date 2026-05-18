@@ -25,7 +25,7 @@ class DashboardQueryService
     {
         $preference = $session
             ? Preference::query()
-                ->with(['choiceOne.coordinator', 'choiceTwo.coordinator', 'choiceThree.coordinator', 'choiceFour.coordinator'])
+                ->with(['choiceOne.subjectMaster', 'choiceOne.coordinator', 'choiceTwo.subjectMaster', 'choiceTwo.coordinator', 'choiceThree.subjectMaster', 'choiceThree.coordinator', 'choiceFour.subjectMaster', 'choiceFour.coordinator'])
                 ->where('session_id', $session->id)
                 ->where('user_id', $user->id)
                 ->first()
@@ -36,7 +36,7 @@ class DashboardQueryService
             'popularSubjects' => $session ? $this->subjectSelectionTotals($session)->take(5) : collect(),
             'recentSelections' => $session && $session->visibility === Session::VISIBILITY_PUBLIC
                 ? Preference::query()
-                    ->with(['lecturer', 'choiceOne'])
+                    ->with(['lecturer', 'choiceOne.subjectMaster'])
                     ->where('session_id', $session->id)
                     ->submitted()
                     ->latest('submitted_at')
@@ -89,7 +89,7 @@ class DashboardQueryService
             ],
             'latestSubmissions' => $session
                 ? Preference::query()
-                    ->with(['lecturer', 'choiceOne', 'choiceTwo', 'choiceThree', 'choiceFour'])
+                    ->with(['lecturer', 'choiceOne.subjectMaster', 'choiceTwo.subjectMaster', 'choiceThree.subjectMaster', 'choiceFour.subjectMaster'])
                     ->where('session_id', $session->id)
                     ->submitted()
                     ->latest('submitted_at')
@@ -136,11 +136,12 @@ class DashboardQueryService
             ->addSelect(DB::raw('COALESCE(choice_counts.choice_2_total, 0) as choice_2_total'))
             ->addSelect(DB::raw('COALESCE(choice_counts.choice_3_total, 0) as choice_3_total'))
             ->addSelect(DB::raw('COALESCE(choice_counts.choice_4_total, 0) as choice_4_total'))
-            ->with(['programme', 'coordinator'])
+            ->with(['programme', 'subjectMaster', 'coordinator', 'classGroups'])
+            ->withCount('classGroups')
             ->where('session_id', $session->id)
             ->active()
             ->orderByDesc('selection_total')
-            ->orderBy('course_code')
+            ->orderBySubjectCode()
             ->get();
     }
 
@@ -224,11 +225,11 @@ class DashboardQueryService
     private function coordinatorMap(Session $session): Collection
     {
         $subjects = OfferedSubject::query()
-            ->with(['programme', 'coordinator'])
+            ->with(['programme', 'subjectMaster', 'coordinator'])
             ->where('session_id', $session->id)
             ->active()
             ->whereNotNull('subject_coordinator_user_id')
-            ->orderBy('course_code')
+            ->orderBySubjectCode()
             ->limit(12)
             ->get();
         $preferences = Preference::query()

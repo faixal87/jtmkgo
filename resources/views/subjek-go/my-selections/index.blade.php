@@ -9,8 +9,8 @@
         : ($currentPreference?->choiceIds() ?? [1 => null, 2 => null, 3 => null, 4 => null]);
     $subjectPayload = $subjectOptions->map(fn ($subject) => [
         'id' => $subject->id,
-        'label' => $subject->course_code.' - '.$subject->course_name,
-        'weekly_contact_hour' => (float) ($subject->weekly_contact_hour ?? 0),
+        'label' => $subject->subjectMaster?->course_code.' - '.$subject->subjectMaster?->course_name,
+        'weekly_contact_hour' => (float) ($subject->subjectMaster?->weekly_contact_hour ?? 0),
     ])->values();
     $isCurrentSessionOpen = $session && $openSession && $session->is($openSession);
 @endphp
@@ -131,6 +131,7 @@
                 <form method="POST" action="{{ route('subjek-go.preferences.store') }}" class="space-y-6">
                     @csrf
                     <input type="hidden" name="session_id" value="{{ $session->id }}">
+                    <input type="hidden" name="return_to" value="{{ url()->full() }}">
 
                     <section id="selection-workspace" class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]">
                         <div class="space-y-4">
@@ -157,7 +158,7 @@
                                             <option value="">Select subject</option>
                                             @foreach ($subjectOptions as $subject)
                                                 <option value="{{ $subject->id }}" :disabled="isSelectedElsewhere({{ $rank }}, {{ $subject->id }})">
-                                                    {{ $subject->course_code }} - {{ $subject->course_name }}
+                                                    {{ $subject->subjectMaster?->course_code }} - {{ $subject->subjectMaster?->course_name }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -213,7 +214,7 @@
                                 <div class="rounded-xl border border-[var(--color-border)] p-3">
                                     <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Choice {{ $index + 1 }}</p>
                                     <p class="mt-1 break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->label }}</p>
-                                    <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $subject->weekly_contact_hour ?? 0 }} hours/week</p>
+                                    <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $subject->subjectMaster?->weekly_contact_hour ?? 0 }} hours/week</p>
                                 </div>
                             @endforeach
                         </div>
@@ -249,7 +250,7 @@
                             @foreach ($subjects as $subject)
                                 <x-subjek.subject-card
                                     :subject="$subject"
-                                    :history="$historyByCourseCode[$subject->course_code] ?? null"
+                                    :history="$historyByCourseCode[$subject->subjectMaster?->course_code] ?? null"
                                     :selectable="$canEditCurrent"
                                 />
                             @endforeach

@@ -5,7 +5,7 @@
                 <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">Sessions</h1>
                 <p class="mt-1 text-sm text-[var(--color-muted)]">Control subject preference windows and visibility.</p>
             </div>
-            <a href="{{ route('subjek-go.sessions.create') }}" class="theme-button-primary rounded-lg px-4 py-2 text-sm font-semibold">Create Session</a>
+            <a href="{{ route('subjek-go.sessions.create', ['return_to' => url()->full()]) }}" class="theme-button-primary rounded-lg px-4 py-2 text-sm font-semibold">Create Session</a>
         </div>
     </x-slot>
 
@@ -28,7 +28,7 @@
                                 </p>
                             </div>
                             <div class="flex flex-wrap gap-2">
-                                <a href="{{ route('subjek-go.sessions.edit', $session) }}" class="theme-button-secondary rounded-lg px-3 py-2 text-sm font-semibold">Edit</a>
+                                <a href="{{ route('subjek-go.sessions.edit', [$session, 'return_to' => url()->full()]) }}" class="theme-button-secondary rounded-lg px-3 py-2 text-sm font-semibold">Edit</a>
                                 <a href="{{ route('subjek-go.admin.preferences.index', ['session_id' => $session->id]) }}" class="theme-button-secondary rounded-lg px-3 py-2 text-sm font-semibold">Submissions</a>
                                 @foreach (['open' => 'Open', 'closed' => 'Close', 'archived' => 'Archive'] as $status => $label)
                                     @if ($session->status !== $status)

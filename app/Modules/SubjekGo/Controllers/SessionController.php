@@ -3,6 +3,7 @@
 namespace App\Modules\SubjekGo\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\SubjekGo\Controllers\Concerns\RespondsWithSubjekGoFeedback;
 use App\Modules\SubjekGo\Models\Preference;
 use App\Modules\SubjekGo\Models\Session;
 use App\Modules\SubjekGo\Requests\StoreSessionRequest;
@@ -15,6 +16,8 @@ use Illuminate\View\View;
 
 class SessionController extends Controller
 {
+    use RespondsWithSubjekGoFeedback;
+
     public function index(): View
     {
         Gate::authorize('manage-subjek-go');
@@ -27,12 +30,13 @@ class SessionController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         Gate::authorize('manage-subjek-go');
 
         return view('subjek-go.sessions.create', [
             'session' => new Session(),
+            'returnTo' => $this->returnTo($request, route('subjek-go.sessions.index')),
         ]);
     }
 
@@ -44,19 +48,26 @@ class SessionController extends Controller
             $this->closeOtherOpenSessions();
         }
 
-        $session = Session::query()->create($validated + [
+        Session::query()->create($validated + [
             'created_by' => $request->user()->id,
         ]);
         $sessions->clearCache();
 
-        return redirect()->route('subjek-go.sessions.edit', $session)->with('status', 'Session created.');
+        return $this->safeListWithSuccess(
+            $request,
+            route('subjek-go.sessions.index'),
+            'Session created successfully.'
+        );
     }
 
-    public function edit(Session $session): View
+    public function edit(Request $request, Session $session): View
     {
         Gate::authorize('manage-subjek-go');
 
-        return view('subjek-go.sessions.edit', compact('session'));
+        return view('subjek-go.sessions.edit', [
+            'session' => $session,
+            'returnTo' => $this->returnTo($request, route('subjek-go.sessions.index')),
+        ]);
     }
 
     public function update(UpdateSessionRequest $request, Session $session, SessionWindowService $sessions): RedirectResponse
@@ -70,7 +81,11 @@ class SessionController extends Controller
         $session->update($validated);
         $sessions->clearCache();
 
-        return back()->with('status', 'Session updated.');
+        return $this->safeListWithSuccess(
+            $request,
+            route('subjek-go.sessions.index'),
+            'Session updated successfully.'
+        );
     }
 
     public function status(Request $request, Session $session, SessionWindowService $sessions): RedirectResponse
@@ -88,7 +103,7 @@ class SessionController extends Controller
         $session->update(['status' => $validated['status']]);
         $sessions->clearCache();
 
-        return back()->with('status', 'Session status updated.');
+        return $this->backWithSuccess('Session status updated successfully.');
     }
 
     public function reopenAll(Session $session, SessionWindowService $sessions): RedirectResponse
@@ -103,7 +118,7 @@ class SessionController extends Controller
             ->whereIn('status', [Preference::STATUS_SUBMITTED, Preference::STATUS_LOCKED])
             ->update(['status' => Preference::STATUS_DRAFT]);
 
-        return back()->with('status', "{$count} submission(s) reopened.");
+        return $this->backWithSuccess("{$count} submission(s) reopened successfully.");
     }
 
     private function closeOtherOpenSessions(?Session $session = null): void

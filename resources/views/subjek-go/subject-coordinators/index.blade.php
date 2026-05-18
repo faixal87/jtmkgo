@@ -47,6 +47,7 @@
                         <form method="POST" action="{{ route('subjek-go.subject-coordinators.update', $subject) }}" class="mt-5 space-y-3">
                             @csrf
                             @method('PATCH')
+                            <input type="hidden" name="return_to" value="{{ url()->full() }}">
                             <div>
                                 <x-input-label for="coordinator_{{ $subject->id }}" value="Coordinator" />
                                 <select id="coordinator_{{ $subject->id }}" name="subject_coordinator_user_id" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">

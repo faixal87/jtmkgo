@@ -162,7 +162,9 @@
                         <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.admin') }}</span>
                         <a href="{{ route('subjek-go.admin.preferences.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.admin.preferences.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.lecturer_preferences') }}</a>
                         <a href="{{ route('subjek-go.sessions.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.sessions.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.sessions') }}</a>
+                        <a href="{{ route('subjek-go.subject-masters.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.subject-masters.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.subject_masters') }}</a>
                         <a href="{{ route('subjek-go.offered-subjects.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.offered-subjects.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.offered_subjects') }}</a>
+                        <a href="{{ route('subjek-go.class-groups.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.class-groups.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.class_groups') }}</a>
                         <a href="{{ route('subjek-go.subject-coordinators.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.subject-coordinators.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.subject_coordinators') }}</a>
                     @endif
                     <a href="{{ route('subjek-go.teaching-history.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.teaching-history.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.teaching_history') }}</a>
@@ -392,7 +394,9 @@
                         <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.admin') }}</span>
                         <a href="{{ route('subjek-go.admin.preferences.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.admin.preferences.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.lecturer_preferences') }}</a>
                         <a href="{{ route('subjek-go.sessions.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.sessions.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.sessions') }}</a>
+                        <a href="{{ route('subjek-go.subject-masters.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.subject-masters.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.subject_masters') }}</a>
                         <a href="{{ route('subjek-go.offered-subjects.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.offered-subjects.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.offered_subjects') }}</a>
+                        <a href="{{ route('subjek-go.class-groups.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.class-groups.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.class_groups') }}</a>
                         <a href="{{ route('subjek-go.subject-coordinators.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.subject-coordinators.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.subject_coordinators') }}</a>
                     @endif
                     <a href="{{ route('subjek-go.teaching-history.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.teaching-history.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.teaching_history') }}</a>

@@ -5,7 +5,15 @@
 
 @if ($status || $error)
     <div class="fixed right-4 top-20 z-50 w-[calc(100vw-2rem)] max-w-sm">
-        <div x-data="{ show: true }" x-show="show" x-transition class="access-toast rounded-xl border p-4 shadow-2xl">
+        <div
+            x-data="{ show: true }"
+            x-init="setTimeout(() => show = false, 4500)"
+            x-show="show"
+            x-transition
+            role="status"
+            aria-live="polite"
+            class="access-toast rounded-xl border p-4 shadow-2xl"
+        >
             <div class="flex items-start gap-3">
                 <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $error ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
                     @if ($error)

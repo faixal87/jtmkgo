@@ -9,8 +9,8 @@
         : ($preference?->choiceIds() ?? [1 => null, 2 => null, 3 => null, 4 => null]);
     $subjectPayload = $subjectOptions->map(fn ($subject) => [
         'id' => $subject->id,
-        'label' => $subject->course_code.' - '.$subject->course_name,
-        'weekly_contact_hour' => (float) ($subject->weekly_contact_hour ?? 0),
+        'label' => $subject->subjectMaster?->course_code.' - '.$subject->subjectMaster?->course_name,
+        'weekly_contact_hour' => (float) ($subject->subjectMaster?->weekly_contact_hour ?? 0),
     ])->values();
 @endphp
 
@@ -56,6 +56,7 @@
                 <form method="POST" action="{{ route('subjek-go.preferences.store') }}" class="space-y-6">
                     @csrf
                     <input type="hidden" name="session_id" value="{{ $session->id }}">
+                    <input type="hidden" name="return_to" value="{{ route('subjek-go.my-selections.index') }}">
 
                     <section class="enterprise-card min-w-0 rounded-2xl border p-5 shadow-sm">
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -84,7 +85,7 @@
                                 >
                                     <option value="">Select subject</option>
                                     @foreach ($subjectOptions as $subject)
-                                        <option value="{{ $subject->id }}">{{ $subject->course_code }} - {{ $subject->course_name }}</option>
+                                        <option value="{{ $subject->id }}">{{ $subject->subjectMaster?->course_code }} - {{ $subject->subjectMaster?->course_name }}</option>
                                     @endforeach
                                 </select>
                                 <p class="mt-3 min-h-10 break-words text-sm font-medium text-[var(--color-text)]" x-text="selectedSubject({{ $rank }})?.label || 'No subject selected'"></p>
@@ -119,7 +120,7 @@
                         @foreach ($subjects as $subject)
                             <x-subjek.subject-card
                                 :subject="$subject"
-                                :history="$historyByCourseCode[$subject->course_code] ?? null"
+                                :history="$historyByCourseCode[$subject->subjectMaster?->course_code] ?? null"
                                 :selectable="$openSession && $session->id === $openSession->id"
                             />
                         @endforeach

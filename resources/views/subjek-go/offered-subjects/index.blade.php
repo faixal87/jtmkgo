@@ -3,9 +3,9 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">Offered Subjects</h1>
-                <p class="mt-1 text-sm text-[var(--color-muted)]">Maintain session-specific subject offerings and workload metadata.</p>
+                <p class="mt-1 text-sm text-[var(--color-muted)]">Maintain session-specific offerings from reusable subject masters and attached class groups.</p>
             </div>
-            <a href="{{ route('subjek-go.offered-subjects.create') }}" class="theme-button-primary rounded-lg px-4 py-2 text-sm font-semibold">Add Subject</a>
+            <a href="{{ route('subjek-go.offered-subjects.create', ['return_to' => url()->full()]) }}" class="theme-button-primary rounded-lg px-4 py-2 text-sm font-semibold">Add Offering</a>
         </div>
     </x-slot>
 
@@ -51,16 +51,21 @@
                             @forelse ($subjects as $subject)
                                 <tr class="align-top">
                                     <td class="px-5 py-4">
-                                        <p class="break-words font-semibold text-[var(--color-text)]">{{ $subject->course_code }}</p>
-                                        <p class="mt-1 max-w-md break-words text-[var(--color-muted)]">{{ $subject->course_name }}</p>
+                                        <p class="break-words font-semibold text-[var(--color-text)]">{{ $subject->subjectMaster?->course_code }}</p>
+                                        <p class="mt-1 max-w-md break-words text-[var(--color-muted)]">{{ $subject->subjectMaster?->course_name }}</p>
                                         @if ($subject->offered_semester)
                                             <p class="mt-1 text-xs text-[var(--color-muted)]">Semester {{ $subject->offered_semester }}</p>
                                         @endif
                                     </td>
                                     <td class="px-5 py-4 text-[var(--color-muted)]">{{ $subject->programme?->code ?: 'Shared' }}</td>
                                     <td class="px-5 py-4 text-[var(--color-muted)]">
-                                        <span class="block">{{ $subject->weekly_contact_hour ?? 0 }} h/week</span>
-                                        <span class="mt-1 block text-xs">{{ $subject->credit_hour ?? 0 }} credit hour(s) | {{ $subject->total_class_groups }} class group(s)</span>
+                                        <span class="block">{{ $subject->subjectMaster?->weekly_contact_hour ?? 0 }} h/week</span>
+                                        <span class="mt-1 block text-xs">{{ $subject->subjectMaster?->credit_hour ?? 0 }} credit hour(s) | {{ $subject->total_class_groups }} class group(s)</span>
+                                        @if ($subject->classGroups->isNotEmpty())
+                                            <span class="mt-2 block text-xs">
+                                                {{ $subject->classGroups->pluck('class_name')->implode(', ') }}
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-4">
                                         @if ($subject->coordinator)
@@ -75,7 +80,7 @@
                                     </td>
                                     <td class="px-5 py-4">
                                         <div class="flex flex-wrap justify-end gap-2">
-                                            <a href="{{ route('subjek-go.offered-subjects.edit', $subject) }}" class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">Edit</a>
+                                            <a href="{{ route('subjek-go.offered-subjects.edit', [$subject, 'return_to' => url()->full()]) }}" class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">Edit</a>
                                             <form method="POST" action="{{ route('subjek-go.offered-subjects.toggle', $subject) }}">
                                                 @csrf
                                                 @method('PATCH')

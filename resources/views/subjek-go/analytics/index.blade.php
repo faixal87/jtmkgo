@@ -79,7 +79,7 @@
                     <div class="space-y-3">
                         @forelse ($data['popularSubjects']->take(6) as $subject)
                             <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(8rem,12rem)_2.5rem] sm:items-center">
-                                <p class="min-w-0 truncate text-sm font-medium text-[var(--color-text)]">{{ $subject->course_code }}</p>
+                                <p class="min-w-0 truncate text-sm font-medium text-[var(--color-text)]">{{ $subject->subjectMaster?->course_code }}</p>
                                 <div class="h-3 overflow-hidden rounded-full bg-[var(--color-accent-soft)]">
                                     <div class="h-full rounded-full bg-[var(--color-accent)]" style="width: {{ max(($subject->selection_total / $popularMax) * 100, 4) }}%"></div>
                                 </div>
@@ -133,8 +133,13 @@
                             <div class="rounded-xl border border-[var(--color-border)] p-4">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div class="min-w-0">
-                                        <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->course_code }} - {{ $subject->course_name }}</p>
+                                        <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->subjectMaster?->course_code }} - {{ $subject->subjectMaster?->course_name }}</p>
                                         <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $subject->programme?->code ?: 'Shared' }}</p>
+                                        @if ($subject->classGroups->isNotEmpty())
+                                            <p class="mt-1 break-words text-xs text-[var(--color-muted)]">
+                                                {{ $subject->classGroups->pluck('class_name')->implode(', ') }}
+                                            </p>
+                                        @endif
                                     </div>
                                     <span class="theme-badge">{{ $subject->selection_total }} total</span>
                                 </div>

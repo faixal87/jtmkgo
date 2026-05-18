@@ -10,6 +10,8 @@
 
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+            <x-toast />
+
             <form method="GET" action="{{ route('subjek-go.teaching-history.index') }}" class="enterprise-card flex flex-col gap-3 rounded-xl border p-4 shadow-sm sm:flex-row sm:items-end">
                 <div class="min-w-0 flex-1">
                     <x-input-label for="q" value="Search" />

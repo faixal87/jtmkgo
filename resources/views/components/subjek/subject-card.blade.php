@@ -8,7 +8,7 @@
     <div class="flex min-w-0 flex-col gap-4">
         <div class="min-w-0">
             <div class="flex flex-wrap items-start justify-between gap-2">
-                <h3 class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->course_code }} - {{ $subject->course_name }}</h3>
+                <h3 class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->subjectMaster?->course_code }} - {{ $subject->subjectMaster?->course_name }}</h3>
                 @if ($subject->coordinator)
                     <span class="theme-badge">Subject Coordinator</span>
                 @endif
@@ -27,11 +27,11 @@
         <dl class="grid gap-3 text-xs sm:grid-cols-2">
             <div>
                 <dt class="text-[var(--color-muted)]">Credit Hour</dt>
-                <dd class="mt-1 font-semibold text-[var(--color-text)]">{{ $subject->credit_hour ?? '-' }}</dd>
+                <dd class="mt-1 font-semibold text-[var(--color-text)]">{{ $subject->subjectMaster?->credit_hour ?? '-' }}</dd>
             </div>
             <div>
                 <dt class="text-[var(--color-muted)]">Weekly Contact</dt>
-                <dd class="mt-1 font-semibold text-[var(--color-text)]">{{ $subject->weekly_contact_hour ?? 0 }} hour(s)</dd>
+                <dd class="mt-1 font-semibold text-[var(--color-text)]">{{ $subject->subjectMaster?->weekly_contact_hour ?? 0 }} hour(s)</dd>
             </div>
             <div>
                 <dt class="text-[var(--color-muted)]">Class Groups</dt>
@@ -46,6 +46,14 @@
         <p class="break-words text-xs text-[var(--color-muted)]">
             Coordinator: {{ $subject->coordinator?->name ?: 'Not assigned' }}
         </p>
+
+        @if ($subject->classGroups->isNotEmpty())
+            <div class="space-y-1 text-xs text-[var(--color-muted)]">
+                @foreach ($subject->classGroups as $classGroup)
+                    <p class="break-words">{{ $classGroup->class_name }}</p>
+                @endforeach
+            </div>
+        @endif
 
         @if (! empty($history['last_session']))
             <p class="break-words text-xs text-[var(--color-muted)]">Last taught semester: {{ $history['last_session'] }}</p>

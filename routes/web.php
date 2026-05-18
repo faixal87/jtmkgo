@@ -35,11 +35,13 @@ use App\Modules\PhotoRepository\Controllers\PhotoDownloadController as PhotoRepo
 use App\Modules\PhotoRepository\Controllers\UploadPhotoController as PhotoRepositoryUploadPhotoController;
 use App\Modules\SubjekGo\Controllers\AdminPreferenceController as SubjekGoAdminPreferenceController;
 use App\Modules\SubjekGo\Controllers\AnalyticsController as SubjekGoAnalyticsController;
+use App\Modules\SubjekGo\Controllers\ClassGroupController as SubjekGoClassGroupController;
 use App\Modules\SubjekGo\Controllers\DashboardController as SubjekGoDashboardController;
 use App\Modules\SubjekGo\Controllers\MySelectionController as SubjekGoMySelectionController;
 use App\Modules\SubjekGo\Controllers\OfferedSubjectController as SubjekGoOfferedSubjectController;
 use App\Modules\SubjekGo\Controllers\PreferenceController as SubjekGoPreferenceController;
 use App\Modules\SubjekGo\Controllers\SessionController as SubjekGoSessionController;
+use App\Modules\SubjekGo\Controllers\SubjectMasterController as SubjekGoSubjectMasterController;
 use App\Modules\SubjekGo\Controllers\SubjectCoordinatorController as SubjekGoSubjectCoordinatorController;
 use App\Modules\SubjekGo\Controllers\TeachingHistoryController as SubjekGoTeachingHistoryController;
 use Illuminate\Http\Request;
@@ -265,6 +267,16 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
 
             Route::patch('/offered-subjects/{offeredSubject}/toggle', [SubjekGoOfferedSubjectController::class, 'toggle'])->name('offered-subjects.toggle');
             Route::resource('offered-subjects', SubjekGoOfferedSubjectController::class)->except(['show', 'destroy']);
+
+            Route::patch('/subject-masters/{subjectMaster}/toggle', [SubjekGoSubjectMasterController::class, 'toggle'])->name('subject-masters.toggle');
+            Route::resource('subject-masters', SubjekGoSubjectMasterController::class)
+                ->parameters(['subject-masters' => 'subjectMaster'])
+                ->except(['show', 'destroy']);
+
+            Route::patch('/class-groups/{classGroup}/toggle', [SubjekGoClassGroupController::class, 'toggle'])->name('class-groups.toggle');
+            Route::resource('class-groups', SubjekGoClassGroupController::class)
+                ->parameters(['class-groups' => 'classGroup'])
+                ->except(['show', 'destroy']);
 
             Route::get('/subject-coordinators', [SubjekGoSubjectCoordinatorController::class, 'index'])->name('subject-coordinators.index');
             Route::patch('/subject-coordinators/{offeredSubject}', [SubjekGoSubjectCoordinatorController::class, 'update'])->name('subject-coordinators.update');
