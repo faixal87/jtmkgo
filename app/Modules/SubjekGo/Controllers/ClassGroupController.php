@@ -8,6 +8,7 @@ use App\Modules\SubjekGo\Controllers\Concerns\RespondsWithSubjekGoFeedback;
 use App\Modules\SubjekGo\Models\ClassGroup;
 use App\Modules\SubjekGo\Requests\StoreClassGroupRequest;
 use App\Modules\SubjekGo\Requests\UpdateClassGroupRequest;
+use App\Modules\SubjekGo\Services\SubjekGoRecordLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -61,6 +62,8 @@ class ClassGroupController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
+        abort_if($classGroup->isArchived(), 403, 'Archived records are read-only.');
+
         return view('subjek-go.class-groups.edit', [
             'classGroup' => $classGroup,
             'programmes' => Programme::query()->active()->orderBy('code')->get(['id', 'code', 'name']),
@@ -70,6 +73,10 @@ class ClassGroupController extends Controller
 
     public function update(UpdateClassGroupRequest $request, ClassGroup $classGroup): RedirectResponse
     {
+        if ($classGroup->isArchived()) {
+            return back()->with('error', 'Archived records are read-only.');
+        }
+
         $classGroup->update($request->validated());
 
         return $this->safeListWithSuccess(
@@ -83,10 +90,44 @@ class ClassGroupController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
+        if ($classGroup->isArchived()) {
+            return back()->with('error', 'Archived records are read-only.');
+        }
+
         $classGroup->update(['is_active' => ! $classGroup->is_active]);
 
         return $this->backWithSuccess($classGroup->is_active
             ? 'Class group enabled successfully.'
             : 'Class group disabled successfully.');
+    }
+
+    public function archive(ClassGroup $classGroup): RedirectResponse
+    {
+        Gate::authorize('manage-subjek-go');
+
+        if ($classGroup->isArchived()) {
+            return back()->with('status', 'Class group is already archived.');
+        }
+
+        $classGroup->update([
+            'is_active' => false,
+            'archived_at' => now(),
+        ]);
+
+        return $this->backWithSuccess('Class group archived successfully.');
+    }
+
+    public function destroy(Request $request, ClassGroup $classGroup, SubjekGoRecordLifecycleService $lifecycle): RedirectResponse
+    {
+        Gate::authorize('manage-subjek-go');
+        abort_unless($request->user()->is_super_admin, 403);
+
+        if ($lifecycle->classGroupIsUsed($classGroup)) {
+            return back()->with('error', 'This record is already used by other modules.');
+        }
+
+        $classGroup->delete();
+
+        return $this->backWithSuccess('Class group deleted successfully.');
     }
 }

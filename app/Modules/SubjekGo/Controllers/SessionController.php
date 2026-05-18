@@ -3,12 +3,14 @@
 namespace App\Modules\SubjekGo\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\AcademicCore\Models\AcademicSemester;
 use App\Modules\SubjekGo\Controllers\Concerns\RespondsWithSubjekGoFeedback;
 use App\Modules\SubjekGo\Models\Preference;
 use App\Modules\SubjekGo\Models\Session;
 use App\Modules\SubjekGo\Requests\StoreSessionRequest;
 use App\Modules\SubjekGo\Requests\UpdateSessionRequest;
 use App\Modules\SubjekGo\Services\SessionWindowService;
+use App\Modules\SubjekGo\Services\SubjekGoRecordLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -36,6 +38,7 @@ class SessionController extends Controller
 
         return view('subjek-go.sessions.create', [
             'session' => new Session(),
+            'academicSemesters' => AcademicSemester::query()->orderByDesc('start_date')->orderByDesc('id')->get(['id', 'name', 'academic_session']),
             'returnTo' => $this->returnTo($request, route('subjek-go.sessions.index')),
         ]);
     }
@@ -64,14 +67,21 @@ class SessionController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
+        abort_if($session->status === Session::STATUS_ARCHIVED, 403, 'Archived records are read-only.');
+
         return view('subjek-go.sessions.edit', [
             'session' => $session,
+            'academicSemesters' => AcademicSemester::query()->orderByDesc('start_date')->orderByDesc('id')->get(['id', 'name', 'academic_session']),
             'returnTo' => $this->returnTo($request, route('subjek-go.sessions.index')),
         ]);
     }
 
     public function update(UpdateSessionRequest $request, Session $session, SessionWindowService $sessions): RedirectResponse
     {
+        if ($session->status === Session::STATUS_ARCHIVED) {
+            return back()->with('error', 'Archived records are read-only.');
+        }
+
         $validated = $request->validated();
 
         if ($validated['status'] === Session::STATUS_OPEN) {
@@ -92,6 +102,10 @@ class SessionController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
+        if ($session->status === Session::STATUS_ARCHIVED) {
+            return back()->with('error', 'Archived records are read-only.');
+        }
+
         $validated = $request->validate([
             'status' => ['required', 'in:draft,open,closed,archived'],
         ]);
@@ -110,6 +124,10 @@ class SessionController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
+        if ($session->status === Session::STATUS_ARCHIVED) {
+            return back()->with('error', 'Archived records are read-only.');
+        }
+
         $this->closeOtherOpenSessions($session);
 
         $session->update(['status' => Session::STATUS_OPEN]);
@@ -119,6 +137,21 @@ class SessionController extends Controller
             ->update(['status' => Preference::STATUS_DRAFT]);
 
         return $this->backWithSuccess("{$count} submission(s) reopened successfully.");
+    }
+
+    public function destroy(Request $request, Session $session, SessionWindowService $sessions, SubjekGoRecordLifecycleService $lifecycle): RedirectResponse
+    {
+        Gate::authorize('manage-subjek-go');
+        abort_unless($request->user()->is_super_admin, 403);
+
+        if ($lifecycle->sessionIsUsed($session)) {
+            return back()->with('error', 'This record is already used by other modules.');
+        }
+
+        $session->delete();
+        $sessions->clearCache();
+
+        return $this->backWithSuccess('Session deleted successfully.');
     }
 
     private function closeOtherOpenSessions(?Session $session = null): void

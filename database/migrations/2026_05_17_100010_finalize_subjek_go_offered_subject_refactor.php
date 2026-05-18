@@ -211,6 +211,8 @@ return new class extends Migration
             return;
         }
 
+        $this->ensureCoordinatorForeignKeyIndex();
+
         Schema::table('subjek_go_offered_subjects', function (Blueprint $table) use ($legacyOfferingColumns): void {
             if (Schema::hasIndex('subjek_go_offered_subjects', 'subjek_go_subjects_session_code_index')) {
                 $table->dropIndex('subjek_go_subjects_session_code_index');
@@ -221,6 +223,23 @@ return new class extends Migration
             }
 
             $table->dropColumn($legacyOfferingColumns);
+        });
+    }
+
+    /**
+     * Keep the coordinator FK indexed after the legacy course-code composite index is removed.
+     */
+    private function ensureCoordinatorForeignKeyIndex(): void
+    {
+        if (
+            ! Schema::hasColumn('subjek_go_offered_subjects', 'subject_coordinator_user_id')
+            || Schema::hasIndex('subjek_go_offered_subjects', 'subjek_go_subjects_coordinator_index')
+        ) {
+            return;
+        }
+
+        Schema::table('subjek_go_offered_subjects', function (Blueprint $table): void {
+            $table->index('subject_coordinator_user_id', 'subjek_go_subjects_coordinator_index');
         });
     }
 

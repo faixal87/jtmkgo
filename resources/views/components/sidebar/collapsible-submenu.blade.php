@@ -3,6 +3,7 @@
     'title',
     'active' => false,
     'badge' => null,
+    'nested' => false,
 ])
 
 @php
@@ -10,6 +11,15 @@
     $buttonClass = $active
         ? 'bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)] shadow-sm ring-1 ring-[var(--color-sidebar-border)]'
         : 'text-[var(--color-sidebar-muted)] hover:bg-[var(--color-sidebar-hover)] hover:text-[var(--color-sidebar-text)]';
+    $wrapperClass = $nested
+        ? 'ms-5 rounded-lg bg-transparent p-0 ring-0'
+        : 'rounded-xl bg-[var(--color-sidebar-hover)] p-1 ring-1 ring-[var(--color-sidebar-border)]';
+    $triggerClass = $nested
+        ? 'px-3 py-1.5 text-xs'
+        : 'px-3 py-2 text-sm';
+    $contentClass = $nested
+        ? 'mt-1 space-y-1 border-s border-[var(--color-sidebar-border)] ps-2'
+        : 'mt-1 space-y-1 border-t border-[var(--color-sidebar-border)] pt-1';
 @endphp
 
 <div
@@ -17,7 +27,7 @@
         open: @js((bool) $active) || (localStorage.getItem(@js($storageKey)) === null ? false : localStorage.getItem(@js($storageKey)) === 'true')
     }"
     x-init="$watch('open', value => localStorage.setItem(@js($storageKey), value))"
-    class="rounded-xl bg-[var(--color-sidebar-hover)] p-1 ring-1 ring-[var(--color-sidebar-border)]"
+    class="{{ $wrapperClass }}"
 >
     <button
         type="button"
@@ -31,7 +41,7 @@
                 open = ! open;
             }
         "
-        class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition duration-200 {{ $buttonClass }}"
+        class="flex w-full items-center gap-3 rounded-lg text-left font-medium transition duration-200 {{ $triggerClass }} {{ $buttonClass }}"
         :class="sidebarCollapsed ? 'justify-center px-2' : ''"
     >
         @isset($icon)
@@ -62,7 +72,7 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="translate-y-0 opacity-100"
         x-transition:leave-end="-translate-y-1 opacity-0"
-        class="mt-1 space-y-1 border-t border-[var(--color-sidebar-border)] pt-1"
+        class="{{ $contentClass }}"
     >
         {{ $slot }}
     </div>

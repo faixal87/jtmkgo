@@ -19,13 +19,7 @@ class StoreOfferedSubjectRequest extends FormRequest
     {
         return [
             'session_id' => ['required', 'integer', Rule::exists('subjek_go_sessions', 'id')],
-            'programme_id' => ['nullable', 'integer', Rule::exists('programmes', 'id')],
-            'subject_master_id' => ['required', 'integer', Rule::exists('subjek_go_subject_masters', 'id')],
-            'curriculum_version' => ['nullable', 'string', 'max:255'],
-            'offered_semester' => ['nullable', 'string', 'max:100'],
-            'class_group_ids' => ['required', 'array', 'min:1'],
-            'class_group_ids.*' => ['integer', 'distinct', Rule::exists('subjek_go_class_groups', 'id')],
-            'subject_coordinator_user_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
+            'academic_subject_offering_id' => ['required', 'integer', Rule::exists('academic_subject_offerings', 'id')],
             'remarks' => ['nullable', 'string', 'max:2000'],
         ];
     }

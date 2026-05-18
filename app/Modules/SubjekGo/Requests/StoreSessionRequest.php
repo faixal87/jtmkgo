@@ -21,6 +21,7 @@ class StoreSessionRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'academic_session' => ['required', 'string', 'max:100'],
+            'academic_semester_id' => ['required', 'integer', 'exists:academic_semesters,id'],
             'description' => ['nullable', 'string', 'max:2000'],
             'visibility' => ['required', Rule::in([Session::VISIBILITY_PRIVATE, Session::VISIBILITY_PUBLIC])],
             'status' => ['required', Rule::in([Session::STATUS_DRAFT, Session::STATUS_OPEN, Session::STATUS_CLOSED, Session::STATUS_ARCHIVED])],

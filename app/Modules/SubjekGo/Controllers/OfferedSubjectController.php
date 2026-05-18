@@ -3,16 +3,14 @@
 namespace App\Modules\SubjekGo\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Modules\GantiGo\Models\Programme;
+use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
 use App\Modules\SubjekGo\Controllers\Concerns\RespondsWithSubjekGoFeedback;
-use App\Modules\SubjekGo\Models\ClassGroup;
 use App\Modules\SubjekGo\Models\OfferedSubject;
 use App\Modules\SubjekGo\Models\Session;
-use App\Modules\SubjekGo\Models\SubjectMaster;
 use App\Modules\SubjekGo\Requests\StoreOfferedSubjectRequest;
 use App\Modules\SubjekGo\Requests\UpdateOfferedSubjectRequest;
 use App\Modules\SubjekGo\Services\OfferingManagementService;
+use App\Modules\SubjekGo\Services\SubjekGoRecordLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -31,7 +29,7 @@ class OfferedSubjectController extends Controller
 
         return view('subjek-go.offered-subjects.index', [
             'subjects' => OfferedSubject::query()
-                ->with(['session', 'programme', 'subjectMaster', 'coordinator', 'classGroups'])
+                ->with(['session', 'programme', 'subjectMaster', 'academicSubjectOffering.subject', 'coordinator', 'classGroups'])
                 ->withCount('classGroups')
                 ->when($sessionId, fn ($query) => $query->where('session_id', $sessionId))
                 ->search($search)
@@ -51,10 +49,11 @@ class OfferedSubjectController extends Controller
         return view('subjek-go.offered-subjects.create', [
             'subject' => new OfferedSubject(),
             'sessions' => Session::query()->latest()->get(['id', 'name', 'academic_session']),
-            'programmes' => Programme::query()->active()->orderBy('code')->get(['id', 'code', 'name']),
-            'subjectMasters' => SubjectMaster::query()->active()->orderBy('course_code')->get(['id', 'course_code', 'course_name', 'credit_hour', 'weekly_contact_hour']),
-            'classGroups' => ClassGroup::query()->active()->with('programme')->orderBy('class_name')->get(),
-            'coordinators' => User::query()->approvedStaff()->orderBy('name')->get(['id', 'name']),
+            'academicOfferings' => AcademicSubjectOffering::query()
+                ->with(['semester', 'subject', 'programme', 'coordinator', 'classGroups.programme'])
+                ->active()
+                ->orderBySubjectCode()
+                ->get(),
             'returnTo' => $this->returnTo($request, route('subjek-go.offered-subjects.index')),
         ]);
     }
@@ -62,10 +61,7 @@ class OfferedSubjectController extends Controller
     public function store(StoreOfferedSubjectRequest $request, OfferingManagementService $offerings): RedirectResponse
     {
         $validated = $request->validated();
-        $classGroupIds = $validated['class_group_ids'];
-        unset($validated['class_group_ids']);
-
-        $offerings->create($validated, $classGroupIds);
+        $offerings->create($validated, []);
 
         return $this->safeListWithSuccess(
             $request,
@@ -78,38 +74,32 @@ class OfferedSubjectController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
-        $offeredSubject->load(['subjectMaster', 'classGroups']);
-        $selectedClassGroupIds = $offeredSubject->classGroups->pluck('id');
+        abort_if($offeredSubject->isArchived(), 403, 'Archived records are read-only.');
+
+        $offeredSubject->load(['subjectMaster', 'classGroups', 'academicSubjectOffering']);
 
         return view('subjek-go.offered-subjects.edit', [
             'subject' => $offeredSubject,
             'sessions' => Session::query()->latest()->get(['id', 'name', 'academic_session']),
-            'programmes' => Programme::query()->active()->orderBy('code')->get(['id', 'code', 'name']),
-            'subjectMasters' => SubjectMaster::query()
+            'academicOfferings' => AcademicSubjectOffering::query()
+                ->with(['semester', 'subject', 'programme', 'coordinator', 'classGroups.programme'])
                 ->where(fn ($query) => $query
                     ->where('is_active', true)
-                    ->orWhere('id', $offeredSubject->subject_master_id))
-                ->orderBy('course_code')
-                ->get(['id', 'course_code', 'course_name', 'credit_hour', 'weekly_contact_hour']),
-            'classGroups' => ClassGroup::query()
-                ->where(fn ($query) => $query
-                    ->where('is_active', true)
-                    ->orWhereIn('id', $selectedClassGroupIds))
-                ->with('programme')
-                ->orderBy('class_name')
+                    ->orWhere('id', $offeredSubject->academic_subject_offering_id))
+                ->orderBySubjectCode()
                 ->get(),
-            'coordinators' => User::query()->approvedStaff()->orderBy('name')->get(['id', 'name']),
             'returnTo' => $this->returnTo($request, route('subjek-go.offered-subjects.index')),
         ]);
     }
 
     public function update(UpdateOfferedSubjectRequest $request, OfferedSubject $offeredSubject, OfferingManagementService $offerings): RedirectResponse
     {
-        $validated = $request->validated();
-        $classGroupIds = $validated['class_group_ids'];
-        unset($validated['class_group_ids']);
+        if ($offeredSubject->isArchived()) {
+            return back()->with('error', 'Archived records are read-only.');
+        }
 
-        $offerings->update($offeredSubject, $validated, $classGroupIds);
+        $validated = $request->validated();
+        $offerings->update($offeredSubject, $validated, []);
 
         return $this->safeListWithSuccess(
             $request,
@@ -122,10 +112,44 @@ class OfferedSubjectController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
+        if ($offeredSubject->isArchived()) {
+            return back()->with('error', 'Archived records are read-only.');
+        }
+
         $offeredSubject->update(['is_active' => ! $offeredSubject->is_active]);
 
         return $this->backWithSuccess($offeredSubject->is_active
             ? 'Offered subject enabled successfully.'
             : 'Offered subject disabled successfully.');
+    }
+
+    public function archive(OfferedSubject $offeredSubject): RedirectResponse
+    {
+        Gate::authorize('manage-subjek-go');
+
+        if ($offeredSubject->isArchived()) {
+            return back()->with('status', 'Offered subject is already archived.');
+        }
+
+        $offeredSubject->update([
+            'is_active' => false,
+            'archived_at' => now(),
+        ]);
+
+        return $this->backWithSuccess('Offered subject archived successfully.');
+    }
+
+    public function destroy(Request $request, OfferedSubject $offeredSubject, SubjekGoRecordLifecycleService $lifecycle): RedirectResponse
+    {
+        Gate::authorize('manage-subjek-go');
+        abort_unless($request->user()->is_super_admin, 403);
+
+        if ($lifecycle->offeredSubjectIsUsed($offeredSubject)) {
+            return back()->with('error', 'This record is already used by other modules.');
+        }
+
+        $offeredSubject->delete();
+
+        return $this->backWithSuccess('Offered subject deleted successfully.');
     }
 }

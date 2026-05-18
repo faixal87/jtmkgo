@@ -3,21 +3,26 @@
 namespace App\Modules\SubjekGo\Models;
 
 use App\Models\User;
+use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
 use App\Modules\GantiGo\Models\Programme;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OfferedSubject extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'subjek_go_offered_subjects';
 
     protected $fillable = [
         'session_id',
         'programme_id',
         'subject_master_id',
+        'academic_subject_offering_id',
         'curriculum_version',
         'offered_semester',
         'subject_coordinator_user_id',
@@ -38,6 +43,11 @@ class OfferedSubject extends Model
     public function subjectMaster(): BelongsTo
     {
         return $this->belongsTo(SubjectMaster::class);
+    }
+
+    public function academicSubjectOffering(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSubjectOffering::class);
     }
 
     public function coordinator(): BelongsTo
@@ -87,7 +97,9 @@ class OfferedSubject extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query
+            ->where('is_active', true)
+            ->whereNull('archived_at');
     }
 
     public function scopeSearch(Builder $query, ?string $search): Builder
@@ -101,6 +113,9 @@ class OfferedSubject extends Model
                 ->whereHas('subjectMaster', fn (Builder $query) => $query
                     ->where('course_code', 'like', "%{$search}%")
                     ->orWhere('course_name', 'like', "%{$search}%"))
+                ->orWhereHas('academicSubjectOffering.subject', fn (Builder $query) => $query
+                    ->where('course_code', 'like', "%{$search}%")
+                    ->orWhere('course_name', 'like', "%{$search}%"))
                 ->orWhere('offered_semester', 'like', "%{$search}%")
                 ->orWhereHas('programme', fn (Builder $query) => $query
                     ->where('code', 'like', "%{$search}%")
@@ -110,27 +125,27 @@ class OfferedSubject extends Model
 
     public function getLabelAttribute(): string
     {
-        return trim(($this->subjectMaster?->course_code ?? 'Unknown subject').' - '.($this->subjectMaster?->course_name ?? ''));
+        return trim(($this->resolvedSubject()?->course_code ?? 'Unknown subject').' - '.($this->resolvedSubject()?->course_name ?? ''));
     }
 
     public function getCourseCodeAttribute(): ?string
     {
-        return $this->subjectMaster?->course_code;
+        return $this->resolvedSubject()?->course_code;
     }
 
     public function getCourseNameAttribute(): ?string
     {
-        return $this->subjectMaster?->course_name;
+        return $this->resolvedSubject()?->course_name;
     }
 
     public function getCreditHourAttribute(): ?string
     {
-        return $this->subjectMaster?->credit_hour;
+        return $this->resolvedSubject()?->credit_hour;
     }
 
     public function getWeeklyContactHourAttribute(): ?string
     {
-        return $this->subjectMaster?->weekly_contact_hour;
+        return $this->resolvedSubject()?->weekly_contact_hour;
     }
 
     public function getTotalClassGroupsAttribute(): int
@@ -155,10 +170,21 @@ class OfferedSubject extends Model
         );
     }
 
+    private function resolvedSubject(): mixed
+    {
+        return $this->academicSubjectOffering?->subject ?? $this->subjectMaster;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
+    }
+
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'archived_at' => 'datetime',
         ];
     }
 }

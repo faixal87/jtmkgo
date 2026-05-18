@@ -11,6 +11,19 @@
         <x-text-input id="academic_session" name="academic_session" class="mt-1 block w-full" :value="old('academic_session', $session?->academic_session)" placeholder="e.g. 2026/2027" required />
         <x-input-error :messages="$errors->get('academic_session')" class="mt-2" />
     </div>
+    <div class="md:col-span-2">
+        <x-input-label for="academic_semester_id" value="Academic Semester" />
+        <select id="academic_semester_id" name="academic_semester_id" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]" required>
+            <option value="">Select academic semester</option>
+            @foreach ($academicSemesters as $academicSemester)
+                <option value="{{ $academicSemester->id }}" @selected((int) old('academic_semester_id', $session?->academic_semester_id) === $academicSemester->id)>
+                    {{ $academicSemester->name }} ({{ $academicSemester->academic_session }})
+                </option>
+            @endforeach
+        </select>
+        <x-form-helper>SubjekGo sessions are now linked to the shared Academic Core semester record.</x-form-helper>
+        <x-input-error :messages="$errors->get('academic_semester_id')" class="mt-2" />
+    </div>
     <div>
         <x-input-label for="visibility" value="Visibility" />
         <select id="visibility" name="visibility" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">

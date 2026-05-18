@@ -3,13 +3,27 @@
 namespace App\Modules\GantiGo\Services;
 
 use App\Models\User;
+use App\Modules\AcademicCore\Services\AcademicCoreProjectionService;
+use App\Modules\AcademicCore\Services\AcademicSemesterActivationService;
 use App\Modules\GantiGo\Models\Semester;
 use Illuminate\Support\Facades\DB;
 
 class SemesterActivationService
 {
+    public function __construct(
+        private readonly AcademicSemesterActivationService $academicSemesters,
+        private readonly AcademicCoreProjectionService $projections,
+    ) {
+    }
+
     public function autoActivateForToday(): ?Semester
     {
+        $academicSemester = $this->academicSemesters->autoActivateForToday();
+
+        if ($academicSemester) {
+            return $this->projections->mirrorSemesterForGantiGo($academicSemester);
+        }
+
         $today = now()->toDateString();
 
         $semester = Semester::query()

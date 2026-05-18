@@ -13,6 +13,10 @@ use App\Http\Controllers\SuperAdmin\UserApprovalController;
 use App\Http\Controllers\SuperAdmin\UserImportController;
 use App\Models\Module;
 use App\Support\SafeArrayCache;
+use App\Modules\AcademicCore\Controllers\AcademicClassGroupController;
+use App\Modules\AcademicCore\Controllers\AcademicSemesterController;
+use App\Modules\AcademicCore\Controllers\AcademicSubjectController;
+use App\Modules\AcademicCore\Controllers\AcademicSubjectOfferingController;
 use App\Modules\GantiGo\Controllers\AdminReplacementController as GantiGoAdminReplacementController;
 use App\Modules\GantiGo\Controllers\ClassReplacementController as GantiGoClassReplacementController;
 use App\Modules\GantiGo\Controllers\ClassGroupController as GantiGoClassGroupController;
@@ -174,6 +178,33 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ad
         Route::delete('/{module:slug}/access/{access}', [ModuleAccessController::class, 'revoke'])->name('access.revoke');
     });
 
+Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'can:manage-academic-core'])
+    ->prefix('academic-core')
+    ->name('academic-core.')
+    ->group(function () {
+        Route::patch('semesters/{semester}/activate', [AcademicSemesterController::class, 'activate'])->name('semesters.activate');
+        Route::patch('semesters/{semester}/archive', [AcademicSemesterController::class, 'archive'])->name('semesters.archive');
+        Route::delete('semesters/{semester}', [AcademicSemesterController::class, 'destroy'])->name('semesters.destroy');
+        Route::resource('semesters', AcademicSemesterController::class)->except(['show', 'destroy']);
+
+        Route::patch('subjects/{subject}/toggle', [AcademicSubjectController::class, 'toggle'])->name('subjects.toggle');
+        Route::patch('subjects/{subject}/archive', [AcademicSubjectController::class, 'archive'])->name('subjects.archive');
+        Route::delete('subjects/{subject}', [AcademicSubjectController::class, 'destroy'])->name('subjects.destroy');
+        Route::resource('subjects', AcademicSubjectController::class)->except(['show', 'destroy']);
+
+        Route::patch('class-groups/{classGroup}/toggle', [AcademicClassGroupController::class, 'toggle'])->name('class-groups.toggle');
+        Route::patch('class-groups/{classGroup}/archive', [AcademicClassGroupController::class, 'archive'])->name('class-groups.archive');
+        Route::delete('class-groups/{classGroup}', [AcademicClassGroupController::class, 'destroy'])->name('class-groups.destroy');
+        Route::resource('class-groups', AcademicClassGroupController::class)
+            ->parameters(['class-groups' => 'classGroup'])
+            ->except(['show', 'destroy']);
+
+        Route::patch('offerings/{offering}/toggle', [AcademicSubjectOfferingController::class, 'toggle'])->name('offerings.toggle');
+        Route::patch('offerings/{offering}/archive', [AcademicSubjectOfferingController::class, 'archive'])->name('offerings.archive');
+        Route::delete('offerings/{offering}', [AcademicSubjectOfferingController::class, 'destroy'])->name('offerings.destroy');
+        Route::resource('offerings', AcademicSubjectOfferingController::class)->except(['show', 'destroy']);
+    });
+
 Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.access:ganti-go'])
     ->prefix('ganti-go')
     ->name('ganti-go.')
@@ -196,19 +227,21 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
             Route::patch('admin/replacements/{classReplacement}/approve', [GantiGoAdminReplacementController::class, 'approve'])->name('admin.replacements.approve');
             Route::patch('admin/replacements/{classReplacement}/reject', [GantiGoAdminReplacementController::class, 'reject'])->name('admin.replacements.reject');
 
-            Route::resource('semesters', GantiGoSemesterController::class)->except(['show', 'destroy']);
-            Route::patch('semesters/{semester}/activate', [GantiGoSemesterController::class, 'activate'])->name('semesters.activate');
-            Route::get('semesters/{semester}/setup', [GantiGoSemesterController::class, 'setup'])->name('semesters.setup');
-            Route::patch('semesters/{semester}/offerings', [GantiGoSemesterController::class, 'syncOfferings'])->name('semesters.offerings.sync');
+            Route::middleware('can:manage-academic-core')->group(function () {
+                Route::resource('semesters', GantiGoSemesterController::class)->except(['show', 'destroy']);
+                Route::patch('semesters/{semester}/activate', [GantiGoSemesterController::class, 'activate'])->name('semesters.activate');
+                Route::get('semesters/{semester}/setup', [GantiGoSemesterController::class, 'setup'])->name('semesters.setup');
+                Route::patch('semesters/{semester}/offerings', [GantiGoSemesterController::class, 'syncOfferings'])->name('semesters.offerings.sync');
 
-            Route::patch('courses/{course}/toggle', [GantiGoCourseController::class, 'toggle'])->name('courses.toggle');
-            Route::resource('courses', GantiGoCourseController::class)->except(['show', 'destroy']);
+                Route::patch('courses/{course}/toggle', [GantiGoCourseController::class, 'toggle'])->name('courses.toggle');
+                Route::resource('courses', GantiGoCourseController::class)->except(['show', 'destroy']);
+
+                Route::patch('classes/{classGroup}/toggle', [GantiGoClassGroupController::class, 'toggle'])->name('classes.toggle');
+                Route::resource('classes', GantiGoClassGroupController::class)->parameters(['classes' => 'classGroup'])->except(['show', 'destroy']);
+            });
 
             Route::patch('programmes/{programme}/toggle', [GantiGoProgrammeController::class, 'toggle'])->name('programmes.toggle');
             Route::resource('programmes', GantiGoProgrammeController::class)->except(['show', 'destroy']);
-
-            Route::patch('classes/{classGroup}/toggle', [GantiGoClassGroupController::class, 'toggle'])->name('classes.toggle');
-            Route::resource('classes', GantiGoClassGroupController::class)->parameters(['classes' => 'classGroup'])->except(['show', 'destroy']);
 
             Route::get('settings', [GantiGoSettingController::class, 'edit'])->name('settings.edit');
             Route::patch('settings', [GantiGoSettingController::class, 'update'])->name('settings.update');
@@ -264,16 +297,23 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
             Route::resource('sessions', SubjekGoSessionController::class)->except(['show', 'destroy']);
             Route::patch('/sessions/{session}/status', [SubjekGoSessionController::class, 'status'])->name('sessions.status');
             Route::patch('/sessions/{session}/reopen-all', [SubjekGoSessionController::class, 'reopenAll'])->name('sessions.reopen-all');
+            Route::delete('/sessions/{session}', [SubjekGoSessionController::class, 'destroy'])->name('sessions.destroy');
 
             Route::patch('/offered-subjects/{offeredSubject}/toggle', [SubjekGoOfferedSubjectController::class, 'toggle'])->name('offered-subjects.toggle');
+            Route::patch('/offered-subjects/{offeredSubject}/archive', [SubjekGoOfferedSubjectController::class, 'archive'])->name('offered-subjects.archive');
+            Route::delete('/offered-subjects/{offeredSubject}', [SubjekGoOfferedSubjectController::class, 'destroy'])->name('offered-subjects.destroy');
             Route::resource('offered-subjects', SubjekGoOfferedSubjectController::class)->except(['show', 'destroy']);
 
             Route::patch('/subject-masters/{subjectMaster}/toggle', [SubjekGoSubjectMasterController::class, 'toggle'])->name('subject-masters.toggle');
+            Route::patch('/subject-masters/{subjectMaster}/archive', [SubjekGoSubjectMasterController::class, 'archive'])->name('subject-masters.archive');
+            Route::delete('/subject-masters/{subjectMaster}', [SubjekGoSubjectMasterController::class, 'destroy'])->name('subject-masters.destroy');
             Route::resource('subject-masters', SubjekGoSubjectMasterController::class)
                 ->parameters(['subject-masters' => 'subjectMaster'])
                 ->except(['show', 'destroy']);
 
             Route::patch('/class-groups/{classGroup}/toggle', [SubjekGoClassGroupController::class, 'toggle'])->name('class-groups.toggle');
+            Route::patch('/class-groups/{classGroup}/archive', [SubjekGoClassGroupController::class, 'archive'])->name('class-groups.archive');
+            Route::delete('/class-groups/{classGroup}', [SubjekGoClassGroupController::class, 'destroy'])->name('class-groups.destroy');
             Route::resource('class-groups', SubjekGoClassGroupController::class)
                 ->parameters(['class-groups' => 'classGroup'])
                 ->except(['show', 'destroy']);

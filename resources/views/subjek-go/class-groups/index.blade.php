@@ -40,7 +40,7 @@
                                     @endif
                                 </p>
                             </div>
-                            <span class="theme-badge">{{ $classGroup->is_active ? 'Active' : 'Inactive' }}</span>
+                            <x-lifecycle-badge :active="$classGroup->is_active" :archived="$classGroup->isArchived()" />
                         </div>
 
                         <dl class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
@@ -50,13 +50,33 @@
                             </div>
                         </dl>
 
-                        <div class="mt-5 flex flex-wrap justify-end gap-2">
-                            <a href="{{ route('subjek-go.class-groups.edit', [$classGroup, 'return_to' => url()->full()]) }}" class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">Edit</a>
-                            <form method="POST" action="{{ route('subjek-go.class-groups.toggle', $classGroup) }}">
-                                @csrf
-                                @method('PATCH')
-                                <button class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">{{ $classGroup->is_active ? 'Disable' : 'Enable' }}</button>
-                            </form>
+                        <div class="mt-5 flex justify-end">
+                            <x-dropdown align="right" width="48" contentClasses="border border-[var(--color-border)] bg-[var(--color-surface)] py-1">
+                                <x-slot name="trigger">
+                                    <button type="button" class="theme-button-secondary inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold">
+                                        Actions
+                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 7.22a.75.75 0 0 1 1.06 0L10 10.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                </x-slot>
+                                <x-slot name="content">
+                                    @unless ($classGroup->isArchived())
+                                        <a href="{{ route('subjek-go.class-groups.edit', [$classGroup, 'return_to' => url()->full()]) }}" class="block w-full px-4 py-2 text-left text-sm text-[var(--color-text)] transition hover:bg-[var(--color-accent-soft)]">Edit</a>
+                                        <form method="POST" action="{{ route('subjek-go.class-groups.toggle', $classGroup) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="block w-full px-4 py-2 text-left text-sm text-[var(--color-text)] transition hover:bg-[var(--color-accent-soft)]">{{ $classGroup->is_active ? 'Disable' : 'Enable' }}</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('subjek-go.class-groups.archive', $classGroup) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button class="block w-full px-4 py-2 text-left text-sm text-[var(--color-text)] transition hover:bg-[var(--color-accent-soft)]">Archive</button>
+                                        </form>
+                                    @endunless
+                                    @if (auth()->user()?->is_super_admin)
+                                        <button type="button" x-data @click="$dispatch('open-modal', 'delete-subjek-class-group-{{ $classGroup->id }}')" class="block w-full px-4 py-2 text-left text-sm text-red-600 transition hover:bg-red-50">Delete</button>
+                                    @endif
+                                </x-slot>
+                            </x-dropdown>
                         </div>
                     </article>
                 @empty
@@ -65,6 +85,25 @@
                     </div>
                 @endforelse
             </div>
+
+            @if (auth()->user()?->is_super_admin)
+                @foreach ($classGroups as $classGroup)
+                    <x-modal name="delete-subjek-class-group-{{ $classGroup->id }}" maxWidth="md">
+                        <form method="POST" action="{{ route('subjek-go.class-groups.destroy', $classGroup) }}" class="space-y-5 bg-[var(--color-surface)] p-6">
+                            @csrf
+                            @method('DELETE')
+                            <div>
+                                <h3 class="text-lg font-semibold text-[var(--color-text)]">Delete class group?</h3>
+                                <p class="mt-2 text-sm text-[var(--color-muted)]">Linked offerings keep their class groups protected. Archive the record if it belongs in history.</p>
+                            </div>
+                            <div class="flex flex-wrap justify-end gap-3">
+                                <button type="button" x-data @click="$dispatch('close-modal', 'delete-subjek-class-group-{{ $classGroup->id }}')" class="theme-button-secondary rounded-lg px-4 py-2 text-sm font-semibold">Cancel</button>
+                                <x-danger-button>Delete</x-danger-button>
+                            </div>
+                        </form>
+                    </x-modal>
+                @endforeach
+            @endif
 
             {{ $classGroups->links() }}
         </div>

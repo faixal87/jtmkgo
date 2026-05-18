@@ -2,6 +2,7 @@
 
 namespace App\Modules\GantiGo\Models;
 
+use App\Modules\AcademicCore\Models\AcademicSubject;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ class MasterCourse extends Model
         'course_name',
         'programme_id',
         'is_active',
+        'academic_subject_id',
     ];
 
     public function programme(): BelongsTo
@@ -29,6 +31,11 @@ class MasterCourse extends Model
     public function courses(): HasMany
     {
         return $this->hasMany(Course::class);
+    }
+
+    public function academicSubject(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSubject::class);
     }
 
     public function setCourseCodeAttribute(?string $value): void

@@ -2,6 +2,7 @@
 
 namespace App\Modules\GantiGo\Models;
 
+use App\Modules\AcademicCore\Models\AcademicClassGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ class MasterClassGroup extends Model
         'class_group_name',
         'programme_id',
         'is_active',
+        'academic_class_group_id',
     ];
 
     public function programme(): BelongsTo
@@ -28,6 +30,11 @@ class MasterClassGroup extends Model
     public function classes(): HasMany
     {
         return $this->hasMany(ClassGroup::class);
+    }
+
+    public function academicClassGroup(): BelongsTo
+    {
+        return $this->belongsTo(AcademicClassGroup::class);
     }
 
     public function setClassGroupNameAttribute(?string $value): void

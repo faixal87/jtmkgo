@@ -28,6 +28,7 @@ return [
         'request_module_access' => 'Request Module Access',
         'no_modules_assigned' => 'No modules assigned.',
         'user_management' => 'User Management',
+        'academic_core' => 'Academic Core',
         'semester_management' => 'Semester Management',
         'course_management' => 'Course Management',
         'programmes_classes' => 'Programmes & Classes',
@@ -35,6 +36,10 @@ return [
         'access_requests' => 'Access Requests',
         'access_control' => 'Access Control',
         'branding_settings' => 'Branding Settings',
+        'academic_semesters' => 'Academic Semesters',
+        'academic_subjects' => 'Academic Subjects',
+        'academic_class_groups' => 'Class Groups',
+        'subject_offerings' => 'Subject Offerings',
     ],
     'topbar' => [
         'notifications' => 'Notifications',

@@ -2,14 +2,18 @@
 
 namespace App\Modules\SubjekGo\Models;
 
+use App\Modules\AcademicCore\Models\AcademicClassGroup;
 use App\Modules\GantiGo\Models\Programme;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ClassGroup extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'subjek_go_class_groups';
 
     protected $fillable = [
@@ -19,6 +23,7 @@ class ClassGroup extends Model
         'current_semester',
         'remarks',
         'is_active',
+        'academic_class_group_id',
     ];
 
     public function programme(): BelongsTo
@@ -36,9 +41,16 @@ class ClassGroup extends Model
         )->withTimestamps();
     }
 
+    public function academicClassGroup(): BelongsTo
+    {
+        return $this->belongsTo(AcademicClassGroup::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query
+            ->where('is_active', true)
+            ->whereNull('archived_at');
     }
 
     public function scopeSearch(Builder $query, ?string $search): Builder
@@ -68,10 +80,16 @@ class ClassGroup extends Model
         $this->attributes['class_name'] = $value === null ? null : strtoupper(trim($value));
     }
 
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
+    }
+
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'archived_at' => 'datetime',
         ];
     }
 }

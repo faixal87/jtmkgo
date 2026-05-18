@@ -4,6 +4,8 @@
     $navActive = 'bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)] shadow-sm ring-1 ring-[var(--color-sidebar-border)]';
     $subItem = 'block rounded-lg px-9 py-1.5 text-xs font-medium transition duration-200';
     $mobileSubItem = 'block rounded-lg px-3 py-1.5 text-xs font-medium transition duration-200';
+    $nestedSubItem = 'block rounded-lg px-4 py-1.5 text-xs font-medium transition duration-200';
+    $mobileNestedSubItem = 'block rounded-lg px-3 py-1.5 text-xs font-medium transition duration-200';
     $subIdle = 'text-[var(--color-sidebar-muted)] hover:bg-[var(--color-sidebar-hover)] hover:text-[var(--color-sidebar-text)]';
     $subActive = 'bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)]';
     $subDisabled = 'cursor-not-allowed text-[var(--color-sidebar-disabled)]';
@@ -18,7 +20,17 @@
     $canViewPhotoRepositoryAnalytics = $photoRepositoryModule && ($isSuperAdmin || $canManagePhotoRepository);
     $canManageSubjekGo = $subjekGoModule && ! $isSuperAdmin && $managedModuleIds->contains($subjekGoModule->id);
     $canViewSubjekGoAnalytics = $subjekGoModule && ($isSuperAdmin || $canManageSubjekGo);
+    $canManageAcademicCore = $user?->can('manage-academic-core') ?? false;
     $canManageAnyModule = $isSuperAdmin || $managedModuleIds->isNotEmpty();
+    $showAdminMenu = $canManageAnyModule || $canManageAcademicCore;
+    $academicCoreActive = request()->routeIs('academic-core.*');
+    $adminRoutesActive = request()->routeIs('super-admin.users.*')
+        || $academicCoreActive
+        || request()->routeIs('admin.notifications.*')
+        || request()->routeIs('notifications.*')
+        || request()->routeIs('admin.module-access-requests.*')
+        || request()->routeIs('super-admin.access-control.*')
+        || request()->routeIs('super-admin.settings.*');
     $workspaceLogo = $branding->asset($brandingSettings['sidebar_logo'] ?? null);
     $workspaceBrandText = $brandingSettings['sidebar_brand_text'] ?? $brandingSettings['workspace_brand_text'] ?? 'JTMK';
     $logoSize = in_array($brandingSettings['sidebar_logo_size'] ?? 'medium', ['large', 'medium', 'small'], true) ? $brandingSettings['sidebar_logo_size'] : 'medium';
@@ -104,10 +116,6 @@
                     @if ($canManageGantiGo)
                         <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.review_queue') }}</a>
                         <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.admin') }}</span>
-                        <a href="{{ route('ganti-go.courses.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.courses') }}</a>
-                        <a href="{{ route('ganti-go.classes.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.classes.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.classes') }}</a>
-                        <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.semester') }}</a>
-                        <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.programmes.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.programmes') }}</a>
                         <a href="{{ route('ganti-go.settings.edit') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.settings.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.settings') }}</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
@@ -162,9 +170,7 @@
                         <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.admin') }}</span>
                         <a href="{{ route('subjek-go.admin.preferences.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.admin.preferences.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.lecturer_preferences') }}</a>
                         <a href="{{ route('subjek-go.sessions.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.sessions.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.sessions') }}</a>
-                        <a href="{{ route('subjek-go.subject-masters.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.subject-masters.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.subject_masters') }}</a>
                         <a href="{{ route('subjek-go.offered-subjects.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.offered-subjects.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.offered_subjects') }}</a>
-                        <a href="{{ route('subjek-go.class-groups.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.class-groups.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.class_groups') }}</a>
                         <a href="{{ route('subjek-go.subject-coordinators.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.subject-coordinators.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.subject_coordinators') }}</a>
                     @endif
                     <a href="{{ route('subjek-go.teaching-history.index') }}" class="{{ $subItem }} {{ request()->routeIs('subjek-go.teaching-history.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.teaching_history') }}</a>
@@ -190,87 +196,46 @@
             @endif
         </x-sidebar.section>
 
-        @if ($canManageAnyModule)
-            <x-sidebar.section :title="__('app.sidebar.admin')">
-                @if ($user?->is_super_admin)
-                    <a href="{{ route('super-admin.users.index') }}" class="{{ $navItem }} {{ request()->routeIs('super-admin.users.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
-                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                            <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                        </svg>
-                        <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.user_management') }}</span>
-                    </a>
-                @endif
-
-                @if ($canManageGantiGo)
-                    <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $navItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
-                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M8 2v4" />
-                            <path d="M16 2v4" />
-                            <path d="M4 9h16" />
-                            <path d="M5 5h14a1 1 0 0 1 1 1v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1Z" />
-                        </svg>
-                        <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.semester_management') }}</span>
-                    </a>
-                    <a href="{{ route('ganti-go.courses.index') }}" class="{{ $navItem }} {{ request()->routeIs('ganti-go.courses.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
-                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z" />
-                            <path d="M8 7h6" />
-                            <path d="M8 11h8" />
-                        </svg>
-                        <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.course_management') }}</span>
-                    </a>
-                    <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $navItem }} {{ request()->routeIs('ganti-go.programmes.*') || request()->routeIs('ganti-go.classes.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
-                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M4 6h16" />
-                            <path d="M4 12h16" />
-                            <path d="M4 18h10" />
-                        </svg>
-                        <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.programmes_classes') }}</span>
-                    </a>
-                @endif
-
-                <a href="{{ route('admin.notifications.create') }}" class="{{ $navItem }} {{ request()->routeIs('admin.notifications.*') || request()->routeIs('notifications.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
-                    <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                    </svg>
-                    <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.notifications') }}</span>
-                </a>
-
-                <a href="{{ route('admin.module-access-requests.index') }}" class="{{ $navItem }} {{ request()->routeIs('admin.module-access-requests.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
-                    <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
-                        <path d="M9 12h6" />
-                    </svg>
-                    <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.access_requests') }}</span>
-                </a>
-
-                @if ($user?->is_super_admin)
-                    <a href="{{ route('super-admin.access-control.index') }}" class="{{ $navItem }} {{ request()->routeIs('super-admin.access-control.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
-                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        @if ($showAdminMenu)
+            <div class="mt-6">
+                <x-sidebar.collapsible-submenu id="admin" :title="__('app.sidebar.admin')" :active="$adminRoutesActive">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
-                            <path d="m9 12 2 2 4-4" />
+                            <path d="M9 12h6" />
                         </svg>
-                        <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.access_control') }}</span>
-                    </a>
-                    <a href="{{ route('super-admin.settings.branding.edit') }}" class="{{ $navItem }} {{ request()->routeIs('super-admin.settings.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
-                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path d="M12 3v3" />
-                            <path d="M12 18v3" />
-                            <path d="M4.22 4.22 6.34 6.34" />
-                            <path d="m17.66 17.66 2.12 2.12" />
-                            <path d="M3 12h3" />
-                            <path d="M18 12h3" />
-                            <path d="m4.22 19.78 2.12-2.12" />
-                            <path d="m17.66 6.34 2.12-2.12" />
-                            <path d="M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0Z" />
-                        </svg>
-                        <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.branding_settings') }}</span>
-                    </a>
-                @endif
-            </x-sidebar.section>
+                    </x-slot>
+
+                    @if ($user?->is_super_admin)
+                        <a href="{{ route('super-admin.users.index') }}" class="{{ $subItem }} {{ request()->routeIs('super-admin.users.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.user_management') }}</a>
+                    @endif
+
+                    @if ($canManageAcademicCore)
+                        <x-sidebar.collapsible-submenu id="admin-academic-core" :title="__('app.sidebar.academic_core')" :active="$academicCoreActive" :nested="true">
+                            <x-slot name="icon">
+                                <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z" />
+                                    <path d="M8 7h8" />
+                                    <path d="M8 11h6" />
+                                </svg>
+                            </x-slot>
+
+                            <a href="{{ route('academic-core.semesters.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('academic-core.semesters.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.academic_semesters') }}</a>
+                            <a href="{{ route('academic-core.subjects.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('academic-core.subjects.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.academic_subjects') }}</a>
+                            <a href="{{ route('academic-core.class-groups.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('academic-core.class-groups.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.academic_class_groups') }}</a>
+                            <a href="{{ route('academic-core.offerings.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('academic-core.offerings.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.subject_offerings') }}</a>
+                        </x-sidebar.collapsible-submenu>
+                    @endif
+
+                    <a href="{{ route('admin.notifications.create') }}" class="{{ $subItem }} {{ request()->routeIs('admin.notifications.*') || request()->routeIs('notifications.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.notifications') }}</a>
+                    <a href="{{ route('admin.module-access-requests.index') }}" class="{{ $subItem }} {{ request()->routeIs('admin.module-access-requests.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.access_requests') }}</a>
+
+                    @if ($user?->is_super_admin)
+                        <a href="{{ route('super-admin.access-control.index') }}" class="{{ $subItem }} {{ request()->routeIs('super-admin.access-control.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.access_control') }}</a>
+                        <a href="{{ route('super-admin.settings.branding.edit') }}" class="{{ $subItem }} {{ request()->routeIs('super-admin.settings.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.branding_settings') }}</a>
+                    @endif
+                </x-sidebar.collapsible-submenu>
+            </div>
         @endif
     </nav>
 </aside>
@@ -336,10 +301,6 @@
                     @if ($canManageGantiGo)
                         <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.review_queue') }}</a>
                         <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.admin') }}</span>
-                        <a href="{{ route('ganti-go.courses.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.courses') }}</a>
-                        <a href="{{ route('ganti-go.classes.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.classes.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.classes') }}</a>
-                        <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.semester') }}</a>
-                        <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.programmes.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.programmes') }}</a>
                         <a href="{{ route('ganti-go.settings.edit') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.settings.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.settings') }}</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
@@ -394,9 +355,7 @@
                         <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.admin') }}</span>
                         <a href="{{ route('subjek-go.admin.preferences.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.admin.preferences.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.lecturer_preferences') }}</a>
                         <a href="{{ route('subjek-go.sessions.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.sessions.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.sessions') }}</a>
-                        <a href="{{ route('subjek-go.subject-masters.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.subject-masters.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.subject_masters') }}</a>
                         <a href="{{ route('subjek-go.offered-subjects.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.offered-subjects.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.offered_subjects') }}</a>
-                        <a href="{{ route('subjek-go.class-groups.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.class-groups.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.class_groups') }}</a>
                         <a href="{{ route('subjek-go.subject-coordinators.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.subject-coordinators.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.subject_coordinators') }}</a>
                     @endif
                     <a href="{{ route('subjek-go.teaching-history.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.teaching-history.*') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.teaching_history') }}</a>
@@ -407,23 +366,45 @@
             @endif
         </x-sidebar.section>
 
-        @if ($canManageAnyModule)
-            <x-sidebar.section :title="__('app.sidebar.admin')">
-                @if ($user?->is_super_admin)
-                    <a href="{{ route('super-admin.users.index') }}" class="{{ $navItem }} {{ request()->routeIs('super-admin.users.*') ? $navActive : $navIdle }}">{{ __('app.sidebar.user_management') }}</a>
-                @endif
-                @if ($canManageGantiGo)
-                    <a href="{{ route('ganti-go.semesters.index') }}" class="{{ $navItem }} {{ request()->routeIs('ganti-go.semesters.*') ? $navActive : $navIdle }}">{{ __('app.sidebar.semester_management') }}</a>
-                    <a href="{{ route('ganti-go.courses.index') }}" class="{{ $navItem }} {{ request()->routeIs('ganti-go.courses.*') ? $navActive : $navIdle }}">{{ __('app.sidebar.course_management') }}</a>
-                    <a href="{{ route('ganti-go.programmes.index') }}" class="{{ $navItem }} {{ request()->routeIs('ganti-go.programmes.*') || request()->routeIs('ganti-go.classes.*') ? $navActive : $navIdle }}">{{ __('app.sidebar.programmes_classes') }}</a>
-                @endif
-                <a href="{{ route('admin.notifications.create') }}" class="{{ $navItem }} {{ request()->routeIs('admin.notifications.*') || request()->routeIs('notifications.*') ? $navActive : $navIdle }}">{{ __('app.sidebar.notifications') }}</a>
-                <a href="{{ route('admin.module-access-requests.index') }}" class="{{ $navItem }} {{ request()->routeIs('admin.module-access-requests.*') ? $navActive : $navIdle }}">{{ __('app.sidebar.access_requests') }}</a>
-                @if ($user?->is_super_admin)
-                    <a href="{{ route('super-admin.access-control.index') }}" class="{{ $navItem }} {{ request()->routeIs('super-admin.access-control.*') ? $navActive : $navIdle }}">{{ __('app.sidebar.access_control') }}</a>
-                    <a href="{{ route('super-admin.settings.branding.edit') }}" class="{{ $navItem }} {{ request()->routeIs('super-admin.settings.*') ? $navActive : $navIdle }}">{{ __('app.sidebar.branding_settings') }}</a>
-                @endif
-            </x-sidebar.section>
+        @if ($showAdminMenu)
+            <div class="mt-6">
+                <x-sidebar.collapsible-submenu id="mobile-admin" :title="__('app.sidebar.admin')" :active="$adminRoutesActive">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                            <path d="M9 12h6" />
+                        </svg>
+                    </x-slot>
+
+                    @if ($user?->is_super_admin)
+                        <a href="{{ route('super-admin.users.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('super-admin.users.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.user_management') }}</a>
+                    @endif
+
+                    @if ($canManageAcademicCore)
+                        <x-sidebar.collapsible-submenu id="mobile-admin-academic-core" :title="__('app.sidebar.academic_core')" :active="$academicCoreActive" :nested="true">
+                            <x-slot name="icon">
+                                <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z" />
+                                    <path d="M8 7h8" />
+                                    <path d="M8 11h6" />
+                                </svg>
+                            </x-slot>
+
+                            <a href="{{ route('academic-core.semesters.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('academic-core.semesters.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.academic_semesters') }}</a>
+                            <a href="{{ route('academic-core.subjects.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('academic-core.subjects.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.academic_subjects') }}</a>
+                            <a href="{{ route('academic-core.class-groups.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('academic-core.class-groups.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.academic_class_groups') }}</a>
+                            <a href="{{ route('academic-core.offerings.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('academic-core.offerings.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.subject_offerings') }}</a>
+                        </x-sidebar.collapsible-submenu>
+                    @endif
+
+                    <a href="{{ route('admin.notifications.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('admin.notifications.*') || request()->routeIs('notifications.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.notifications') }}</a>
+                    <a href="{{ route('admin.module-access-requests.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('admin.module-access-requests.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.access_requests') }}</a>
+                    @if ($user?->is_super_admin)
+                        <a href="{{ route('super-admin.access-control.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('super-admin.access-control.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.access_control') }}</a>
+                        <a href="{{ route('super-admin.settings.branding.edit') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('super-admin.settings.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.branding_settings') }}</a>
+                    @endif
+                </x-sidebar.collapsible-submenu>
+            </div>
         @endif
     </nav>
 </aside>

@@ -3,13 +3,17 @@
 namespace App\Modules\SubjekGo\Models;
 
 use App\Models\User;
+use App\Modules\AcademicCore\Models\AcademicSemester;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Session extends Model
 {
+    use SoftDeletes;
+
     public const VISIBILITY_PRIVATE = 'private';
     public const VISIBILITY_PUBLIC = 'public';
     public const STATUS_DRAFT = 'draft';
@@ -22,6 +26,7 @@ class Session extends Model
     protected $fillable = [
         'name',
         'academic_session',
+        'academic_semester_id',
         'description',
         'visibility',
         'status',
@@ -33,6 +38,11 @@ class Session extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function academicSemester(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSemester::class);
     }
 
     public function offeredSubjects(): HasMany

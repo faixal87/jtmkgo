@@ -3,6 +3,7 @@
 namespace App\Modules\GantiGo\Models;
 
 use App\Models\User;
+use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ class Course extends Model
 {
     protected $fillable = [
         'master_course_id',
+        'academic_subject_offering_id',
         'semester_id',
         'programme_id',
         'course_code',
@@ -34,6 +36,11 @@ class Course extends Model
     public function programme(): BelongsTo
     {
         return $this->belongsTo(Programme::class);
+    }
+
+    public function academicSubjectOffering(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSubjectOffering::class);
     }
 
     public function creator(): BelongsTo

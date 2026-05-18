@@ -21,7 +21,8 @@ class StorePreferenceRequest extends FormRequest
         $subjectRule = Rule::exists('subjek_go_offered_subjects', 'id')
             ->where(fn ($query) => $query
                 ->where('session_id', $sessionId)
-                ->where('is_active', true));
+                ->where('is_active', true)
+                ->whereNull('archived_at'));
 
         return [
             'session_id' => ['required', 'integer', Rule::exists('subjek_go_sessions', 'id')],

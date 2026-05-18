@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Modules\GantiGo\Models\ClassReplacement;
 use App\Modules\GantiGo\Policies\ClassReplacementPolicy;
 use App\Modules\GantiGo\Policies\GantiGoPolicy;
+use App\Modules\AcademicCore\Policies\AcademicCorePolicy;
 use App\Modules\PhotoRepository\Models\MediaPhoto;
 use App\Modules\PhotoRepository\Policies\MediaPhotoPolicy;
 use App\Modules\PhotoRepository\Policies\PhotoRepositoryPolicy;
@@ -35,6 +36,8 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('view-ganti-go', [GantiGoPolicy::class, 'view']);
         Gate::define('manage-ganti-go', [GantiGoPolicy::class, 'manage']);
+        Gate::define('view-academic-core', [AcademicCorePolicy::class, 'view']);
+        Gate::define('manage-academic-core', [AcademicCorePolicy::class, 'manage']);
         Gate::define('view-photo-repository', [PhotoRepositoryPolicy::class, 'view']);
         Gate::define('upload-photo-repository', [PhotoRepositoryPolicy::class, 'upload']);
         Gate::define('manage-photo-repository', [PhotoRepositoryPolicy::class, 'manage']);

@@ -229,6 +229,8 @@ return new class extends Migration
         ], fn (string $column): bool => Schema::hasColumn('subjek_go_offered_subjects', $column)));
 
         if ($legacyOfferingColumns !== []) {
+            $this->ensureCoordinatorForeignKeyIndex();
+
             Schema::table('subjek_go_offered_subjects', function (Blueprint $table) use ($legacyOfferingColumns): void {
                 if (Schema::hasIndex('subjek_go_offered_subjects', 'subjek_go_subjects_session_code_index')) {
                     $table->dropIndex('subjek_go_subjects_session_code_index');
@@ -326,6 +328,23 @@ return new class extends Migration
                 DB::statement("ALTER TABLE subjek_go_offered_subjects MODIFY {$column} {$definition}");
             }
         }
+    }
+
+    /**
+     * Keep the coordinator FK indexed after the legacy course-code composite index is removed.
+     */
+    private function ensureCoordinatorForeignKeyIndex(): void
+    {
+        if (
+            ! Schema::hasColumn('subjek_go_offered_subjects', 'subject_coordinator_user_id')
+            || Schema::hasIndex('subjek_go_offered_subjects', 'subjek_go_subjects_coordinator_index')
+        ) {
+            return;
+        }
+
+        Schema::table('subjek_go_offered_subjects', function (Blueprint $table): void {
+            $table->index('subject_coordinator_user_id', 'subjek_go_subjects_coordinator_index');
+        });
     }
 
     private function hasForeignKey(string $table, string $foreignKey): bool

@@ -3,6 +3,7 @@
 namespace App\Modules\GantiGo\Models;
 
 use App\Models\User;
+use App\Modules\AcademicCore\Models\AcademicSemester;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,7 @@ class Semester extends Model
         'auto_activate',
         'remarks',
         'created_by',
+        'academic_semester_id',
     ];
 
     public function courses(): HasMany
@@ -64,6 +66,11 @@ class Semester extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function academicSemester(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSemester::class);
     }
 
     public function scopeActive(Builder $query): Builder

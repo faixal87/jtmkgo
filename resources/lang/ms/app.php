@@ -28,6 +28,7 @@ return [
         'request_module_access' => 'Mohon Akses Modul',
         'no_modules_assigned' => 'Tiada modul diberikan.',
         'user_management' => 'Pengurusan Pengguna',
+        'academic_core' => 'Teras Akademik',
         'semester_management' => 'Pengurusan Semester',
         'course_management' => 'Pengurusan Kursus',
         'programmes_classes' => 'Program & Kelas',
@@ -35,6 +36,10 @@ return [
         'access_requests' => 'Permohonan Akses',
         'access_control' => 'Kawalan Akses',
         'branding_settings' => 'Tetapan Penjenamaan',
+        'academic_semesters' => 'Semester Akademik',
+        'academic_subjects' => 'Subjek Akademik',
+        'academic_class_groups' => 'Kumpulan Kelas',
+        'subject_offerings' => 'Tawaran Subjek',
     ],
     'topbar' => [
         'notifications' => 'Notifikasi',
