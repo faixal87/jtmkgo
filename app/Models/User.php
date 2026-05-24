@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Modules\GantiGo\Models\ClassReplacement;
 use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
+use App\Modules\SubjekGo\Models\TeachingExperience as SubjekGoTeachingExperience;
 use App\Modules\SubjekGo\Models\TeachingHistory as SubjekGoTeachingHistory;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -130,6 +131,11 @@ class User extends Authenticatable
     public function subjekGoTeachingHistories(): HasMany
     {
         return $this->hasMany(SubjekGoTeachingHistory::class);
+    }
+
+    public function subjekGoTeachingExperiences(): HasMany
+    {
+        return $this->hasMany(SubjekGoTeachingExperience::class);
     }
 
     public function profilePhotoUrl(): ?string

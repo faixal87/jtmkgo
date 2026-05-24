@@ -1,10 +1,24 @@
 @php
     $isEditing = isset($replacement);
-    $selectedSemester = old('semester_id', $replacement->semester_id ?? $activeSemester?->id);
-    $selectedCourse = old('course_id', $replacement->course_id ?? '');
-    $selectedProgramme = old('programme_id', $replacement->programme_id ?? '');
-    $selectedClasses = collect(old('class_ids', isset($replacement) ? $replacement->classes->pluck('id')->all() : []))
+    $selectedSemester = old('academic_semester_id', $replacement->academic_semester_id ?? $activeSemester?->id);
+    $selectedOffering = old('academic_subject_offering_id', $replacement->academic_subject_offering_id ?? '');
+    $selectedClasses = collect(old('academic_class_group_ids', isset($replacement) ? $replacement->academicClassGroups->pluck('id')->all() : []))
         ->map(fn ($id) => (int) $id)
+        ->all();
+    $offeringOptions = $offerings
+        ->map(fn ($offering) => [
+            'id' => $offering->id,
+            'label' => $offering->subject?->course_code.' — '.$offering->subject?->course_name,
+            'programme' => $offering->programme?->code,
+            'class_groups' => $offering->classGroups
+                ->map(fn ($classGroup) => [
+                    'id' => $classGroup->id,
+                    'label' => $classGroup->class_name.' - '.($classGroup->programme?->code ?: 'Shared'),
+                ])
+                ->values()
+                ->all(),
+        ])
+        ->values()
         ->all();
     $selectedMethod = old('replacement_method', $replacement->replacement_method ?? '');
     $reasonOptions = $reasons ?? \App\Modules\GantiGo\Models\ClassReplacement::replacementReasonOptions();
@@ -16,8 +30,8 @@
 
 @if (! $selectedSemester && $semesters->isEmpty())
     <x-ganti.empty-state
-        title="No semester is available"
-        message="Please contact the module admin before creating a replacement record."
+        title="No current academic semester has been configured."
+        message="Please contact an Academic Core administrator before creating a replacement record."
     />
 @endif
 
@@ -31,6 +45,24 @@
         reason: @js($selectedReason),
         alreadyImplemented: @js($alreadyImplemented),
         workflowLocked: @js($workflowLocked),
+        offeringSearch: '',
+        selectedOffering: Number(@js((int) $selectedOffering)),
+        selectedAcademicClassGroups: @js($selectedClasses),
+        offerings: @js($offeringOptions),
+        get visibleOfferings() {
+            const search = this.offeringSearch.toLowerCase();
+            return this.offerings.filter(offering => offering.label.toLowerCase().includes(search));
+        },
+        get selectedOfferingRecord() {
+            return this.offerings.find(offering => Number(offering.id) === Number(this.selectedOffering));
+        },
+        get availableClassGroups() {
+            return this.selectedOfferingRecord?.class_groups ?? [];
+        },
+        syncOfferingClasses() {
+            const availableIds = this.availableClassGroups.map(group => Number(group.id));
+            this.selectedAcademicClassGroups = this.selectedAcademicClassGroups.filter(id => availableIds.includes(Number(id)));
+        },
         minutes(start, end) {
             if (!start || !end) return null;
             const [sh, sm] = start.split(':').map(Number);
@@ -66,56 +98,60 @@
     >
         <div class="grid gap-5 md:grid-cols-2">
             <div>
-                <x-input-label for="semester_id" value="Semester" />
-                <select id="semester_id" name="semester_id" required class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
-                    <option value="">Select semester</option>
-                    @foreach ($semesters as $semester)
-                        <option value="{{ $semester->id }}" @selected((int) $selectedSemester === (int) $semester->id)>
-                            {{ $semester->name }} ({{ $semester->session_code }})
-                        </option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('semester_id')" class="mt-2" />
+                <x-input-label for="academic_semester_id" value="Academic Semester" />
+                <input type="hidden" id="academic_semester_id" name="academic_semester_id" value="{{ $selectedSemester }}">
+                <div class="mt-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                    @if ($activeSemester)
+                        {{ $activeSemester->name }} ({{ $activeSemester->academic_session }})
+                    @else
+                        No current academic semester has been configured.
+                    @endif
+                </div>
+                <x-input-error :messages="$errors->get('academic_semester_id')" class="mt-2" />
             </div>
 
             <div>
-                <x-input-label for="course_id" value="Course Code + Course Name" />
-                <select id="course_id" name="course_id" required class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                <x-input-label for="academic_subject_offering_id" value="Course Code + Course Name" />
+                <x-text-input x-model="offeringSearch" type="search" class="mt-1 block w-full" placeholder="Search current semester offerings" />
+                <select
+                    id="academic_subject_offering_id"
+                    name="academic_subject_offering_id"
+                    x-model.number="selectedOffering"
+                    @change="syncOfferingClasses()"
+                    required
+                    @disabled($offerings->isEmpty())
+                    class="mt-2 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900"
+                >
                     <option value="">Select course</option>
-                    @foreach ($courses as $course)
-                        <option value="{{ $course->id }}" @selected((int) $selectedCourse === (int) $course->id)>
-                            {{ $course->course_code }} - {{ $course->course_name }} ({{ $course->semester?->session_code }})
-                        </option>
-                    @endforeach
+                    <template x-for="offering in visibleOfferings" :key="offering.id">
+                        <option :value="offering.id" x-text="offering.label"></option>
+                    </template>
                 </select>
-                <x-input-error :messages="$errors->get('course_id')" class="mt-2" />
+                <x-form-helper>Courses are loaded from Academic Core current semester offerings.</x-form-helper>
+                @if ($activeSemester && $offerings->isEmpty())
+                    <x-form-helper>No subject offerings are available for the current semester.</x-form-helper>
+                @endif
+                <x-input-error :messages="$errors->get('academic_subject_offering_id')" class="mt-2" />
             </div>
 
-            <div>
-                <x-input-label for="programme_id" value="Programme" />
-                <select id="programme_id" name="programme_id" required class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
-                    <option value="">Select programme</option>
-                    @foreach ($programmes as $programme)
-                        <option value="{{ $programme->id }}" @selected((int) $selectedProgramme === (int) $programme->id)>
-                            {{ $programme->code }} - {{ $programme->name }}
-                        </option>
-                    @endforeach
+            <div class="md:col-span-2">
+                <x-input-label for="academic_class_group_ids" value="Class Group" />
+                <select
+                    id="academic_class_group_ids"
+                    name="academic_class_group_ids[]"
+                    x-model.number="selectedAcademicClassGroups"
+                    required
+                    multiple
+                    size="5"
+                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900"
+                >
+                    <template x-for="classGroup in availableClassGroups" :key="classGroup.id">
+                        <option :value="classGroup.id" x-text="classGroup.label"></option>
+                    </template>
                 </select>
-                <x-input-error :messages="$errors->get('programme_id')" class="mt-2" />
-            </div>
-
-            <div>
-                <x-input-label for="class_ids" value="Class Group" />
-                <select id="class_ids" name="class_ids[]" required multiple size="5" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
-                    @foreach ($classes as $classGroup)
-                        <option value="{{ $classGroup->id }}" @selected(in_array((int) $classGroup->id, $selectedClasses, true))>
-                            {{ $classGroup->class_name }} - {{ $classGroup->programme?->code }} ({{ $classGroup->semester?->session_code }})
-                        </option>
-                    @endforeach
-                </select>
-                <x-form-helper>Hold Ctrl to select combined classes.</x-form-helper>
-                <x-input-error :messages="$errors->get('class_ids')" class="mt-2" />
-                <x-input-error :messages="$errors->get('class_ids.*')" class="mt-2" />
+                <x-form-helper>Class groups are limited to those attached to the selected Academic Core offering. Hold Ctrl to select combined classes.</x-form-helper>
+                <x-input-error :messages="$errors->get('academic_class_group_ids')" class="mt-2" />
+                <x-input-error :messages="$errors->get('academic_class_group_ids.*')" class="mt-2" />
             </div>
 
             <div>

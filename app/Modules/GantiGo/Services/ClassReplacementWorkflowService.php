@@ -3,6 +3,7 @@
 namespace App\Modules\GantiGo\Services;
 
 use App\Models\User;
+use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
 use App\Modules\GantiGo\Models\ClassReplacement;
 use App\Services\NotificationService;
 use Carbon\Carbon;
@@ -21,7 +22,7 @@ class ClassReplacementWorkflowService
      */
     public function create(array $data, User $lecturer): ClassReplacement
     {
-        [$attributes, $classIds] = $this->prepareReplacementData($data);
+        [$attributes, $academicClassGroupIds] = $this->prepareReplacementData($data);
         $isDirectImplementation = (bool) Arr::get($attributes, 'already_implemented', false);
 
         $replacement = ClassReplacement::create([
@@ -33,9 +34,19 @@ class ClassReplacementWorkflowService
             'implementation_submitted_at' => $isDirectImplementation ? now() : null,
         ]);
 
-        $replacement->classes()->sync($classIds);
+        $replacement->academicClassGroups()->sync($academicClassGroupIds);
 
-        return $replacement->fresh(['semester', 'course', 'programme', 'classes', 'lecturer']);
+        return $replacement->fresh([
+            'academicSemester',
+            'academicSubjectOffering.subject',
+            'academicSubject',
+            'academicClassGroups',
+            'semester',
+            'course',
+            'programme',
+            'classes',
+            'lecturer',
+        ]);
     }
 
     /**
@@ -43,7 +54,7 @@ class ClassReplacementWorkflowService
      */
     public function update(ClassReplacement $classReplacement, array $data): ClassReplacement
     {
-        [$attributes, $classIds] = $this->prepareReplacementData($data);
+        [$attributes, $academicClassGroupIds] = $this->prepareReplacementData($data);
 
         if ((bool) Arr::get($attributes, 'already_implemented', false)) {
             $attributes = [
@@ -58,9 +69,19 @@ class ClassReplacementWorkflowService
         }
 
         $classReplacement->update($attributes);
-        $classReplacement->classes()->sync($classIds);
+        $classReplacement->academicClassGroups()->sync($academicClassGroupIds);
 
-        return $classReplacement->fresh(['semester', 'course', 'programme', 'classes', 'lecturer']);
+        return $classReplacement->fresh([
+            'academicSemester',
+            'academicSubjectOffering.subject',
+            'academicSubject',
+            'academicClassGroups',
+            'semester',
+            'course',
+            'programme',
+            'classes',
+            'lecturer',
+        ]);
     }
 
     public function cancel(ClassReplacement $classReplacement): ClassReplacement
@@ -208,8 +229,17 @@ class ClassReplacementWorkflowService
      */
     private function prepareReplacementData(array $data): array
     {
-        $classIds = array_values(array_unique((array) Arr::pull($data, 'class_ids', [])));
+        $academicClassGroupIds = array_values(array_unique((array) Arr::pull($data, 'academic_class_group_ids', [])));
         $evidence = Arr::pull($data, 'evidence_file');
+        $offering = AcademicSubjectOffering::query()
+            ->with('subject')
+            ->findOrFail((int) $data['academic_subject_offering_id']);
+
+        $data['academic_semester_id'] = $offering->academic_semester_id;
+        $data['academic_subject_id'] = $offering->academic_subject_id;
+        $data['programme_id'] = $offering->programme_id;
+        $data['semester_id'] = null;
+        $data['course_id'] = null;
 
         $data['already_implemented'] = (bool) Arr::get($data, 'already_implemented', false);
         $data['original_duration_minutes'] = $this->durationInMinutes($data['original_start_time'] ?? null, $data['original_end_time'] ?? null);
@@ -226,7 +256,7 @@ class ClassReplacementWorkflowService
             ];
         }
 
-        return [$data, $classIds];
+        return [$data, $academicClassGroupIds];
     }
 
     private function durationInMinutes(?string $start, ?string $end): ?int
@@ -281,13 +311,21 @@ class ClassReplacementWorkflowService
      */
     private function hasDuplicateReplacement(User $lecturer, array $data, ?ClassReplacement $ignore): bool
     {
-        if (empty($data['course_id']) || empty($data['original_class_date']) || empty($data['replacement_date'])) {
+        if (
+            (empty($data['academic_subject_offering_id']) && empty($data['course_id']))
+            || empty($data['original_class_date'])
+            || empty($data['replacement_date'])
+        ) {
             return false;
         }
 
         return ClassReplacement::query()
             ->where('user_id', $lecturer->id)
-            ->where('course_id', $data['course_id'])
+            ->when(
+                ! empty($data['academic_subject_offering_id']),
+                fn ($query) => $query->where('academic_subject_offering_id', $data['academic_subject_offering_id']),
+                fn ($query) => $query->where('course_id', $data['course_id'])
+            )
             ->whereDate('original_class_date', $data['original_class_date'])
             ->whereDate('replacement_date', $data['replacement_date'])
             ->whereNotIn('status', [ClassReplacement::STATUS_CANCELLED])

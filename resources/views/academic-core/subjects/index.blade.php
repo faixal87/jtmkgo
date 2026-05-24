@@ -28,18 +28,14 @@
                             </div>
                             <x-lifecycle-badge :active="$subject->is_active" :archived="$subject->isArchived()" />
                         </div>
-                        <dl class="mt-4 grid grid-cols-3 gap-3 text-sm">
-                            <div>
-                                <dt class="text-[var(--color-muted)]">Credit</dt>
-                                <dd class="font-medium text-[var(--color-text)]">{{ $subject->credit_hour ?: '-' }}</dd>
+                        <dl class="mt-5 grid gap-3 sm:grid-cols-2">
+                            <div class="rounded-lg bg-[var(--color-secondary-bg)] p-3">
+                                <dt class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Credit Hour</dt>
+                                <dd class="mt-1 text-base font-semibold text-[var(--color-text)]">{{ $subject->credit_hour ?: '-' }}</dd>
                             </div>
-                            <div>
-                                <dt class="text-[var(--color-muted)]">Weekly</dt>
-                                <dd class="font-medium text-[var(--color-text)]">{{ $subject->weekly_contact_hour ?: '-' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-[var(--color-muted)]">Offerings</dt>
-                                <dd class="font-medium text-[var(--color-text)]">{{ $subject->offerings_count }}</dd>
+                            <div class="rounded-lg bg-[var(--color-secondary-bg)] p-3">
+                                <dt class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Contact Hour Weekly</dt>
+                                <dd class="mt-1 text-base font-semibold text-[var(--color-text)]">{{ $subject->weekly_contact_hour ?: '-' }}</dd>
                             </div>
                         </dl>
                         <div class="mt-5 flex justify-end">

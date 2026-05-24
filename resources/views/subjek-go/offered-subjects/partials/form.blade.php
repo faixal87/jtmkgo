@@ -8,7 +8,8 @@
                 <option value="">Select session</option>
                 @foreach ($sessions as $session)
                     <option value="{{ $session->id }}" @selected((int) old('session_id', $subject?->session_id) === $session->id)>
-                        {{ $session->name }} ({{ $session->academic_session }})
+                        {{ $session->name }} - {{ $session->academicSemester?->name ?: 'No linked academic semester' }}
+                        ({{ $session->academicSemester?->academic_session ?: $session->academic_session }})
                     </option>
                 @endforeach
             </select>

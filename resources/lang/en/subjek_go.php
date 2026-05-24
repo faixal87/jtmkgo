@@ -11,6 +11,7 @@ return [
         'offered_subjects' => 'Offered Subjects',
         'class_groups' => 'Class Groups',
         'subject_coordinators' => 'Subject Coordinators',
+        'teaching_experience' => 'My Teaching Experience',
         'teaching_history' => 'Teaching History',
         'analytics' => 'Analytics',
     ],

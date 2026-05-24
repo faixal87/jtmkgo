@@ -14,12 +14,15 @@ use App\Modules\SubjekGo\Models\ClassGroup as SubjekGoClassGroup;
 use App\Modules\SubjekGo\Models\OfferedSubject as SubjekGoOfferedSubject;
 use App\Modules\SubjekGo\Models\Session as SubjekGoSession;
 use App\Modules\SubjekGo\Models\SubjectMaster as SubjekGoSubjectMaster;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AcademicRecordLifecycleService
 {
     public function semesterIsUsed(AcademicSemester $semester): bool
     {
         return $semester->subjectOfferings()->exists()
+            || $semester->classGroups()->exists()
             || GantiGoSemester::query()->where('academic_semester_id', $semester->id)->exists()
             || SubjekGoSession::query()->where('academic_semester_id', $semester->id)->exists();
     }
@@ -34,6 +37,9 @@ class AcademicRecordLifecycleService
     public function classGroupIsUsed(AcademicClassGroup $classGroup): bool
     {
         return $classGroup->offerings()->exists()
+            || (Schema::hasTable('ganti_go_replacement_class_groups') && DB::table('ganti_go_replacement_class_groups')
+                ->where('academic_class_group_id', $classGroup->id)
+                ->exists())
             || GantiGoMasterClassGroup::query()->where('academic_class_group_id', $classGroup->id)->exists()
             || SubjekGoClassGroup::query()->where('academic_class_group_id', $classGroup->id)->exists();
     }

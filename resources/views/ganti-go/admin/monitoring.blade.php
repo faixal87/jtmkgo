@@ -7,6 +7,7 @@
     $pieStyle = "background: conic-gradient(#10b981 0deg {$verifiedDeg}deg, #3b82f6 {$verifiedDeg}deg {$pendingDeg}deg, #a855f7 {$pendingDeg}deg {$rejectedDeg}deg, #ef4444 {$rejectedDeg}deg {$cancelledDeg}deg, #f59e0b {$cancelledDeg}deg 360deg)";
     $monthlyMax = max(collect($monthlyCounts)->max('total') ?? 1, 1);
     $semesterMax = max(collect($semesterTrend)->max('total') ?? 1, 1);
+    $academicSessionMax = max(collect($academicSessionTrend)->max('total') ?? 1, 1);
     $programmeMax = max(collect($programmeCounts)->max('total') ?? 1, 1);
     $reasonMax = max(collect($reasonBreakdown)->max('total') ?? 1, 1);
     $firstReplacementId = $replacements->first()?->id;
@@ -82,7 +83,7 @@
                 </x-ganti.card>
             </section>
 
-            <section class="grid gap-6 xl:grid-cols-3">
+            <section class="grid gap-6 xl:grid-cols-4">
                 <x-ganti.card>
                     <x-ganti.section-header title="Semester Trend" description="Verified implementations across semesters." />
                     <div class="mt-6 flex h-56 items-end gap-3">
@@ -130,6 +131,23 @@
                             </div>
                         @empty
                             <x-ganti.empty-state title="No reason data yet" message="Reason breakdown appears after replacement records are submitted." />
+                        @endforelse
+                    </div>
+                </x-ganti.card>
+
+                <x-ganti.card>
+                    <x-ganti.section-header title="Academic Session Comparison" description="Verified replacements grouped by academic session." />
+                    <div class="mt-6 space-y-3">
+                        @forelse ($academicSessionTrend as $item)
+                            <div class="grid grid-cols-[5.5rem_1fr_3rem] items-center gap-3 text-sm">
+                                <span class="font-medium text-slate-700">{{ $item['label'] }}</span>
+                                <div class="h-3 overflow-hidden rounded-full bg-slate-100">
+                                    <div class="h-full rounded-full bg-cyan-500" style="width: {{ max(($item['total'] / $academicSessionMax) * 100, 4) }}%"></div>
+                                </div>
+                                <span class="text-right font-semibold text-slate-800">{{ $item['total'] }}</span>
+                            </div>
+                        @empty
+                            <x-ganti.empty-state title="No academic session data yet" message="Verified records will build session comparison over time." />
                         @endforelse
                     </div>
                 </x-ganti.card>
@@ -190,12 +208,12 @@
                                     @forelse ($attentionItems[$key] as $replacement)
                                         @if ($canReviewImplementations)
                                             <a href="{{ route('ganti-go.replacements.show', $replacement) }}" class="block rounded-lg border border-slate-200 px-3 py-2 text-sm transition hover:bg-slate-50">
-                                                <span class="block font-medium text-slate-950">{{ $replacement->course?->course_code }} - {{ $replacement->lecturer?->name }}</span>
+                                                <span class="block font-medium text-slate-950">{{ $replacement->displayCourseCode() }} - {{ $replacement->lecturer?->name }}</span>
                                                 <span class="mt-1 block text-xs text-slate-500">{{ $replacement->replacement_date->format('d M Y') }} - {{ $replacement->formattedClassGroups() }}</span>
                                             </a>
                                         @else
                                             <div class="block rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                                                <span class="block font-medium text-slate-950">{{ $replacement->course?->course_code }} - {{ $replacement->lecturer?->name }}</span>
+                                                <span class="block font-medium text-slate-950">{{ $replacement->displayCourseCode() }} - {{ $replacement->lecturer?->name }}</span>
                                                 <span class="mt-1 block text-xs text-slate-500">{{ $replacement->replacement_date->format('d M Y') }} - {{ $replacement->formattedClassGroups() }}</span>
                                             </div>
                                         @endif
@@ -210,7 +228,18 @@
             </section>
 
             <x-ganti.card>
-                <form method="GET" action="{{ $analyticsRoute }}" class="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] lg:items-end">
+                <form method="GET" action="{{ $analyticsRoute }}" class="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                        <x-input-label for="academic_session" value="Academic Session" />
+                        <select id="academic_session" name="academic_session" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                            <option value="">All sessions</option>
+                            @foreach ($academicSessions as $academicSession)
+                                <option value="{{ $academicSession }}" @selected(($filters['academic_session'] ?? '') === $academicSession)>
+                                    {{ $academicSession }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div>
                         <x-input-label for="semester_id" value="Semester" />
                         <select id="semester_id" name="semester_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
@@ -219,6 +248,46 @@
                                 <option value="{{ $semester->id }}" @selected((int) $selectedSemesterId === (int) $semester->id)>
                                     {{ $semester->name }}
                                 </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="programme_id" value="Programme" />
+                        <select id="programme_id" name="programme_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                            <option value="">All programmes</option>
+                            @foreach ($programmes as $programme)
+                                <option value="{{ $programme->id }}" @selected((int) ($filters['programme_id'] ?? 0) === $programme->id)>{{ $programme->code }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="academic_class_group_id" value="Class Group" />
+                        <select id="academic_class_group_id" name="academic_class_group_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                            <option value="">All class groups</option>
+                            @foreach ($classGroups as $classGroup)
+                                <option value="{{ $classGroup->id }}" @selected((int) ($filters['academic_class_group_id'] ?? 0) === $classGroup->id)>
+                                    {{ $classGroup->class_name }} - {{ $classGroup->semester?->academic_session }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="academic_subject_id" value="Subject" />
+                        <select id="academic_subject_id" name="academic_subject_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                            <option value="">All subjects</option>
+                            @foreach ($subjects as $subject)
+                                <option value="{{ $subject->id }}" @selected((int) ($filters['academic_subject_id'] ?? 0) === $subject->id)>
+                                    {{ $subject->course_code }} - {{ $subject->course_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="lecturer_id" value="Lecturer" />
+                        <select id="lecturer_id" name="lecturer_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                            <option value="">All lecturers</option>
+                            @foreach ($lecturers as $lecturer)
+                                <option value="{{ $lecturer->id }}" @selected((int) ($filters['lecturer_id'] ?? 0) === $lecturer->id)>{{ $lecturer->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -232,10 +301,18 @@
                         </select>
                     </div>
                     <div>
+                        <x-input-label for="date_from" value="Date From" />
+                        <x-text-input id="date_from" type="date" name="date_from" class="mt-1 block w-full" :value="$filters['date_from'] ?? null" />
+                    </div>
+                    <div>
+                        <x-input-label for="date_to" value="Date To" />
+                        <x-text-input id="date_to" type="date" name="date_to" class="mt-1 block w-full" :value="$filters['date_to'] ?? null" />
+                    </div>
+                    <div class="xl:col-span-2">
                         <x-input-label for="q" value="Search" />
                         <x-text-input id="q" name="q" class="mt-1 block w-full" :value="request('q')" placeholder="Lecturer, IC number, course, class" />
                     </div>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-wrap items-end gap-2 xl:col-span-2">
                         <button type="submit" class="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-slate-800">
                             Filter
                         </button>
@@ -251,7 +328,7 @@
                     <x-searchable-list-panel title="Replacement Explorer" placeholder="Search visible records" model="replacementSearch">
                         @forelse ($replacements as $replacement)
                             @php
-                                $searchableReplacement = strtolower(($replacement->lecturer?->name ?? '').' '.($replacement->lecturer?->ic_number ?? '').' '.($replacement->course?->course_code ?? '').' '.($replacement->course?->course_name ?? '').' '.$replacement->formattedClassGroups().' '.$replacement->status);
+                                $searchableReplacement = strtolower(($replacement->lecturer?->name ?? '').' '.($replacement->lecturer?->ic_number ?? '').' '.$replacement->displayCourseCode().' '.$replacement->displayCourseName().' '.$replacement->formattedClassGroups().' '.$replacement->status);
                             @endphp
                             <button
                                 type="button"
@@ -261,7 +338,7 @@
                                 :class="selectedReplacement === {{ $replacement->id }} ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
                             >
                                 <span class="block truncate text-sm font-semibold text-[var(--color-text)]">{{ $replacement->lecturer?->name }}</span>
-                                <span class="mt-1 block truncate text-xs text-[var(--color-muted)]">{{ $replacement->course?->course_code }} - {{ $replacement->formattedClassGroups() }}</span>
+                                <span class="mt-1 block truncate text-xs text-[var(--color-muted)]">{{ $replacement->displayCourseCode() }} - {{ $replacement->formattedClassGroups() }}</span>
                                 <span class="mt-3 flex items-center justify-between gap-3">
                                     <span class="text-xs font-medium text-[var(--color-muted)]">{{ $replacement->replacement_date->format('d M Y') }}</span>
                                     <x-ganti.status-badge :status="$replacement->status" />
@@ -286,8 +363,8 @@
                             <section x-show="selectedReplacement === {{ $replacement->id }}" x-cloak class="space-y-6">
                                 <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
                                     <div class="min-w-0">
-                                        <h3 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $replacement->course?->course_code }} - {{ $replacement->course?->course_name }}</h3>
-                                        <p class="mt-1 break-words text-sm text-[var(--color-muted)]">{{ $replacement->lecturer?->name }} - {{ $replacement->semester?->session_code }}</p>
+                                        <h3 class="break-words text-lg font-semibold text-[var(--color-text)]">{{ $replacement->displayCourseLabel() }}</h3>
+                                        <p class="mt-1 break-words text-sm text-[var(--color-muted)]">{{ $replacement->lecturer?->name }} - {{ $replacement->displaySemesterSession() }}</p>
                                     </div>
                                     <x-ganti.status-badge :status="$replacement->status" />
                                 </div>

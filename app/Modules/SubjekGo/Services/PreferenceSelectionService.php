@@ -46,7 +46,7 @@ class PreferenceSelectionService
         }
 
         $subjects = OfferedSubject::query()
-            ->with('subjectMaster')
+            ->with(['academicSubjectOffering.subject', 'subjectMaster'])
             ->where('session_id', $session->id)
             ->active()
             ->whereIn('id', $choiceIds)
@@ -76,9 +76,13 @@ class PreferenceSelectionService
             ])->save();
 
             return $preference->fresh([
+                'choiceOne.academicSubjectOffering.subject',
                 'choiceOne.subjectMaster',
+                'choiceTwo.academicSubjectOffering.subject',
                 'choiceTwo.subjectMaster',
+                'choiceThree.academicSubjectOffering.subject',
                 'choiceThree.subjectMaster',
+                'choiceFour.academicSubjectOffering.subject',
                 'choiceFour.subjectMaster',
                 'session',
             ]);
@@ -90,6 +94,6 @@ class PreferenceSelectionService
      */
     private function totalContactHours(Collection $subjects): float
     {
-        return (float) $subjects->sum(fn (OfferedSubject $subject): float => (float) ($subject->subjectMaster?->weekly_contact_hour ?? 0));
+        return (float) $subjects->sum(fn (OfferedSubject $subject): float => (float) ($subject->weekly_contact_hour ?? 0));
     }
 }

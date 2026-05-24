@@ -4,6 +4,7 @@ namespace App\Modules\SubjekGo\Models;
 
 use App\Models\User;
 use App\Modules\AcademicCore\Models\AcademicSemester;
+use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -55,6 +56,18 @@ class Session extends Model
         return $this->offeredSubjects()->where('is_active', true);
     }
 
+    public function academicSubjectOfferings(): HasMany
+    {
+        return $this->hasMany(AcademicSubjectOffering::class, 'academic_semester_id', 'academic_semester_id');
+    }
+
+    public function activeAcademicSubjectOfferings(): HasMany
+    {
+        return $this->academicSubjectOfferings()
+            ->where('is_active', true)
+            ->whereNull('archived_at');
+    }
+
     public function preferences(): HasMany
     {
         return $this->hasMany(Preference::class);
@@ -68,6 +81,41 @@ class Session extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('visibility', self::VISIBILITY_PUBLIC);
+    }
+
+    public function scopeCanonicalForDisplay(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->whereNull('subjek_go_sessions.academic_semester_id')
+                ->orWhereNotExists(function ($subquery): void {
+                    $statusRankSql = "FIELD(competing_sessions.status, 'open', 'draft', 'closed', 'archived')";
+                    $currentRankSql = "FIELD(subjek_go_sessions.status, 'open', 'draft', 'closed', 'archived')";
+
+                    $subquery
+                        ->selectRaw('1')
+                        ->from('subjek_go_sessions as competing_sessions')
+                        ->whereColumn('competing_sessions.academic_semester_id', 'subjek_go_sessions.academic_semester_id')
+                        ->whereNull('competing_sessions.deleted_at')
+                        ->where(function ($betterSession) use ($statusRankSql, $currentRankSql): void {
+                            $betterSession
+                                ->whereRaw("{$statusRankSql} < {$currentRankSql}")
+                                ->orWhere(function ($sameRank) use ($statusRankSql, $currentRankSql): void {
+                                    $sameRank
+                                        ->whereRaw("{$statusRankSql} = {$currentRankSql}")
+                                        ->where(function ($newerSession): void {
+                                            $newerSession
+                                                ->whereColumn('competing_sessions.created_at', '>', 'subjek_go_sessions.created_at')
+                                                ->orWhere(function ($sameTimestamp): void {
+                                                    $sameTimestamp
+                                                        ->whereColumn('competing_sessions.created_at', '=', 'subjek_go_sessions.created_at')
+                                                        ->whereColumn('competing_sessions.id', '>', 'subjek_go_sessions.id');
+                                                });
+                                        });
+                                });
+                        });
+                });
+        });
     }
 
     public function isOpenForSelection(): bool

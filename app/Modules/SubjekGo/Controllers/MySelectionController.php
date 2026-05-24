@@ -5,7 +5,8 @@ namespace App\Modules\SubjekGo\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\GantiGo\Models\Programme;
 use App\Modules\SubjekGo\Models\Preference;
-use App\Modules\SubjekGo\Models\TeachingHistory;
+use App\Modules\SubjekGo\Models\TeachingExperience;
+use App\Modules\SubjekGo\Services\OfferingManagementService;
 use App\Modules\SubjekGo\Services\SessionWindowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -13,42 +14,71 @@ use Illuminate\View\View;
 
 class MySelectionController extends Controller
 {
-    public function index(Request $request, SessionWindowService $sessions): View
+    public function index(
+        Request $request,
+        SessionWindowService $sessions,
+        OfferingManagementService $offerings
+    ): View
     {
         Gate::authorize('select-subjek-go');
 
         $session = $sessions->current();
         $openSession = $sessions->openForSelection();
-        $search = trim((string) $request->query('q'));
-        $programmeId = $request->integer('programme_id');
+        $projectedSubjects = $session
+            ? $offerings->syncSessionFromAcademicCore($session)
+            : collect();
         $currentPreference = $session
             ? Preference::query()
-                ->with(['session', 'choiceOne.subjectMaster', 'choiceOne.coordinator', 'choiceTwo.subjectMaster', 'choiceTwo.coordinator', 'choiceThree.subjectMaster', 'choiceThree.coordinator', 'choiceFour.subjectMaster', 'choiceFour.coordinator'])
+                ->with([
+                    'session',
+                    'choiceOne.academicSubjectOffering.subject',
+                    'choiceOne.subjectMaster',
+                    'choiceOne.coordinator',
+                    'choiceTwo.academicSubjectOffering.subject',
+                    'choiceTwo.subjectMaster',
+                    'choiceTwo.coordinator',
+                    'choiceThree.academicSubjectOffering.subject',
+                    'choiceThree.subjectMaster',
+                    'choiceThree.coordinator',
+                    'choiceFour.academicSubjectOffering.subject',
+                    'choiceFour.subjectMaster',
+                    'choiceFour.coordinator',
+                ])
                 ->where('session_id', $session->id)
                 ->where('user_id', $request->user()->id)
                 ->first()
             : null;
         $subjectOptions = $session
-            ? $session->activeOfferedSubjects()
-                ->with('subjectMaster')
-                ->orderBySubjectCode()
-                ->get(['id', 'subject_master_id'])
+            ? $projectedSubjects
+                ->loadMissing(['programme', 'academicSubjectOffering.subject', 'subjectMaster', 'coordinator', 'classGroups'])
+                ->loadCount('classGroups')
+                ->loadCount([
+                    'choiceOnePreferences as choice_1_total' => fn ($query) => $query->where('session_id', $session->id)->submitted(),
+                    'choiceTwoPreferences as choice_2_total' => fn ($query) => $query->where('session_id', $session->id)->submitted(),
+                    'choiceThreePreferences as choice_3_total' => fn ($query) => $query->where('session_id', $session->id)->submitted(),
+                    'choiceFourPreferences as choice_4_total' => fn ($query) => $query->where('session_id', $session->id)->submitted(),
+                ])
+                ->sortBy(fn ($subject) => $subject->course_code)
+                ->values()
             : collect();
         $programmeIds = $session
-            ? $session->activeOfferedSubjects()
+            ? $offerings->projectedQuery($session)
                 ->whereNotNull('programme_id')
                 ->distinct()
                 ->pluck('programme_id')
             : collect();
-        $historyRows = $subjectOptions->isEmpty()
+        $academicSubjectIds = $subjectOptions
+            ->map(fn ($subject) => $subject->academicSubjectOffering?->academic_subject_id)
+            ->filter()
+            ->unique();
+        $experienceRows = $academicSubjectIds->isEmpty()
             ? collect()
-            : TeachingHistory::query()
+            : TeachingExperience::query()
                 ->forLecturer($request->user())
-                ->whereIn('course_code', $subjectOptions->pluck('subjectMaster.course_code')->filter())
-                ->select(['course_code', 'academic_session'])
-                ->latest('academic_session')
+                ->with('subject:id,course_code,course_name')
+                ->whereIn('academic_subject_id', $academicSubjectIds)
                 ->get()
-                ->groupBy('course_code');
+                ->keyBy(fn (TeachingExperience $experience) => $experience->subject?->course_code);
         $canEditCurrent = $session
             && $openSession
             && $session->is($openSession)
@@ -59,35 +89,44 @@ class MySelectionController extends Controller
             'openSession' => $openSession,
             'currentPreference' => $currentPreference,
             'canEditCurrent' => $canEditCurrent,
-            'subjects' => $session
-                ? $session->activeOfferedSubjects()
-                    ->with(['programme', 'subjectMaster', 'coordinator', 'classGroups'])
-                    ->withCount('classGroups')
-                    ->search($search)
-                    ->when($programmeId, fn ($query) => $query->where('programme_id', $programmeId))
-                    ->orderBySubjectCode()
-                    ->paginate(18)
-                    ->withQueryString()
-                : collect(),
             'subjectOptions' => $subjectOptions,
             'programmes' => $programmeIds->isNotEmpty()
                 ? Programme::query()->whereIn('id', $programmeIds)->orderBy('code')->get(['id', 'code', 'name'])
                 : collect(),
-            'selectedProgrammeId' => $programmeId,
-            'historyByCourseCode' => $historyRows->map(fn ($rows) => [
-                'count' => $rows->count(),
-                'last_session' => $rows->first()?->academic_session,
+            'experienceByCourseCode' => $experienceRows->map(fn (TeachingExperience $experience) => [
+                'years' => $experience->experience_years,
+                'level' => $experience->experience_level,
+                'last_session' => $experience->last_taught_session,
             ]),
-            'search' => $search,
             'mySelections' => Preference::query()
-                ->with(['session', 'choiceOne.subjectMaster', 'choiceTwo.subjectMaster', 'choiceThree.subjectMaster', 'choiceFour.subjectMaster'])
+                ->with([
+                    'session',
+                    'choiceOne.academicSubjectOffering.subject',
+                    'choiceOne.subjectMaster',
+                    'choiceTwo.academicSubjectOffering.subject',
+                    'choiceTwo.subjectMaster',
+                    'choiceThree.academicSubjectOffering.subject',
+                    'choiceThree.subjectMaster',
+                    'choiceFour.academicSubjectOffering.subject',
+                    'choiceFour.subjectMaster',
+                ])
                 ->where('user_id', $request->user()->id)
                 ->when($session, fn ($query) => $query->where('session_id', '!=', $session->id))
                 ->latest()
                 ->paginate(10),
             'publicSelections' => $session && $session->visibility === 'public'
                 ? Preference::query()
-                    ->with(['lecturer:id,name', 'choiceOne.subjectMaster', 'choiceTwo.subjectMaster', 'choiceThree.subjectMaster', 'choiceFour.subjectMaster'])
+                    ->with([
+                        'lecturer:id,name',
+                        'choiceOne.academicSubjectOffering.subject',
+                        'choiceOne.subjectMaster',
+                        'choiceTwo.academicSubjectOffering.subject',
+                        'choiceTwo.subjectMaster',
+                        'choiceThree.academicSubjectOffering.subject',
+                        'choiceThree.subjectMaster',
+                        'choiceFour.academicSubjectOffering.subject',
+                        'choiceFour.subjectMaster',
+                    ])
                     ->where('session_id', $session->id)
                     ->submitted()
                     ->latest('submitted_at')

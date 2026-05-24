@@ -16,6 +16,7 @@ class SessionWindowService
         $cached = SafeArrayCache::remember(self::CURRENT_CACHE_KEY, now()->addSeconds(30), function (): array {
             return [
                 'id' => Session::query()
+                    ->canonicalForDisplay()
                     ->orderByRaw("FIELD(status, 'open', 'draft', 'closed', 'archived')")
                     ->orderByDesc('open_at')
                     ->orderByDesc('created_at')
@@ -23,7 +24,9 @@ class SessionWindowService
             ];
         }, ['id']);
 
-        return filled($cached['id'] ?? null) ? Session::query()->find($cached['id']) : null;
+        return filled($cached['id'] ?? null)
+            ? Session::query()->with('academicSemester')->find($cached['id'])
+            : null;
     }
 
     public function openForSelection(): ?Session
@@ -31,6 +34,7 @@ class SessionWindowService
         $cached = SafeArrayCache::remember(self::OPEN_CACHE_KEY, now()->addSeconds(30), function (): array {
             return [
                 'id' => Session::query()
+                    ->canonicalForDisplay()
                     ->open()
                     ->where(function ($query): void {
                         $query->whereNull('open_at')->orWhere('open_at', '<=', now());
@@ -44,7 +48,9 @@ class SessionWindowService
             ];
         }, ['id']);
 
-        return filled($cached['id'] ?? null) ? Session::query()->find($cached['id']) : null;
+        return filled($cached['id'] ?? null)
+            ? Session::query()->with('academicSemester')->find($cached['id'])
+            : null;
     }
 
     public function clearCache(): void

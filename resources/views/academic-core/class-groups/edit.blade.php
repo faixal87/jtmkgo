@@ -2,7 +2,12 @@
     <x-slot name="header">
         <div>
             <h2 class="text-xl font-semibold leading-tight text-[var(--color-text)]">Edit Class Group</h2>
-            <p class="mt-1 text-sm text-[var(--color-muted)]">{{ $classGroup->class_name }}</p>
+            <p class="mt-1 text-sm text-[var(--color-muted)]">
+                {{ $classGroup->class_name }}
+                @if ($classGroup->semester)
+                    - {{ $classGroup->semester->name }} ({{ $classGroup->semester->academic_session }})
+                @endif
+            </p>
         </div>
     </x-slot>
 

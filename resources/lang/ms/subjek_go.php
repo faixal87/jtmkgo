@@ -11,6 +11,7 @@ return [
         'offered_subjects' => 'Subjek Ditawarkan',
         'class_groups' => 'Kumpulan Kelas',
         'subject_coordinators' => 'Penyelaras Subjek',
+        'teaching_experience' => 'Pengalaman Mengajar Saya',
         'teaching_history' => 'Sejarah Pengajaran',
         'analytics' => 'Analitik',
     ],

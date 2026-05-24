@@ -24,19 +24,29 @@ class OfferedSubjectController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
-        $sessionId = $request->integer('session_id') ?: Session::query()->latest()->value('id');
+        $sessionId = $request->integer('session_id') ?: Session::query()->canonicalForDisplay()->latest()->value('id');
         $search = trim((string) $request->query('q'));
 
         return view('subjek-go.offered-subjects.index', [
             'subjects' => OfferedSubject::query()
                 ->with(['session', 'programme', 'subjectMaster', 'academicSubjectOffering.subject', 'coordinator', 'classGroups'])
                 ->withCount('classGroups')
+                ->withCount([
+                    'choiceOnePreferences as choice_1_total' => fn ($query) => $query->when($sessionId, fn ($query) => $query->where('session_id', $sessionId))->submitted(),
+                    'choiceTwoPreferences as choice_2_total' => fn ($query) => $query->when($sessionId, fn ($query) => $query->where('session_id', $sessionId))->submitted(),
+                    'choiceThreePreferences as choice_3_total' => fn ($query) => $query->when($sessionId, fn ($query) => $query->where('session_id', $sessionId))->submitted(),
+                    'choiceFourPreferences as choice_4_total' => fn ($query) => $query->when($sessionId, fn ($query) => $query->where('session_id', $sessionId))->submitted(),
+                ])
                 ->when($sessionId, fn ($query) => $query->where('session_id', $sessionId))
                 ->search($search)
                 ->orderBySubjectCode()
                 ->paginate(15)
                 ->withQueryString(),
-            'sessions' => Session::query()->latest()->get(['id', 'name', 'academic_session']),
+            'sessions' => Session::query()
+                ->with('academicSemester')
+                ->canonicalForDisplay()
+                ->latest()
+                ->get(['id', 'name', 'academic_session', 'academic_semester_id']),
             'selectedSessionId' => $sessionId,
             'search' => $search,
         ]);
@@ -48,7 +58,11 @@ class OfferedSubjectController extends Controller
 
         return view('subjek-go.offered-subjects.create', [
             'subject' => new OfferedSubject(),
-            'sessions' => Session::query()->latest()->get(['id', 'name', 'academic_session']),
+            'sessions' => Session::query()
+                ->with('academicSemester')
+                ->canonicalForDisplay()
+                ->latest()
+                ->get(['id', 'name', 'academic_session', 'academic_semester_id']),
             'academicOfferings' => AcademicSubjectOffering::query()
                 ->with(['semester', 'subject', 'programme', 'coordinator', 'classGroups.programme'])
                 ->active()
@@ -80,7 +94,11 @@ class OfferedSubjectController extends Controller
 
         return view('subjek-go.offered-subjects.edit', [
             'subject' => $offeredSubject,
-            'sessions' => Session::query()->latest()->get(['id', 'name', 'academic_session']),
+            'sessions' => Session::query()
+                ->with('academicSemester')
+                ->canonicalForDisplay()
+                ->latest()
+                ->get(['id', 'name', 'academic_session', 'academic_semester_id']),
             'academicOfferings' => AcademicSubjectOffering::query()
                 ->with(['semester', 'subject', 'programme', 'coordinator', 'classGroups.programme'])
                 ->where(fn ($query) => $query

@@ -3,13 +3,25 @@
     $selectedClassGroupIds = collect(old('class_group_ids', $offering?->classGroups?->pluck('id')->all() ?? []))
         ->map(fn ($id) => (int) $id)
         ->all();
+    $classGroupSemesterMap = $classGroups
+        ->mapWithKeys(fn ($classGroup) => [$classGroup->id => $classGroup->academic_semester_id])
+        ->all();
 @endphp
 
-<div class="space-y-6">
+<div
+    class="space-y-6"
+    x-data="{
+        selectedSemesterId: Number(@js((int) old('academic_semester_id', $offering?->academic_semester_id ?? 0))),
+        classSearch: '',
+        selectedGroups: @js($selectedClassGroupIds),
+        classGroupSemesterMap: @js($classGroupSemesterMap),
+    }"
+    x-init="$watch('selectedSemesterId', value => selectedGroups = selectedGroups.filter(id => Number(classGroupSemesterMap[id]) === Number(value)))"
+>
     <div class="grid gap-5 md:grid-cols-2">
         <div>
             <x-input-label for="academic_semester_id" value="Academic Semester" />
-            <select id="academic_semester_id" name="academic_semester_id" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]" required>
+            <select id="academic_semester_id" name="academic_semester_id" x-model.number="selectedSemesterId" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]" required>
                 <option value="">Select semester</option>
                 @foreach ($semesters as $semester)
                     <option value="{{ $semester->id }}" @selected((int) old('academic_semester_id', $offering?->academic_semester_id) === $semester->id)>
@@ -81,7 +93,6 @@
 
     <section
         class="rounded-xl border border-[var(--color-border)] bg-[var(--color-accent-soft)] p-4"
-        x-data="{ classSearch: '', selectedGroups: @js($selectedClassGroupIds) }"
     >
         <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -105,13 +116,18 @@
                     ])));
                 @endphp
                 <label
-                    x-show="@js($searchText).includes(classSearch.toLowerCase())"
+                    x-show="Number(selectedSemesterId) === Number({{ $classGroup->academic_semester_id ?: 0 }}) && @js($searchText).includes(classSearch.toLowerCase())"
                     class="enterprise-card flex min-w-0 cursor-pointer items-start gap-3 rounded-xl border p-4 shadow-sm transition hover:-translate-y-0.5"
                 >
                     <input type="checkbox" name="class_group_ids[]" value="{{ $classGroup->id }}" x-model.number="selectedGroups" class="mt-1 rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]" @checked(in_array($classGroup->id, $selectedClassGroupIds, true))>
                     <span class="min-w-0">
                         <span class="block break-words text-sm font-semibold text-[var(--color-text)]">{{ $classGroup->class_name }}</span>
-                        <span class="mt-1 block break-words text-xs text-[var(--color-muted)]">{{ $classGroup->programme?->code ?: 'Shared' }}</span>
+                        <span class="mt-1 block break-words text-xs text-[var(--color-muted)]">
+                            {{ $classGroup->programme?->code ?: 'Shared' }}
+                            @if ($classGroup->semester)
+                                - {{ $classGroup->semester->name }} ({{ $classGroup->semester->academic_session }})
+                            @endif
+                        </span>
                     </span>
                 </label>
             @empty

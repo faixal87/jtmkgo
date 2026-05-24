@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Modules\SubjekGo\Models\OfferedSubject;
 use App\Modules\SubjekGo\Models\Preference;
 use App\Modules\SubjekGo\Models\Session;
-use App\Modules\SubjekGo\Models\TeachingHistory;
+use App\Modules\SubjekGo\Models\TeachingExperience;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
@@ -25,7 +25,20 @@ class DashboardQueryService
     {
         $preference = $session
             ? Preference::query()
-                ->with(['choiceOne.subjectMaster', 'choiceOne.coordinator', 'choiceTwo.subjectMaster', 'choiceTwo.coordinator', 'choiceThree.subjectMaster', 'choiceThree.coordinator', 'choiceFour.subjectMaster', 'choiceFour.coordinator'])
+                ->with([
+                    'choiceOne.academicSubjectOffering.subject',
+                    'choiceOne.subjectMaster',
+                    'choiceOne.coordinator',
+                    'choiceTwo.academicSubjectOffering.subject',
+                    'choiceTwo.subjectMaster',
+                    'choiceTwo.coordinator',
+                    'choiceThree.academicSubjectOffering.subject',
+                    'choiceThree.subjectMaster',
+                    'choiceThree.coordinator',
+                    'choiceFour.academicSubjectOffering.subject',
+                    'choiceFour.subjectMaster',
+                    'choiceFour.coordinator',
+                ])
                 ->where('session_id', $session->id)
                 ->where('user_id', $user->id)
                 ->first()
@@ -33,30 +46,33 @@ class DashboardQueryService
 
         return [
             'preference' => $preference,
+            'assignedSubjects' => $session ? $this->assignedSubjects($user, $session) : collect(),
             'popularSubjects' => $session ? $this->subjectSelectionTotals($session)->take(5) : collect(),
             'recentSelections' => $session && $session->visibility === Session::VISIBILITY_PUBLIC
                 ? Preference::query()
-                    ->with(['lecturer', 'choiceOne.subjectMaster'])
+                    ->with(['lecturer', 'choiceOne.academicSubjectOffering.subject', 'choiceOne.subjectMaster'])
                     ->where('session_id', $session->id)
                     ->submitted()
                     ->latest('submitted_at')
                     ->limit(6)
                     ->get()
                 : collect(),
-            'teachingHistory' => TeachingHistory::query()
+            'teachingExperiences' => TeachingExperience::query()
                 ->forLecturer($user)
-                ->latest('academic_session')
+                ->with('subject:id,course_code,course_name')
+                ->orderByDesc('experience_years')
                 ->latest()
                 ->limit(6)
                 ->get(),
-            'taughtSubjectCodes' => TeachingHistory::query()
+            'experiencedSubjectCodes' => TeachingExperience::query()
                 ->forLecturer($user)
-                ->select('course_code')
-                ->selectRaw('COUNT(*) as total')
-                ->groupBy('course_code')
+                ->join('academic_subjects', 'academic_subjects.id', '=', 'subjek_go_teaching_experiences.academic_subject_id')
+                ->select('academic_subjects.course_code')
+                ->selectRaw('MAX(subjek_go_teaching_experiences.experience_years) as total')
+                ->groupBy('academic_subjects.course_code')
                 ->orderByDesc('total')
                 ->limit(8)
-                ->pluck('total', 'course_code'),
+                ->pluck('total', 'academic_subjects.course_code'),
         ];
     }
 
@@ -89,7 +105,17 @@ class DashboardQueryService
             ],
             'latestSubmissions' => $session
                 ? Preference::query()
-                    ->with(['lecturer', 'choiceOne.subjectMaster', 'choiceTwo.subjectMaster', 'choiceThree.subjectMaster', 'choiceFour.subjectMaster'])
+                    ->with([
+                        'lecturer',
+                        'choiceOne.academicSubjectOffering.subject',
+                        'choiceOne.subjectMaster',
+                        'choiceTwo.academicSubjectOffering.subject',
+                        'choiceTwo.subjectMaster',
+                        'choiceThree.academicSubjectOffering.subject',
+                        'choiceThree.subjectMaster',
+                        'choiceFour.academicSubjectOffering.subject',
+                        'choiceFour.subjectMaster',
+                    ])
                     ->where('session_id', $session->id)
                     ->submitted()
                     ->latest('submitted_at')
@@ -103,14 +129,34 @@ class DashboardQueryService
             'lecturerWorkloads' => $lecturerWorkloads->take(12),
             'workloadDistribution' => $this->workloadDistribution($lecturerWorkloads),
             'pendingLecturers' => $session ? $this->pendingLecturers($session)->limit(10)->get(['id', 'name', 'profile_photo']) : collect(),
-            'historyInsights' => TeachingHistory::query()
-                ->select(['course_code', 'course_name'])
+            'historyInsights' => TeachingExperience::query()
+                ->join('academic_subjects', 'academic_subjects.id', '=', 'subjek_go_teaching_experiences.academic_subject_id')
+                ->select([
+                    'academic_subjects.course_code',
+                    'academic_subjects.course_name',
+                ])
                 ->selectRaw('COUNT(*) as total')
-                ->groupBy('course_code', 'course_name')
+                ->selectRaw('AVG(subjek_go_teaching_experiences.experience_years) as average_years')
+                ->groupBy('academic_subjects.course_code', 'academic_subjects.course_name')
                 ->orderByDesc('total')
                 ->limit(10)
                 ->get(),
         ];
+    }
+
+    /**
+     * @return Collection<int, OfferedSubject>
+     */
+    private function assignedSubjects(User $user, Session $session): Collection
+    {
+        return OfferedSubject::query()
+            ->with(['programme', 'academicSubjectOffering.subject', 'subjectMaster', 'classGroups'])
+            ->withCount('classGroups')
+            ->where('session_id', $session->id)
+            ->active()
+            ->where('subject_coordinator_user_id', $user->id)
+            ->orderBySubjectCode()
+            ->get();
     }
 
     /**
@@ -136,7 +182,7 @@ class DashboardQueryService
             ->addSelect(DB::raw('COALESCE(choice_counts.choice_2_total, 0) as choice_2_total'))
             ->addSelect(DB::raw('COALESCE(choice_counts.choice_3_total, 0) as choice_3_total'))
             ->addSelect(DB::raw('COALESCE(choice_counts.choice_4_total, 0) as choice_4_total'))
-            ->with(['programme', 'subjectMaster', 'coordinator', 'classGroups'])
+            ->with(['programme', 'academicSubjectOffering.subject', 'subjectMaster', 'coordinator', 'classGroups'])
             ->withCount('classGroups')
             ->where('session_id', $session->id)
             ->active()
@@ -184,20 +230,19 @@ class DashboardQueryService
     }
 
     /**
-     * @return Collection<int, TeachingHistory>
+     * @return Collection<int, object>
      */
     private function teachingExperienceSummary(): Collection
     {
-        return TeachingHistory::query()
+        return TeachingExperience::query()
             ->select('user_id')
-            ->selectRaw('COUNT(DISTINCT academic_session) as total_semesters_taught')
-            ->selectRaw('COUNT(DISTINCT course_code) as subjects_taught_before')
-            ->selectRaw('COALESCE(SUM(taught_duration_months), 0) as total_months_taught')
-            ->selectRaw('MAX(academic_session) as latest_semester_taught')
+            ->selectRaw('COUNT(DISTINCT academic_subject_id) as subjects_taught_before')
+            ->selectRaw('COALESCE(SUM(experience_years), 0) as total_experience_years')
+            ->selectRaw('MAX(last_taught_session) as latest_semester_taught')
             ->with('lecturer:id,name,profile_photo')
             ->groupBy('user_id')
-            ->orderByDesc('total_semesters_taught')
-            ->orderByDesc('total_months_taught')
+            ->orderByDesc('subjects_taught_before')
+            ->orderByDesc('total_experience_years')
             ->get();
     }
 
@@ -225,7 +270,7 @@ class DashboardQueryService
     private function coordinatorMap(Session $session): Collection
     {
         $subjects = OfferedSubject::query()
-            ->with(['programme', 'subjectMaster', 'coordinator'])
+            ->with(['programme', 'academicSubjectOffering.subject', 'subjectMaster', 'coordinator'])
             ->where('session_id', $session->id)
             ->active()
             ->whereNotNull('subject_coordinator_user_id')

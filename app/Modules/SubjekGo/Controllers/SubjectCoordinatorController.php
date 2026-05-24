@@ -21,19 +21,23 @@ class SubjectCoordinatorController extends Controller
     {
         Gate::authorize('manage-subjek-go');
 
-        $sessionId = $request->integer('session_id') ?: Session::query()->latest()->value('id');
+        $sessionId = $request->integer('session_id') ?: Session::query()->canonicalForDisplay()->latest()->value('id');
         $search = trim((string) $request->query('q'));
 
         return view('subjek-go.subject-coordinators.index', [
             'subjects' => OfferedSubject::query()
-                ->with(['programme', 'subjectMaster', 'coordinator'])
+                ->with(['programme', 'academicSubjectOffering.subject', 'subjectMaster', 'coordinator'])
                 ->when($sessionId, fn ($query) => $query->where('session_id', $sessionId))
                 ->search($search)
                 ->active()
                 ->orderBySubjectCode()
                 ->paginate(15)
                 ->withQueryString(),
-            'sessions' => Session::query()->latest()->get(['id', 'name', 'academic_session']),
+            'sessions' => Session::query()
+                ->with('academicSemester')
+                ->canonicalForDisplay()
+                ->latest()
+                ->get(['id', 'name', 'academic_session', 'academic_semester_id']),
             'coordinators' => User::query()->approvedStaff()->orderBy('name')->get(['id', 'name']),
             'selectedSessionId' => $sessionId,
             'search' => $search,

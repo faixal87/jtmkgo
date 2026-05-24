@@ -2,11 +2,11 @@
 
 namespace App\Modules\GantiGo\Requests;
 
-use App\Modules\GantiGo\Models\ClassGroup;
+use App\Modules\AcademicCore\Models\AcademicClassGroup;
+use App\Modules\AcademicCore\Models\AcademicSemester;
+use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
 use App\Modules\GantiGo\Models\ClassReplacement;
-use App\Modules\GantiGo\Models\Course;
 use App\Modules\GantiGo\Models\GantiGoSetting;
-use App\Modules\GantiGo\Models\Semester;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
@@ -46,11 +46,10 @@ class UpdateClassReplacementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'semester_id' => ['required', 'integer', 'exists:semesters,id'],
-            'course_id' => ['required', 'integer', 'exists:courses,id'],
-            'programme_id' => ['required', 'integer', 'exists:programmes,id'],
-            'class_ids' => ['required', 'array', 'min:1'],
-            'class_ids.*' => ['integer', 'exists:classes,id'],
+            'academic_semester_id' => ['required', 'integer', Rule::exists('academic_semesters', 'id')],
+            'academic_subject_offering_id' => ['required', 'integer', Rule::exists('academic_subject_offerings', 'id')],
+            'academic_class_group_ids' => ['required', 'array', 'min:1'],
+            'academic_class_group_ids.*' => ['integer', 'distinct', Rule::exists('academic_class_groups', 'id')],
             'already_implemented' => ['nullable', 'boolean'],
             'original_class_date' => ['required', 'date'],
             'original_start_time' => ['required', 'date_format:H:i'],
@@ -84,40 +83,56 @@ class UpdateClassReplacementRequest extends FormRequest
 
     public function withValidator(Validator $validator): void
     {
-        $validator->after(function (Validator $validator) {
-            if (! $this->filled(['semester_id', 'course_id', 'programme_id'])) {
+        $validator->after(function (Validator $validator): void {
+            if (! $this->filled(['academic_semester_id', 'academic_subject_offering_id'])) {
                 return;
             }
 
-            $semester = Semester::query()->find($this->integer('semester_id'));
+            $semester = AcademicSemester::query()->find($this->integer('academic_semester_id'));
 
             if ($semester?->isArchived()) {
-                $validator->errors()->add('semester_id', 'Past semesters are read-only and cannot be edited.');
+                $validator->errors()->add('academic_semester_id', 'Past semesters are read-only and cannot be edited.');
             }
 
-            if ($semester && ! $semester->is_active) {
-                $validator->errors()->add('semester_id', 'Replacement records can only be edited for the active current semester.');
+            if ($semester && (! $semester->is_current || $semester->status !== AcademicSemester::STATUS_ACTIVE)) {
+                $validator->errors()->add('academic_semester_id', 'Replacement records can only be edited for the current active academic semester.');
             }
 
-            $courseBelongsToSemester = Course::query()
-                ->offered()
-                ->whereKey($this->integer('course_id'))
-                ->where('semester_id', $this->integer('semester_id'))
-                ->exists();
+            $offering = AcademicSubjectOffering::query()
+                ->active()
+                ->with('classGroups')
+                ->whereKey($this->integer('academic_subject_offering_id'))
+                ->where('academic_semester_id', $this->integer('academic_semester_id'))
+                ->first();
 
-            if (! $courseBelongsToSemester) {
-                $validator->errors()->add('course_id', 'The selected course is not offered in the active semester.');
+            if (! $offering) {
+                $validator->errors()->add('academic_subject_offering_id', 'The selected subject offering is not available in the current academic semester.');
+
+                return;
             }
 
-            $classesMatchSelection = ClassGroup::query()
-                ->offered()
-                ->whereIn('id', (array) $this->input('class_ids', []))
-                ->where('semester_id', $this->integer('semester_id'))
-                ->where('programme_id', $this->integer('programme_id'))
-                ->count() === count((array) $this->input('class_ids', []));
+            $selectedClassGroupIds = collect((array) $this->input('academic_class_group_ids', []))
+                ->map(fn ($id) => (int) $id)
+                ->values();
+            $attachedClassGroupIds = $offering->classGroups->pluck('id')->map(fn ($id) => (int) $id);
 
-            if (! $classesMatchSelection) {
-                $validator->errors()->add('class_ids', 'All selected class groups must be offered for the selected programme in the active semester.');
+            if ($selectedClassGroupIds->diff($attachedClassGroupIds)->isNotEmpty()) {
+                $validator->errors()->add(
+                    'academic_class_group_ids',
+                    'All selected class groups must be attached to the selected Academic Core subject offering.'
+                );
+            }
+
+            $groupsBelongToSemester = AcademicClassGroup::query()
+                ->whereIn('id', $selectedClassGroupIds)
+                ->where('academic_semester_id', $this->integer('academic_semester_id'))
+                ->count() === $selectedClassGroupIds->count();
+
+            if (! $groupsBelongToSemester) {
+                $validator->errors()->add(
+                    'academic_class_group_ids',
+                    'All selected class groups must belong to the current academic semester.'
+                );
             }
         });
     }

@@ -3,17 +3,15 @@
 namespace App\Modules\GantiGo\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\GantiGo\Models\ClassGroup;
+use App\Modules\AcademicCore\Models\AcademicSemester;
+use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
+use App\Modules\AcademicCore\Services\AcademicSemesterActivationService;
 use App\Modules\GantiGo\Models\ClassReplacement;
-use App\Modules\GantiGo\Models\Course;
 use App\Modules\GantiGo\Models\GantiGoSetting;
-use App\Modules\GantiGo\Models\Programme;
-use App\Modules\GantiGo\Models\Semester;
 use App\Modules\GantiGo\Requests\StoreClassReplacementRequest;
 use App\Modules\GantiGo\Requests\SubmitImplementationRequest;
 use App\Modules\GantiGo\Requests\UpdateClassReplacementRequest;
 use App\Modules\GantiGo\Services\ClassReplacementWorkflowService;
-use App\Modules\GantiGo\Services\SemesterActivationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -39,7 +37,16 @@ class ClassReplacementController extends Controller
 
         return view('ganti-go.replacements.index', [
             'replacements' => ClassReplacement::query()
-                ->with(['semester', 'course', 'programme', 'classes'])
+                ->with([
+                    'academicSemester',
+                    'academicSubjectOffering.subject',
+                    'academicSubject',
+                    'academicClassGroups',
+                    'semester',
+                    'course',
+                    'programme',
+                    'classes',
+                ])
                 ->forUser($request->user())
                 ->when(
                     in_array($status, ClassReplacement::STATUSES, true),
@@ -59,6 +66,12 @@ class ClassReplacementController extends Controller
                                     ->orWhere('name', 'like', "%{$search}%");
                             })
                             ->orWhereHas('classes', fn ($query) => $query->where('class_name', 'like', "%{$search}%"))
+                            ->orWhereHas('academicClassGroups', fn ($query) => $query->where('class_name', 'like', "%{$search}%"))
+                            ->orWhereHas('academicSubject', function ($query) use ($search): void {
+                                $query
+                                    ->where('course_code', 'like', "%{$search}%")
+                                    ->orWhere('course_name', 'like', "%{$search}%");
+                            })
                             ->orWhereHas('course', function ($query) use ($search): void {
                                 $query
                                     ->where('course_code', 'like', "%{$search}%")
@@ -69,6 +82,11 @@ class ClassReplacementController extends Controller
                                 $query
                                     ->where('name', 'like', "%{$search}%")
                                     ->orWhere('session_code', 'like', "%{$search}%");
+                            })
+                            ->orWhereHas('academicSemester', function ($query) use ($search): void {
+                                $query
+                                    ->where('name', 'like', "%{$search}%")
+                                    ->orWhere('academic_session', 'like', "%{$search}%");
                             });
                     });
                 })
@@ -80,7 +98,7 @@ class ClassReplacementController extends Controller
         ]);
     }
 
-    public function create(Request $request, SemesterActivationService $semesterActivation): View|RedirectResponse
+    public function create(Request $request, AcademicSemesterActivationService $semesterActivation): View|RedirectResponse
     {
         if ($redirect = $this->redirectSuperAdmin($request)) {
             return $redirect;
@@ -93,20 +111,7 @@ class ClassReplacementController extends Controller
         return view('ganti-go.replacements.create', [
             'activeSemester' => $activeSemester,
             'semesters' => $activeSemester ? collect([$activeSemester]) : collect(),
-            'programmes' => Programme::query()->active()->orderBy('code')->get(),
-            'classes' => ClassGroup::query()
-                ->with(['programme', 'semester'])
-                ->offered()
-                ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id), fn ($query) => $query->whereRaw('1 = 0'))
-                ->orderBy('class_name')
-                ->get(),
-            'courses' => Course::query()
-                ->with(['semester', 'programme'])
-                ->offered()
-                ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id), fn ($query) => $query->whereRaw('1 = 0'))
-                ->orderBy('course_code')
-                ->orderBy('course_name')
-                ->get(),
+            'offerings' => $this->academicOfferingsFor($activeSemester),
             'methods' => ClassReplacement::REPLACEMENT_METHODS,
             'reasons' => ClassReplacement::replacementReasonOptions(),
             'evidenceRequired' => GantiGoSetting::bool('require_evidence_upload'),
@@ -137,6 +142,10 @@ class ClassReplacementController extends Controller
 
         return view('ganti-go.replacements.show', [
             'replacement' => $classReplacement->load([
+                'academicSemester',
+                'academicSubjectOffering.subject',
+                'academicSubject',
+                'academicClassGroups',
                 'semester',
                 'course',
                 'programme',
@@ -155,37 +164,33 @@ class ClassReplacementController extends Controller
         }
 
         Gate::authorize('update', $classReplacement);
-        $semester = $classReplacement->semester;
-        $courses = Course::query()
-            ->with(['semester', 'programme'])
-            ->offered()
-            ->where('semester_id', $semester?->id)
-            ->orderBy('course_code')
-            ->orderBy('course_name')
-            ->get();
+        $classReplacement->loadMissing([
+            'academicSemester',
+            'academicSubjectOffering.subject',
+            'academicSubject',
+            'academicClassGroups',
+            'semester.academicSemester',
+            'course',
+            'programme',
+            'classes',
+        ]);
+        $semester = $classReplacement->academicSemester
+            ?? $classReplacement->semester?->academicSemester
+            ?? AcademicSemester::query()->current()->first();
+        $offerings = $this->academicOfferingsFor($semester);
 
-        if ($classReplacement->course && ! $courses->contains('id', $classReplacement->course_id)) {
-            $courses->push($classReplacement->course->loadMissing(['semester', 'programme']));
+        if (
+            $classReplacement->academicSubjectOffering
+            && ! $offerings->contains('id', $classReplacement->academic_subject_offering_id)
+        ) {
+            $offerings->push($classReplacement->academicSubjectOffering->loadMissing(['subject', 'programme', 'classGroups.programme']));
         }
 
-        $classes = ClassGroup::query()
-            ->with(['programme', 'semester'])
-            ->offered()
-            ->where('semester_id', $semester?->id)
-            ->orderBy('class_name')
-            ->get();
-
-        $classReplacement->loadMissing('classes');
-        $classReplacement->classes
-            ->reject(fn (ClassGroup $classGroup) => $classes->contains('id', $classGroup->id))
-            ->each(fn (ClassGroup $classGroup) => $classes->push($classGroup->loadMissing(['programme', 'semester'])));
-
         return view('ganti-go.replacements.edit', [
-            'replacement' => $classReplacement->load(['semester', 'course', 'programme', 'classes']),
+            'replacement' => $classReplacement,
+            'activeSemester' => $semester,
             'semesters' => $semester ? collect([$semester]) : collect(),
-            'programmes' => Programme::query()->active()->orderBy('code')->get(),
-            'classes' => $classes,
-            'courses' => $courses,
+            'offerings' => $offerings,
             'methods' => ClassReplacement::REPLACEMENT_METHODS,
             'reasons' => ClassReplacement::replacementReasonOptions(),
             'evidenceRequired' => GantiGoSetting::bool('require_evidence_upload'),
@@ -252,5 +257,22 @@ class ClassReplacementController extends Controller
         return redirect()
             ->route('ganti-go.dashboard')
             ->with('status', self::SUPER_ADMIN_READ_ONLY_MESSAGE);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, AcademicSubjectOffering>
+     */
+    private function academicOfferingsFor(?AcademicSemester $semester)
+    {
+        return AcademicSubjectOffering::query()
+            ->with(['subject', 'programme', 'classGroups.programme'])
+            ->active()
+            ->when(
+                $semester,
+                fn ($query) => $query->where('academic_semester_id', $semester->id),
+                fn ($query) => $query->whereRaw('1 = 0')
+            )
+            ->orderBySubjectCode()
+            ->get();
     }
 }

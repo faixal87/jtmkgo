@@ -108,7 +108,7 @@
                                 <a href="{{ route('ganti-go.replacements.show', $replacement) }}" class="block px-5 py-4 transition duration-200 hover:bg-slate-50">
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
-                                            <p class="text-sm font-medium text-slate-950">{{ $replacement->course?->course_code }} - {{ $replacement->course?->course_name }}</p>
+                                            <p class="text-sm font-medium text-slate-950">{{ $replacement->displayCourseLabel() }}</p>
                                             <p class="mt-1 text-sm text-slate-500">{{ $replacement->formattedClassGroups() }}</p>
                                             <p class="mt-1 text-sm text-slate-500">{{ $replacement->replacement_date->format('d M Y') }}, {{ substr($replacement->replacement_start_time, 0, 5) }} - {{ substr($replacement->replacement_end_time, 0, 5) }}</p>
                                         </div>
@@ -154,10 +154,12 @@
 
                             <div class="mt-5 grid gap-3 sm:grid-cols-3">
                                 <a href="{{ route('ganti-go.analytics') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800">Analytics</a>
-                                <a href="{{ route('ganti-go.semesters.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">Semesters</a>
-                                <a href="{{ route('ganti-go.courses.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">Courses</a>
+                                @can('manage-academic-core')
+                                    <a href="{{ route('academic-core.semesters.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">Academic Semesters</a>
+                                    <a href="{{ route('academic-core.offerings.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800">Subject Offerings</a>
+                                    <a href="{{ route('academic-core.class-groups.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800">Class Groups</a>
+                                @endcan
                                 <a href="{{ route('ganti-go.programmes.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-800">Programmes</a>
-                                <a href="{{ route('ganti-go.classes.index') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800">Classes</a>
                                 <a href="{{ route('ganti-go.settings.edit') }}" class="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition duration-200 hover:border-slate-300 hover:bg-slate-50">Settings</a>
                             </div>
                         </x-ganti.card>

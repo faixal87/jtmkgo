@@ -56,8 +56,8 @@
                     @forelse ($replacements as $replacement)
                         <tr class="transition duration-200 hover:bg-slate-50">
                             <td class="px-5 py-4">
-                                <p class="text-sm font-medium text-slate-950">{{ $replacement->course?->course_code }} - {{ $replacement->course?->course_name }}</p>
-                                <p class="mt-1 text-sm text-slate-500">{{ $replacement->formattedClassGroups() }} - {{ $replacement->semester?->session_code }}</p>
+                                <p class="text-sm font-medium text-slate-950">{{ $replacement->displayCourseLabel() }}</p>
+                                <p class="mt-1 text-sm text-slate-500">{{ $replacement->formattedClassGroups() }} - {{ $replacement->displaySemesterSession() }}</p>
                             </td>
                             <td class="px-5 py-4 text-sm text-slate-600">
                                 {{ $replacement->original_class_date->format('d M Y') }}<br>

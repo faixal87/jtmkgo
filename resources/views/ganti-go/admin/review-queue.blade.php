@@ -49,10 +49,10 @@
                         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                             <div>
                                 <div class="flex flex-wrap items-center gap-3">
-                                    <h2 class="text-sm font-semibold text-slate-950">{{ $replacement->course?->course_code }} - {{ $replacement->course?->course_name }}</h2>
+                                    <h2 class="text-sm font-semibold text-slate-950">{{ $replacement->displayCourseLabel() }}</h2>
                                     <x-ganti.status-badge :status="$replacement->status" />
                                 </div>
-                                <p class="mt-2 text-sm text-slate-500">{{ $replacement->lecturer?->name }} - {{ $replacement->formattedClassGroups() }} - {{ $replacement->semester?->session_code }}</p>
+                                <p class="mt-2 text-sm text-slate-500">{{ $replacement->lecturer?->name }} - {{ $replacement->formattedClassGroups() }} - {{ $replacement->displaySemesterSession() }}</p>
                                 <p class="mt-3 text-sm text-slate-600">
                                     Replacement: {{ $replacement->replacement_date->format('d M Y') }}, {{ substr($replacement->replacement_start_time, 0, 5) }} - {{ substr($replacement->replacement_end_time, 0, 5) }}
                                 </p>

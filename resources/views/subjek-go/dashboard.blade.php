@@ -34,12 +34,40 @@
             </section>
 
             @if ($lecturerData)
-                <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                     <x-stat-card label="Current Choices" :value="$lecturerData['preference']?->selectedSubjects()->count() ?? 0" tone="blue" />
                     <x-stat-card label="Weekly Contact Hour" :value="$lecturerData['preference']?->total_selected_contact_hour ?? '0.00'" tone="emerald" />
-                    <x-stat-card label="Subjects Taught Before" :value="$lecturerData['taughtSubjectCodes']->count()" tone="purple" />
+                    <x-stat-card label="Experience Subjects" :value="$lecturerData['experiencedSubjectCodes']->count()" tone="purple" />
+                    <x-stat-card label="Course Coordinator" :value="$lecturerData['assignedSubjects']->count()" tone="amber" />
                     <x-stat-card label="Submission Status" :value="str($lecturerData['preference']?->status ?? 'draft')->title()" tone="amber" />
                 </section>
+
+                @if ($lecturerData['assignedSubjects']->isNotEmpty())
+                    <section class="enterprise-card min-w-0 rounded-xl border p-5 shadow-sm">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0">
+                                <h2 class="text-sm font-semibold text-[var(--color-text)]">Course Coordinator</h2>
+                                <p class="mt-1 text-sm text-[var(--color-muted)]">Subjects where you are assigned as the course coordinator.</p>
+                            </div>
+                            <span class="theme-badge">{{ $lecturerData['assignedSubjects']->count() }} coordinated</span>
+                        </div>
+                        <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            @foreach ($lecturerData['assignedSubjects'] as $subject)
+                                <article class="rounded-xl border border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-4">
+                                    <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->label }}</p>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        <span class="theme-badge">{{ $subject->programme?->code ?: 'Shared' }}</span>
+                                        <span class="theme-badge">{{ $subject->weekly_contact_hour ?? 0 }} h/week</span>
+                                        <span class="theme-badge">{{ $subject->total_class_groups }} class group(s)</span>
+                                    </div>
+                                    @if ($subject->classGroups->isNotEmpty())
+                                        <p class="mt-3 break-words text-xs text-[var(--color-muted)]">{{ $subject->classGroups->pluck('class_name')->implode(', ') }}</p>
+                                    @endif
+                                </article>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
 
                 <section class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
                     <article class="enterprise-card min-w-0 rounded-xl border p-5 shadow-sm">
@@ -58,7 +86,7 @@
                                         <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Choice {{ $index + 1 }}</p>
                                         <p class="mt-1 break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->label }}</p>
                                     </div>
-                                    <span class="theme-badge">{{ $subject->subjectMaster?->weekly_contact_hour ?? 0 }} h/week</span>
+                                    <span class="theme-badge">{{ $subject->weekly_contact_hour ?? 0 }} h/week</span>
                                 </div>
                             @empty
                                 <x-empty-state title="No selection submitted" message="Open My Selections to rank four offered subjects." />
@@ -103,20 +131,20 @@
 
                     <article class="enterprise-card min-w-0 rounded-xl border p-5 shadow-sm">
                         <div class="flex flex-wrap items-center justify-between gap-3">
-                            <h2 class="text-sm font-semibold text-[var(--color-text)]">My Teaching History</h2>
-                            <a href="{{ route('subjek-go.teaching-history.index') }}" class="text-sm font-semibold text-[var(--color-accent-text)]">View all</a>
+                            <h2 class="text-sm font-semibold text-[var(--color-text)]">My Teaching Experience</h2>
+                            <a href="{{ route('subjek-go.teaching-experience.index') }}" class="text-sm font-semibold text-[var(--color-accent-text)]">Update</a>
                         </div>
                         <div class="mt-4 space-y-3">
-                            @forelse ($lecturerData['teachingHistory'] as $history)
+                            @forelse ($lecturerData['teachingExperiences'] as $experience)
                                 <div class="flex min-w-0 items-start justify-between gap-3 rounded-xl border border-[var(--color-border)] p-3">
                                     <div class="min-w-0">
-                                        <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $history->course_code }} - {{ $history->course_name }}</p>
-                                        <p class="mt-1 break-words text-xs text-[var(--color-muted)]">{{ $history->academic_session }}</p>
+                                        <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $experience->subject?->course_code }} - {{ $experience->subject?->course_name }}</p>
+                                        <p class="mt-1 break-words text-xs text-[var(--color-muted)]">{{ $experience->last_taught_session ?: 'Last taught not set' }}</p>
                                     </div>
-                                    <span class="theme-badge">{{ $history->weekly_contact_hour ?? 0 }} h</span>
+                                    <span class="theme-badge">{{ $experience->experience_years }} year(s)</span>
                                 </div>
                             @empty
-                                <p class="text-sm text-[var(--color-muted)]">No teaching history recorded yet.</p>
+                                <x-empty-state title="No experience recorded" message="Add your subject experience to help coordinators review your preferences." />
                             @endforelse
                         </div>
                     </article>
@@ -138,11 +166,13 @@
                     @if ($canManage)
                         <x-dashboard.status-card title="Lecturer Preferences" description="Monitor selections, workload, and lecturer history." :href="route('subjek-go.admin.preferences.index')" icon="users" />
                         <x-dashboard.status-card title="Sessions" description="Open or close subject preference windows." :href="route('subjek-go.sessions.index')" icon="calendar" />
-                        <x-dashboard.status-card title="Subject Masters" description="Maintain reusable subject catalogue data." :href="route('subjek-go.subject-masters.index')" icon="activity" />
                         <x-dashboard.status-card title="Offered Subjects" description="Attach subject masters to sessions and class groups." :href="route('subjek-go.offered-subjects.index')" icon="activity" />
-                        <x-dashboard.status-card title="Class Groups" description="Manage reusable groups and academic advisors." :href="route('subjek-go.class-groups.index')" icon="users" />
                         <x-dashboard.status-card title="Coordinators" description="Maintain subject coordinator mapping." :href="route('subjek-go.subject-coordinators.index')" icon="users" />
                     @endif
+                    @can('manage-academic-core')
+                        <x-dashboard.status-card title="Academic Subjects" description="Maintain the shared subject catalogue in Academic Core." :href="route('academic-core.subjects.index')" icon="activity" />
+                        <x-dashboard.status-card title="Academic Class Groups" description="Maintain shared class groups in Academic Core." :href="route('academic-core.class-groups.index')" icon="users" />
+                    @endcan
                 </section>
 
                 <section class="grid min-w-0 gap-6 xl:grid-cols-2">
@@ -235,10 +265,10 @@
                             @forelse ($adminData['lecturerExperience'] as $lecturer)
                                 <div class="flex min-w-0 items-center justify-between gap-3">
                                     <p class="min-w-0 truncate text-sm text-[var(--color-text)]">{{ $lecturer->lecturer?->name }}</p>
-                                    <span class="theme-badge">{{ $lecturer->taught_subject_count }}</span>
+                                    <span class="theme-badge">{{ $lecturer->subjects_taught_before }}</span>
                                 </div>
                             @empty
-                                <p class="text-sm text-[var(--color-muted)]">No teaching history yet.</p>
+                                <p class="text-sm text-[var(--color-muted)]">No self-declared experience yet.</p>
                             @endforelse
                         </div>
                     </article>
@@ -258,7 +288,7 @@
                     </article>
 
                     <article class="enterprise-card min-w-0 rounded-xl border p-5 shadow-sm">
-                        <h2 class="text-sm font-semibold text-[var(--color-text)]">Teaching History Insights</h2>
+                        <h2 class="text-sm font-semibold text-[var(--color-text)]">Teaching Experience Insights</h2>
                         <div class="mt-4 space-y-3">
                             @forelse ($adminData['historyInsights'] as $history)
                                 <div class="flex min-w-0 items-center justify-between gap-3">
@@ -266,7 +296,7 @@
                                     <span class="theme-badge">{{ $history->total }}</span>
                                 </div>
                             @empty
-                                <p class="text-sm text-[var(--color-muted)]">No history insights yet.</p>
+                                <p class="text-sm text-[var(--color-muted)]">No experience insights yet.</p>
                             @endforelse
                         </div>
                     </article>

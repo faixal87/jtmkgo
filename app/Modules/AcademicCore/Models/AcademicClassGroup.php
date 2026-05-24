@@ -2,6 +2,7 @@
 
 namespace App\Modules\AcademicCore\Models;
 
+use App\Models\User;
 use App\Modules\GantiGo\Models\Programme;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -14,13 +15,20 @@ class AcademicClassGroup extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'academic_semester_id',
         'programme_id',
         'class_name',
         'cohort',
         'current_semester',
+        'academic_advisor_user_id',
         'remarks',
         'is_active',
     ];
+
+    public function semester(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSemester::class, 'academic_semester_id');
+    }
 
     public function programme(): BelongsTo
     {
@@ -35,6 +43,11 @@ class AcademicClassGroup extends Model
             'academic_class_group_id',
             'academic_subject_offering_id'
         )->withTimestamps();
+    }
+
+    public function academicAdvisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'academic_advisor_user_id');
     }
 
     public function scopeActive(Builder $query): Builder
@@ -55,6 +68,12 @@ class AcademicClassGroup extends Model
                 ->where('class_name', 'like', "%{$search}%")
                 ->orWhere('cohort', 'like', "%{$search}%")
                 ->orWhere('current_semester', 'like', "%{$search}%")
+                ->orWhereHas('semester', fn (Builder $query) => $query
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('academic_session', 'like', "%{$search}%"))
+                ->orWhereHas('academicAdvisor', fn (Builder $query) => $query
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%"))
                 ->orWhereHas('programme', fn (Builder $query) => $query
                     ->where('code', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%"));

@@ -39,6 +39,11 @@ class AcademicSemester extends Model
         return $this->hasMany(AcademicSubjectOffering::class);
     }
 
+    public function classGroups(): HasMany
+    {
+        return $this->hasMany(AcademicClassGroup::class);
+    }
+
     public function scopeCurrent(Builder $query): Builder
     {
         return $query->where('is_current', true);

@@ -8,7 +8,7 @@ use App\Modules\GantiGo\Models\Programme;
 use App\Modules\SubjekGo\Models\OfferedSubject;
 use App\Modules\SubjekGo\Models\Preference;
 use App\Modules\SubjekGo\Models\Session;
-use App\Modules\SubjekGo\Models\TeachingHistory;
+use App\Modules\SubjekGo\Models\TeachingExperience;
 use App\Support\SafeArrayCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -35,9 +35,26 @@ class LecturerPreferenceMonitoringService
             ->with([
                 'subjekGoPreferences' => fn ($query) => $query
                     ->where('session_id', $session->id)
-                    ->with(['choiceOne.subjectMaster', 'choiceTwo.subjectMaster', 'choiceThree.subjectMaster', 'choiceFour.subjectMaster']),
+                    ->with([
+                        'choiceOne.academicSubjectOffering.subject',
+                        'choiceOne.subjectMaster',
+                        'choiceOne.classGroups',
+                        'choiceOne.coordinator',
+                        'choiceTwo.academicSubjectOffering.subject',
+                        'choiceTwo.subjectMaster',
+                        'choiceTwo.classGroups',
+                        'choiceTwo.coordinator',
+                        'choiceThree.academicSubjectOffering.subject',
+                        'choiceThree.subjectMaster',
+                        'choiceThree.classGroups',
+                        'choiceThree.coordinator',
+                        'choiceFour.academicSubjectOffering.subject',
+                        'choiceFour.subjectMaster',
+                        'choiceFour.classGroups',
+                        'choiceFour.coordinator',
+                    ]),
             ])
-            ->withExists('subjekGoTeachingHistories as has_teaching_history')
+            ->withExists('subjekGoTeachingExperiences as has_teaching_history')
             ->when(filled($filters['q'] ?? null), fn (Builder $query) => $query->searchIdentity($filters['q']))
             ->when(
                 filled($filters['programme_id'] ?? null),
@@ -79,7 +96,7 @@ class LecturerPreferenceMonitoringService
             )
             ->when(
                 filter_var($filters['experienced'] ?? false, FILTER_VALIDATE_BOOL),
-                fn (Builder $query) => $query->whereHas('subjekGoTeachingHistories')
+                fn (Builder $query) => $query->whereHas('subjekGoTeachingExperiences')
             )
             ->orderBy('name');
     }
@@ -128,39 +145,51 @@ class LecturerPreferenceMonitoringService
     {
         $preference = Preference::query()
             ->with([
+                'choiceOne.academicSubjectOffering.subject',
                 'choiceOne.subjectMaster',
                 'choiceOne.coordinator',
                 'choiceOne.programme',
+                'choiceOne.classGroups',
+                'choiceTwo.academicSubjectOffering.subject',
                 'choiceTwo.subjectMaster',
                 'choiceTwo.coordinator',
                 'choiceTwo.programme',
+                'choiceTwo.classGroups',
+                'choiceThree.academicSubjectOffering.subject',
                 'choiceThree.subjectMaster',
                 'choiceThree.coordinator',
                 'choiceThree.programme',
+                'choiceThree.classGroups',
+                'choiceFour.academicSubjectOffering.subject',
                 'choiceFour.subjectMaster',
                 'choiceFour.coordinator',
                 'choiceFour.programme',
+                'choiceFour.classGroups',
             ])
             ->where('session_id', $session->id)
             ->where('user_id', $lecturer->id)
             ->first();
 
-        $teachingHistory = TeachingHistory::query()
+        $teachingExperience = TeachingExperience::query()
             ->forLecturer($lecturer)
-            ->latest('academic_session')
+            ->with('subject:id,course_code,course_name')
+            ->orderByDesc('experience_years')
             ->latest()
             ->get();
 
-        $historyByCourseCode = $teachingHistory
-            ->groupBy('course_code')
-            ->map(fn (Collection $rows) => [
-                'count' => $rows->count(),
-                'semester_history' => $rows->pluck('academic_session')->filter()->unique()->values(),
-                'last_session' => $rows->first()?->academic_session,
+        $experienceByCourseCode = $teachingExperience
+            ->keyBy(fn (TeachingExperience $experience) => $experience->subject?->course_code)
+            ->map(fn (TeachingExperience $experience) => [
+                'years' => $experience->experience_years,
+                'months' => (int) round(((float) $experience->experience_years) * 12),
+                'semesters' => (int) ceil(((float) $experience->experience_years) * 2),
+                'level' => $experience->experience_level,
+                'last_session' => $experience->last_taught_session,
+                'history' => collect([$experience->last_taught_session])->filter()->values(),
             ]);
 
         $coordinatorSubjects = OfferedSubject::query()
-            ->with(['programme', 'subjectMaster'])
+            ->with(['programme', 'academicSubjectOffering.subject', 'subjectMaster'])
             ->where('session_id', $session->id)
             ->active()
             ->where('subject_coordinator_user_id', $lecturer->id)
@@ -169,16 +198,16 @@ class LecturerPreferenceMonitoringService
 
         return [
             'preference' => $preference,
-            'teachingHistory' => $teachingHistory->take(12),
-            'historyByCourseCode' => $historyByCourseCode,
-            'previousSemesters' => $teachingHistory
-                ->pluck('academic_session')
+            'teachingExperiences' => $teachingExperience->take(12),
+            'experienceByCourseCode' => $experienceByCourseCode,
+            'previousSemesters' => $teachingExperience
+                ->pluck('last_taught_session')
                 ->filter()
                 ->unique()
                 ->values(),
-            'experienceMonths' => (int) $teachingHistory->sum('taught_duration_months'),
-            'subjectsTaughtBefore' => $teachingHistory
-                ->pluck('course_code')
+            'experienceYears' => (float) $teachingExperience->sum('experience_years'),
+            'subjectsTaughtBefore' => $teachingExperience
+                ->pluck('academic_subject_id')
                 ->filter()
                 ->unique()
                 ->count(),

@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">Offered Subjects</h1>
-                <p class="mt-1 text-sm text-[var(--color-muted)]">Maintain session-specific offerings from reusable subject masters and attached class groups.</p>
+                <p class="mt-1 text-sm text-[var(--color-muted)]">Maintain session-specific offerings projected from Academic Core subject offerings.</p>
             </div>
             <a href="{{ route('subjek-go.offered-subjects.create', ['return_to' => url()->full()]) }}" class="theme-button-primary rounded-lg px-4 py-2 text-sm font-semibold">Add Offering</a>
         </div>
@@ -19,7 +19,8 @@
                     <select id="session_id" name="session_id" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                         @foreach ($sessions as $session)
                             <option value="{{ $session->id }}" @selected((int) $selectedSessionId === $session->id)>
-                                {{ $session->name }} ({{ $session->academic_session }})
+                                {{ $session->name }} - {{ $session->academicSemester?->name ?: 'No linked academic semester' }}
+                                ({{ $session->academicSemester?->academic_session ?: $session->academic_session }})
                             </option>
                         @endforeach
                     </select>
@@ -51,16 +52,30 @@
                             @forelse ($subjects as $subject)
                                 <tr class="align-top">
                                     <td class="px-5 py-4">
-                                        <p class="break-words font-semibold text-[var(--color-text)]">{{ $subject->subjectMaster?->course_code }}</p>
-                                        <p class="mt-1 max-w-md break-words text-[var(--color-muted)]">{{ $subject->subjectMaster?->course_name }}</p>
+                                        <p class="break-words font-semibold text-[var(--color-text)]">{{ $subject->course_code }}</p>
+                                        <p class="mt-1 max-w-md break-words text-[var(--color-muted)]">{{ $subject->course_name }}</p>
                                         @if ($subject->offered_semester)
                                             <p class="mt-1 text-xs text-[var(--color-muted)]">Semester {{ $subject->offered_semester }}</p>
                                         @endif
+                                        @php
+                                            $choiceTotals = [
+                                                1 => (int) ($subject->choice_1_total ?? 0),
+                                                2 => (int) ($subject->choice_2_total ?? 0),
+                                                3 => (int) ($subject->choice_3_total ?? 0),
+                                                4 => (int) ($subject->choice_4_total ?? 0),
+                                            ];
+                                        @endphp
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            <span class="theme-badge">{{ array_sum($choiceTotals) }} total choices</span>
+                                            @foreach ($choiceTotals as $rank => $total)
+                                                <span class="theme-badge">C{{ $rank }}: {{ $total }}</span>
+                                            @endforeach
+                                        </div>
                                     </td>
                                     <td class="px-5 py-4 text-[var(--color-muted)]">{{ $subject->programme?->code ?: 'Shared' }}</td>
                                     <td class="px-5 py-4 text-[var(--color-muted)]">
-                                        <span class="block">{{ $subject->subjectMaster?->weekly_contact_hour ?? 0 }} h/week</span>
-                                        <span class="mt-1 block text-xs">{{ $subject->subjectMaster?->credit_hour ?? 0 }} credit hour(s) | {{ $subject->total_class_groups }} class group(s)</span>
+                                        <span class="block">{{ $subject->weekly_contact_hour ?? 0 }} h/week</span>
+                                        <span class="mt-1 block text-xs">{{ $subject->credit_hour ?? 0 }} credit hour(s) | {{ $subject->total_class_groups }} class group(s)</span>
                                         @if ($subject->classGroups->isNotEmpty())
                                             <span class="mt-2 block text-xs">
                                                 {{ $subject->classGroups->pluck('class_name')->implode(', ') }}
@@ -129,7 +144,7 @@
                             @method('DELETE')
                             <div>
                                 <h3 class="text-lg font-semibold text-[var(--color-text)]">Delete offered subject?</h3>
-                                <p class="mt-2 text-sm text-[var(--color-muted)]">Selections, teaching history, or attached class groups block deletion. Archive is safer once an offering has history.</p>
+                                <p class="mt-2 text-sm text-[var(--color-muted)]">Selections or attached class groups block deletion. Archive is safer once an offering has activity.</p>
                             </div>
                             <div class="flex flex-wrap justify-end gap-3">
                                 <button type="button" x-data @click="$dispatch('close-modal', 'delete-subjek-offered-subject-{{ $subject->id }}')" class="theme-button-secondary rounded-lg px-4 py-2 text-sm font-semibold">Cancel</button>

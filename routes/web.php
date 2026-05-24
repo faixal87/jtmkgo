@@ -47,6 +47,7 @@ use App\Modules\SubjekGo\Controllers\PreferenceController as SubjekGoPreferenceC
 use App\Modules\SubjekGo\Controllers\SessionController as SubjekGoSessionController;
 use App\Modules\SubjekGo\Controllers\SubjectMasterController as SubjekGoSubjectMasterController;
 use App\Modules\SubjekGo\Controllers\SubjectCoordinatorController as SubjekGoSubjectCoordinatorController;
+use App\Modules\SubjekGo\Controllers\TeachingExperienceController as SubjekGoTeachingExperienceController;
 use App\Modules\SubjekGo\Controllers\TeachingHistoryController as SubjekGoTeachingHistoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -195,6 +196,8 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'can:manag
         Route::patch('class-groups/{classGroup}/toggle', [AcademicClassGroupController::class, 'toggle'])->name('class-groups.toggle');
         Route::patch('class-groups/{classGroup}/archive', [AcademicClassGroupController::class, 'archive'])->name('class-groups.archive');
         Route::delete('class-groups/{classGroup}', [AcademicClassGroupController::class, 'destroy'])->name('class-groups.destroy');
+        Route::get('class-groups/promote', [AcademicClassGroupController::class, 'promote'])->name('class-groups.promote');
+        Route::post('class-groups/promote', [AcademicClassGroupController::class, 'storePromotion'])->name('class-groups.promote.store');
         Route::resource('class-groups', AcademicClassGroupController::class)
             ->parameters(['class-groups' => 'classGroup'])
             ->except(['show', 'destroy']);
@@ -290,6 +293,9 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
         Route::get('/subject-preferences', [SubjekGoPreferenceController::class, 'index'])->name('preferences.index');
         Route::post('/subject-preferences', [SubjekGoPreferenceController::class, 'store'])->name('preferences.store');
         Route::get('/my-selections', [SubjekGoMySelectionController::class, 'index'])->name('my-selections.index');
+        Route::resource('teaching-experience', SubjekGoTeachingExperienceController::class)
+            ->parameters(['teaching-experience' => 'teachingExperience'])
+            ->except(['show']);
         Route::get('/teaching-history', [SubjekGoTeachingHistoryController::class, 'index'])->name('teaching-history.index');
         Route::get('/analytics', SubjekGoAnalyticsController::class)->name('analytics');
 

@@ -8,7 +8,7 @@
     $popularMax = max((int) ($data['popularSubjects']->max('selection_total') ?? 0), 1);
     $workloadMax = max(array_values($data['workloadDistribution']) ?: [1]);
     $experienceChart = $data['teachingExperience']->take(6);
-    $experienceMax = max((int) ($experienceChart->max('total_semesters_taught') ?? 0), 1);
+    $experienceMax = max((float) ($experienceChart->max('total_experience_years') ?? 0), 1);
 @endphp
 
 <x-app-layout>
@@ -29,6 +29,25 @@
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             <x-toast />
+
+            <form method="GET" action="{{ route('subjek-go.analytics') }}" class="enterprise-card grid gap-4 rounded-2xl border p-5 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                <div>
+                    <x-input-label for="session_id" value="Academic Session" />
+                    <select id="session_id" name="session_id" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                        @foreach ($sessions as $availableSession)
+                            <option value="{{ $availableSession->id }}" @selected($session?->id === $availableSession->id)>
+                                {{ $availableSession->name }} - {{ $availableSession->academicSemester?->name ?: $availableSession->academic_session }}
+                                ({{ $availableSession->academicSemester?->academic_session ?: $availableSession->academic_session }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-form-helper>Select a previous session to review historical preference analytics.</x-form-helper>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <x-primary-button>Apply</x-primary-button>
+                    <a href="{{ route('subjek-go.analytics') }}" class="theme-button-secondary rounded-lg px-4 py-2 text-sm font-semibold">Current</a>
+                </div>
+            </form>
 
             <section class="enterprise-card min-w-0 rounded-2xl border p-5 shadow-sm">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -79,7 +98,7 @@
                     <div class="space-y-3">
                         @forelse ($data['popularSubjects']->take(6) as $subject)
                             <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(8rem,12rem)_2.5rem] sm:items-center">
-                                <p class="min-w-0 truncate text-sm font-medium text-[var(--color-text)]">{{ $subject->subjectMaster?->course_code }}</p>
+                                <p class="min-w-0 truncate text-sm font-medium text-[var(--color-text)]">{{ $subject->course_code }}</p>
                                 <div class="h-3 overflow-hidden rounded-full bg-[var(--color-accent-soft)]">
                                     <div class="h-full rounded-full bg-[var(--color-accent)]" style="width: {{ max(($subject->selection_total / $popularMax) * 100, 4) }}%"></div>
                                 </div>
@@ -109,18 +128,18 @@
                     </div>
                 </x-subjek.chart-card>
 
-                <x-subjek.chart-card title="Experienced Lecturer Chart" description="Top lecturers by semesters taught.">
+                <x-subjek.chart-card title="Experienced Lecturer Chart" description="Top lecturers by self-declared experience years.">
                     <div class="space-y-3">
                         @forelse ($experienceChart as $lecturer)
                             <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(8rem,12rem)_2.5rem] sm:items-center">
                                 <p class="min-w-0 truncate text-sm font-medium text-[var(--color-text)]">{{ $lecturer->lecturer?->name }}</p>
                                 <div class="h-3 overflow-hidden rounded-full bg-[var(--color-accent-soft)]">
-                                    <div class="h-full rounded-full bg-[var(--color-accent)]" style="width: {{ max(($lecturer->total_semesters_taught / $experienceMax) * 100, 4) }}%"></div>
+                                    <div class="h-full rounded-full bg-[var(--color-accent)]" style="width: {{ max(((float) $lecturer->total_experience_years / $experienceMax) * 100, 4) }}%"></div>
                                 </div>
-                                <span class="text-sm font-semibold text-[var(--color-text)]">{{ $lecturer->total_semesters_taught }}</span>
+                                <span class="text-sm font-semibold text-[var(--color-text)]">{{ number_format((float) $lecturer->total_experience_years, 1) }}y</span>
                             </div>
                         @empty
-                            <x-empty-state title="No experience history yet" message="Teaching history insights appear once records are available." />
+                            <x-empty-state title="No experience profile yet" message="Self-declared teaching experience appears once lecturers update their profile." />
                         @endforelse
                     </div>
                 </x-subjek.chart-card>
@@ -133,7 +152,7 @@
                             <div class="rounded-xl border border-[var(--color-border)] p-4">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                     <div class="min-w-0">
-                                        <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->subjectMaster?->course_code }} - {{ $subject->subjectMaster?->course_name }}</p>
+                                        <p class="break-words text-sm font-semibold text-[var(--color-text)]">{{ $subject->label }}</p>
                                         <p class="mt-1 text-xs text-[var(--color-muted)]">{{ $subject->programme?->code ?: 'Shared' }}</p>
                                         @if ($subject->classGroups->isNotEmpty())
                                             <p class="mt-1 break-words text-xs text-[var(--color-muted)]">
@@ -209,33 +228,29 @@
                     </div>
                 </x-subjek.analytics-card>
 
-                <x-subjek.analytics-card title="Teaching Experience Insights" description="History depth from tracked teaching records.">
+                <x-subjek.analytics-card title="Teaching Experience Insights" description="Self-declared subject experience from lecturer profiles.">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-[var(--color-border)]">
                             <thead>
                                 <tr class="text-left text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
                                     <th class="pb-3 pr-3">Lecturer</th>
-                                    <th class="pb-3 pr-3">Semesters</th>
-                                    <th class="pb-3 pr-3">Duration</th>
+                                    <th class="pb-3 pr-3">Subjects</th>
+                                    <th class="pb-3 pr-3">Years</th>
                                     <th class="pb-3">Latest</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-[var(--color-border)]">
                                 @forelse ($data['teachingExperience']->take(10) as $lecturer)
-                                    @php
-                                        $years = intdiv((int) $lecturer->total_months_taught, 12);
-                                        $months = (int) $lecturer->total_months_taught % 12;
-                                    @endphp
                                     <tr>
                                         <td class="py-3 pr-3 text-sm font-medium text-[var(--color-text)]">{{ $lecturer->lecturer?->name }}</td>
-                                        <td class="py-3 pr-3 text-sm text-[var(--color-text)]">{{ $lecturer->total_semesters_taught }}</td>
-                                        <td class="py-3 pr-3 text-sm text-[var(--color-text)]">{{ $years }}y {{ $months }}m</td>
+                                        <td class="py-3 pr-3 text-sm text-[var(--color-text)]">{{ $lecturer->subjects_taught_before }}</td>
+                                        <td class="py-3 pr-3 text-sm text-[var(--color-text)]">{{ number_format((float) $lecturer->total_experience_years, 1) }}y</td>
                                         <td class="py-3 text-sm text-[var(--color-text)]">{{ $lecturer->latest_semester_taught ?: '-' }}</td>
                                     </tr>
                                 @empty
                                     <tr>
                                         <td colspan="4" class="py-4">
-                                            <x-empty-state title="No teaching history" message="Experience metrics appear after history records are added." />
+                                            <x-empty-state title="No teaching experience" message="Experience metrics appear after lecturers update their self-declared profiles." />
                                         </td>
                                     </tr>
                                 @endforelse

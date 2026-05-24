@@ -45,7 +45,7 @@ class DashboardController extends Controller
             'reasonCount' => ReplacementReason::query()->active()->count(),
             'reviewQueueCount' => ClassReplacement::query()
                 ->submittedForReview()
-                ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id))
+                ->forSemesterContext($activeSemester)
                 ->count(),
         ], $foundationKeys);
 

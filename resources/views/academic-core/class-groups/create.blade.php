@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div>
             <h2 class="text-xl font-semibold leading-tight text-[var(--color-text)]">Create Class Group</h2>
-            <p class="mt-1 text-sm text-[var(--color-muted)]">Create a reusable student grouping reference.</p>
+            <p class="mt-1 text-sm text-[var(--color-muted)]">Create a semester-specific student grouping record without overwriting historical groups.</p>
         </div>
     </x-slot>
 

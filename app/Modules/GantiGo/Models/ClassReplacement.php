@@ -3,6 +3,10 @@
 namespace App\Modules\GantiGo\Models;
 
 use App\Models\User;
+use App\Modules\AcademicCore\Models\AcademicClassGroup;
+use App\Modules\AcademicCore\Models\AcademicSemester;
+use App\Modules\AcademicCore\Models\AcademicSubject;
+use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,8 +56,11 @@ class ClassReplacement extends Model
 
     protected $fillable = [
         'semester_id',
+        'academic_semester_id',
         'user_id',
         'course_id',
+        'academic_subject_offering_id',
+        'academic_subject_id',
         'programme_id',
         'already_implemented',
         'original_class_date',
@@ -91,9 +98,24 @@ class ClassReplacement extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function academicSemester(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSemester::class);
+    }
+
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function academicSubjectOffering(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSubjectOffering::class);
+    }
+
+    public function academicSubject(): BelongsTo
+    {
+        return $this->belongsTo(AcademicSubject::class);
     }
 
     public function programme(): BelongsTo
@@ -111,6 +133,16 @@ class ClassReplacement extends Model
         )->withTimestamps();
     }
 
+    public function academicClassGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            AcademicClassGroup::class,
+            'ganti_go_replacement_class_groups',
+            'class_replacement_id',
+            'academic_class_group_id'
+        )->withTimestamps();
+    }
+
     public function implementationApprovedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'implementation_approved_by');
@@ -124,6 +156,28 @@ class ClassReplacement extends Model
     public function scopeForUser(Builder $query, User $user): Builder
     {
         return $query->where('user_id', $user->id);
+    }
+
+    public function scopeForSemesterContext(Builder $query, ?Semester $semester): Builder
+    {
+        if (! $semester) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $query) use ($semester): void {
+            if ($semester->academic_semester_id) {
+                $query->where('academic_semester_id', $semester->academic_semester_id)
+                    ->orWhere(function (Builder $query) use ($semester): void {
+                        $query
+                            ->whereNull('academic_semester_id')
+                            ->where('semester_id', $semester->id);
+                    });
+
+                return;
+            }
+
+            $query->where('semester_id', $semester->id);
+        });
     }
 
     public function scopeSubmittedForReview(Builder $query): Builder
@@ -183,7 +237,9 @@ class ClassReplacement extends Model
 
     public function isArchived(): bool
     {
-        return $this->semester?->isArchived() ?? false;
+        return $this->academicSemester?->isArchived()
+            ?? $this->semester?->isArchived()
+            ?? false;
     }
 
     public function statusLabel(): string
@@ -234,11 +290,54 @@ class ClassReplacement extends Model
 
     public function formattedClassGroups(): string
     {
+        $academicClassNames = $this->academicClassGroups->pluck('class_name')->filter()->values();
+
+        if ($academicClassNames->isNotEmpty()) {
+            return $academicClassNames->join(', ');
+        }
+
         $classNames = $this->classes->pluck('class_name')->filter()->values();
 
         return $classNames->isNotEmpty()
             ? $classNames->join(', ')
             : ($this->course?->class_name ?: 'Not assigned');
+    }
+
+    public function displayCourseCode(): string
+    {
+        return $this->academicSubject?->course_code
+            ?? $this->academicSubjectOffering?->subject?->course_code
+            ?? $this->course?->course_code
+            ?? 'Legacy Course';
+    }
+
+    public function displayCourseName(): string
+    {
+        return $this->academicSubject?->course_name
+            ?? $this->academicSubjectOffering?->subject?->course_name
+            ?? $this->course?->course_name
+            ?? '';
+    }
+
+    public function displayCourseLabel(): string
+    {
+        $name = $this->displayCourseName();
+
+        return trim($this->displayCourseCode().($name !== '' ? " - {$name}" : ''));
+    }
+
+    public function displaySemesterName(): string
+    {
+        return $this->academicSemester?->name
+            ?? $this->semester?->name
+            ?? 'Legacy Semester';
+    }
+
+    public function displaySemesterSession(): string
+    {
+        return $this->academicSemester?->academic_session
+            ?? $this->semester?->session_code
+            ?? 'Legacy Session';
     }
 
     public function formattedDuration(?int $minutes): string

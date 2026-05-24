@@ -22,7 +22,11 @@
                                     <x-subjek.status-badge :status="$session->status" />
                                     <span class="theme-badge">{{ str($session->visibility)->title() }}</span>
                                 </div>
-                                <p class="mt-1 break-words text-sm text-[var(--color-muted)]">{{ $session->academic_session }}</p>
+                                <p class="mt-1 break-words text-sm text-[var(--color-muted)]">
+                                    {{ $session->academicSemester?->name ?: 'No linked academic semester' }}
+                                    <span class="mx-1">|</span>
+                                    {{ $session->academicSemester?->academic_session ?: $session->academic_session }}
+                                </p>
                                 <p class="mt-3 break-words text-sm text-[var(--color-muted)]">
                                     {{ $session->offered_subjects_count }} subject(s) | {{ $session->preferences_count }} submission(s)
                                 </p>

@@ -80,13 +80,17 @@ class AcademicCoreProjectionService
     {
         $mirror = SubjekGoClassGroup::query()
             ->where('academic_class_group_id', $classGroup->id)
-            ->first()
-            ?? SubjekGoClassGroup::query()
+            ->first();
+
+        if (! $mirror && ! $classGroup->academic_semester_id) {
+            $mirror = SubjekGoClassGroup::query()
                 ->where('programme_id', $classGroup->programme_id)
                 ->where('class_name', $classGroup->class_name)
                 ->where('cohort', $classGroup->cohort)
-                ->first()
-            ?? new SubjekGoClassGroup();
+                ->first();
+        }
+
+        $mirror ??= new SubjekGoClassGroup();
 
         $mirror->fill([
             'academic_class_group_id' => $classGroup->id,

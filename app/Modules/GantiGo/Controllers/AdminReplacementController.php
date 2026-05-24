@@ -3,7 +3,12 @@
 namespace App\Modules\GantiGo\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Modules\AcademicCore\Models\AcademicClassGroup;
+use App\Modules\AcademicCore\Models\AcademicSemester;
+use App\Modules\AcademicCore\Models\AcademicSubject;
 use App\Modules\GantiGo\Models\ClassReplacement;
+use App\Modules\GantiGo\Models\Programme;
 use App\Modules\GantiGo\Models\Semester;
 use App\Modules\GantiGo\Requests\ApproveImplementationRequest;
 use App\Modules\GantiGo\Requests\RejectImplementationRequest;
@@ -30,20 +35,22 @@ class AdminReplacementController extends Controller
         $workflow->markOverdueRecords();
 
         $activeSemester = $semesterActivation->autoActivateForToday();
-        $selectedSemesterId = $request->integer('semester_id') ?: $activeSemester?->id;
+        $filters = $this->analyticsFilters($request, $activeSemester?->id);
+        $selectedSemesterId = $filters['semester_id'];
         $isAnalyticsRoute = $request->routeIs('ganti-go.analytics');
-        $query = $this->filteredQuery($request, $selectedSemesterId);
-        $widgetKeys = ['stats', 'statusBreakdown', 'monthlyCounts', 'semesterTrend', 'programmeCounts', 'reasonBreakdown', 'verificationStats'];
-        $widgets = SafeArrayCache::remember("ganti-go.monitoring.widgets.".($selectedSemesterId ?? 'all'), now()->addSeconds(30), function () use ($selectedSemesterId) {
-            $statusBreakdown = $this->statusBreakdown($selectedSemesterId);
+        $query = $this->filteredQuery($request, $filters);
+        $widgetKeys = ['stats', 'statusBreakdown', 'monthlyCounts', 'semesterTrend', 'academicSessionTrend', 'programmeCounts', 'reasonBreakdown', 'verificationStats'];
+        $widgets = SafeArrayCache::remember("ganti-go.monitoring.widgets.".md5(json_encode($filters)), now()->addSeconds(30), function () use ($filters) {
+            $statusBreakdown = $this->statusBreakdown($filters);
 
             return [
-                'stats' => $this->statsFromBreakdown($statusBreakdown, $selectedSemesterId),
+                'stats' => $this->statsFromBreakdown($statusBreakdown, $filters),
                 'statusBreakdown' => $statusBreakdown,
-                'monthlyCounts' => $this->monthlyCounts($selectedSemesterId),
+                'monthlyCounts' => $this->monthlyCounts($filters),
                 'semesterTrend' => $this->semesterTrend(),
-                'programmeCounts' => $this->programmeCounts($selectedSemesterId),
-                'reasonBreakdown' => $this->reasonBreakdown($selectedSemesterId),
+                'academicSessionTrend' => $this->academicSessionTrend(),
+                'programmeCounts' => $this->programmeCounts($filters),
+                'reasonBreakdown' => $this->reasonBreakdown($filters),
                 'verificationStats' => $this->verificationStats($statusBreakdown),
             ];
         }, $widgetKeys);
@@ -51,7 +58,20 @@ class AdminReplacementController extends Controller
         return view('ganti-go.admin.monitoring', $widgets + [
             'replacements' => $query->latest()->paginate(15)->withQueryString(),
             'semesters' => Semester::query()->orderByDesc('start_date')->get(),
+            'academicSessions' => AcademicSemester::query()
+                ->select('academic_session')
+                ->distinct()
+                ->orderByDesc('academic_session')
+                ->pluck('academic_session'),
+            'programmes' => Programme::query()->active()->orderBy('code')->get(['id', 'code', 'name']),
+            'classGroups' => AcademicClassGroup::query()
+                ->with(['semester', 'programme'])
+                ->orderBy('class_name')
+                ->get(['id', 'academic_semester_id', 'programme_id', 'class_name']),
+            'subjects' => AcademicSubject::query()->orderBy('course_code')->get(['id', 'course_code', 'course_name']),
+            'lecturers' => User::query()->approvedStaff()->orderBy('name')->get(['id', 'name']),
             'selectedSemesterId' => $selectedSemesterId,
+            'filters' => $filters,
             'statusOptions' => ClassReplacement::STATUSES,
             'canReviewImplementations' => ! $request->user()->is_super_admin && Gate::allows('manage-ganti-go'),
             'isSuperAdminReadOnly' => $request->user()->is_super_admin,
@@ -60,8 +80,8 @@ class AdminReplacementController extends Controller
                 ? 'Read-only analytics for Ganti Go trends, verification, and lecturer activity.'
                 : 'Module admin analytics for Ganti Go verification, trends, and lecturer activity.',
             'analyticsRouteName' => $isAnalyticsRoute ? 'ganti-go.analytics' : 'ganti-go.admin.monitoring',
-            'lecturerStats' => $this->lecturerStats($selectedSemesterId),
-            'attentionItems' => $this->attentionItems($selectedSemesterId),
+            'lecturerStats' => $this->lecturerStats($filters),
+            'attentionItems' => $this->attentionItems($filters),
         ]);
     }
 
@@ -81,9 +101,19 @@ class AdminReplacementController extends Controller
 
         return view('ganti-go.admin.review-queue', [
             'replacements' => ClassReplacement::query()
-                ->with(['semester', 'course', 'programme', 'classes', 'lecturer'])
+                ->with([
+                    'academicSemester',
+                    'academicSubjectOffering.subject',
+                    'academicSubject',
+                    'academicClassGroups',
+                    'semester',
+                    'course',
+                    'programme',
+                    'classes',
+                    'lecturer',
+                ])
                 ->submittedForReview()
-                ->when($selectedSemesterId, fn ($query) => $query->where('semester_id', $selectedSemesterId))
+                ->when($selectedSemesterId, fn ($query) => $query->forSemesterContext(Semester::query()->find($selectedSemesterId)))
                 ->latest('implementation_submitted_at')
                 ->paginate(15)
                 ->withQueryString(),
@@ -106,11 +136,20 @@ class AdminReplacementController extends Controller
         return back()->with('status', 'Implementation has been rejected.');
     }
 
-    private function filteredQuery(Request $request, ?int $selectedSemesterId): Builder
+    private function filteredQuery(Request $request, array $filters): Builder
     {
-        return ClassReplacement::query()
-            ->with(['semester', 'course', 'programme', 'classes', 'lecturer'])
-            ->when($selectedSemesterId, fn ($query) => $query->where('semester_id', $selectedSemesterId))
+        return $this->filteredBaseQuery($filters)
+            ->with([
+                'academicSemester',
+                'academicSubjectOffering.subject',
+                'academicSubject',
+                'academicClassGroups',
+                'semester',
+                'course',
+                'programme',
+                'classes',
+                'lecturer',
+            ])
             ->when(
                 $request->filled('status') && in_array((string) $request->string('status'), ClassReplacement::STATUSES, true),
                 fn ($query) => $query->where('status', (string) $request->string('status'))
@@ -126,34 +165,58 @@ class AdminReplacementController extends Controller
                         ->orWhere('reason', 'like', "%{$normalizedReasonSearch}%")
                         ->orWhereHas('programme', fn ($query) => $query->where('code', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%"))
                         ->orWhereHas('classes', fn ($query) => $query->where('class_name', 'like', "%{$search}%"))
+                        ->orWhereHas('academicSubject', fn ($query) => $query->where('course_code', 'like', "%{$search}%")->orWhere('course_name', 'like', "%{$search}%"))
+                        ->orWhereHas('academicClassGroups', fn ($query) => $query->where('class_name', 'like', "%{$search}%"))
                         ->orWhereHas('course', fn ($query) => $query->where('course_code', 'like', "%{$search}%")->orWhere('course_name', 'like', "%{$search}%")->orWhere('class_name', 'like', "%{$search}%"));
                 });
             });
     }
 
     /**
-     * @return array<string, int>
+     * @return array<string, mixed>
      */
-    private function stats(?int $semesterId): array
+    private function analyticsFilters(Request $request, ?int $defaultSemesterId): array
     {
-        $baseQuery = ClassReplacement::query()
-            ->when($semesterId, fn ($query) => $query->where('semester_id', $semesterId));
-
         return [
-            'planned' => (clone $baseQuery)->where('status', ClassReplacement::STATUS_PLANNED)->count(),
-            'pendingVerification' => (clone $baseQuery)->where('status', ClassReplacement::STATUS_PENDING_VERIFICATION)->count(),
-            'verified' => (clone $baseQuery)->where('status', ClassReplacement::STATUS_VERIFIED)->count(),
-            'rejected' => (clone $baseQuery)->where('status', ClassReplacement::STATUS_REJECTED)->count(),
-            'overdue' => (clone $baseQuery)->where('status', ClassReplacement::STATUS_OVERDUE)->count(),
-            'upcoming' => (clone $baseQuery)->upcoming()->count(),
+            'academic_session' => trim((string) $request->query('academic_session')),
+            'semester_id' => $request->filled('semester_id')
+                ? $request->integer('semester_id')
+                : ($request->filled('academic_session') ? null : $defaultSemesterId),
+            'programme_id' => $request->integer('programme_id') ?: null,
+            'academic_class_group_id' => $request->integer('academic_class_group_id') ?: null,
+            'academic_subject_id' => $request->integer('academic_subject_id') ?: null,
+            'lecturer_id' => $request->integer('lecturer_id') ?: null,
+            'date_from' => $request->date('date_from')?->toDateString(),
+            'date_to' => $request->date('date_to')?->toDateString(),
         ];
+    }
+
+    private function filteredBaseQuery(array $filters): Builder
+    {
+        return ClassReplacement::query()
+            ->when($filters['academic_session'], fn ($query, $session) => $query->whereHas(
+                'semester.academicSemester',
+                fn ($query) => $query->where('academic_session', $session)
+            ))
+            ->when($filters['semester_id'], function ($query, $semesterId): void {
+                $query->forSemesterContext(Semester::query()->find($semesterId));
+            })
+            ->when($filters['programme_id'], fn ($query, $programmeId) => $query->where('programme_id', $programmeId))
+            ->when($filters['academic_class_group_id'], fn ($query, $classGroupId) => $query->whereHas(
+                'academicClassGroups',
+                fn ($query) => $query->whereKey($classGroupId)
+            ))
+            ->when($filters['academic_subject_id'], fn ($query, $subjectId) => $query->where('academic_subject_id', $subjectId))
+            ->when($filters['lecturer_id'], fn ($query, $lecturerId) => $query->where('user_id', $lecturerId))
+            ->when($filters['date_from'], fn ($query, $dateFrom) => $query->whereDate('replacement_date', '>=', $dateFrom))
+            ->when($filters['date_to'], fn ($query, $dateTo) => $query->whereDate('replacement_date', '<=', $dateTo));
     }
 
     /**
      * @param  array<string, int>  $statusBreakdown
      * @return array<string, int>
      */
-    private function statsFromBreakdown(array $statusBreakdown, ?int $semesterId): array
+    private function statsFromBreakdown(array $statusBreakdown, array $filters): array
     {
         return [
             'planned' => $statusBreakdown[ClassReplacement::STATUS_PLANNED] ?? 0,
@@ -161,8 +224,7 @@ class AdminReplacementController extends Controller
             'verified' => $statusBreakdown[ClassReplacement::STATUS_VERIFIED] ?? 0,
             'rejected' => $statusBreakdown[ClassReplacement::STATUS_REJECTED] ?? 0,
             'overdue' => $statusBreakdown[ClassReplacement::STATUS_OVERDUE] ?? 0,
-            'upcoming' => ClassReplacement::query()
-                ->when($semesterId, fn ($query) => $query->where('semester_id', $semesterId))
+            'upcoming' => $this->filteredBaseQuery($filters)
                 ->upcoming()
                 ->count(),
         ];
@@ -171,11 +233,10 @@ class AdminReplacementController extends Controller
     /**
      * @return array<string, int>
      */
-    private function statusBreakdown(?int $semesterId): array
+    private function statusBreakdown(array $filters): array
     {
-        $counts = ClassReplacement::query()
+        $counts = $this->filteredBaseQuery($filters)
             ->select('status', DB::raw('COUNT(*) as total'))
-            ->when($semesterId, fn ($query) => $query->where('semester_id', $semesterId))
             ->groupBy('status')
             ->pluck('total', 'status')
             ->all();
@@ -188,12 +249,11 @@ class AdminReplacementController extends Controller
     /**
      * @return array<int, array{label: string, total: int}>
      */
-    private function monthlyCounts(?int $semesterId): array
+    private function monthlyCounts(array $filters): array
     {
-        return ClassReplacement::query()
+        return $this->filteredBaseQuery($filters)
             ->selectRaw("DATE_FORMAT(replacement_date, '%Y-%m') as label, COUNT(*) as total")
             ->where('status', ClassReplacement::STATUS_VERIFIED)
-            ->when($semesterId, fn ($query) => $query->where('semester_id', $semesterId))
             ->groupBy('label')
             ->orderBy('label')
             ->limit(12)
@@ -207,15 +267,16 @@ class AdminReplacementController extends Controller
      */
     private function semesterTrend(): array
     {
-        return Semester::query()
+        return AcademicSemester::query()
             ->leftJoin('class_replacements', function ($join) {
                 $join
-                    ->on('semesters.id', '=', 'class_replacements.semester_id')
+                    ->on('academic_semesters.id', '=', 'class_replacements.academic_semester_id')
                     ->where('class_replacements.status', '=', ClassReplacement::STATUS_VERIFIED);
             })
-            ->select('semesters.session_code as label', DB::raw('COUNT(class_replacements.id) as total'))
-            ->groupBy('semesters.id', 'semesters.session_code')
-            ->orderByDesc('semesters.start_date')
+            ->selectRaw("CONCAT(academic_semesters.name, ' - ', academic_semesters.academic_session) as label")
+            ->selectRaw('COUNT(class_replacements.id) as total')
+            ->groupBy('academic_semesters.id', 'academic_semesters.name', 'academic_semesters.academic_session')
+            ->orderByDesc('academic_semesters.start_date')
             ->limit(6)
             ->get()
             ->reverse()
@@ -227,12 +288,30 @@ class AdminReplacementController extends Controller
     /**
      * @return array<int, array{label: string, total: int}>
      */
-    private function programmeCounts(?int $semesterId): array
+    private function academicSessionTrend(): array
     {
-        return ClassReplacement::query()
+        return AcademicSemester::query()
+            ->leftJoin('class_replacements', function ($join) {
+                $join
+                    ->on('academic_semesters.id', '=', 'class_replacements.academic_semester_id')
+                    ->where('class_replacements.status', '=', ClassReplacement::STATUS_VERIFIED);
+            })
+            ->select('academic_semesters.academic_session as label', DB::raw('COUNT(class_replacements.id) as total'))
+            ->groupBy('academic_semesters.academic_session')
+            ->orderBy('academic_semesters.academic_session')
+            ->get()
+            ->map(fn ($row) => ['label' => $row->label, 'total' => (int) $row->total])
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{label: string, total: int}>
+     */
+    private function programmeCounts(array $filters): array
+    {
+        return $this->filteredBaseQuery($filters)
             ->leftJoin('programmes', 'programmes.id', '=', 'class_replacements.programme_id')
             ->selectRaw("COALESCE(UPPER(programmes.code), 'Unassigned') as label, COUNT(class_replacements.id) as total")
-            ->when($semesterId, fn ($query) => $query->where('class_replacements.semester_id', $semesterId))
             ->groupBy('label')
             ->orderBy('label')
             ->get()
@@ -243,11 +322,10 @@ class AdminReplacementController extends Controller
     /**
      * @return array<int, array{label: string, total: int}>
      */
-    private function reasonBreakdown(?int $semesterId): array
+    private function reasonBreakdown(array $filters): array
     {
-        $counts = ClassReplacement::query()
+        $counts = $this->filteredBaseQuery($filters)
             ->select('reason', DB::raw('COUNT(*) as total'))
-            ->when($semesterId, fn ($query) => $query->where('semester_id', $semesterId))
             ->groupBy('reason')
             ->pluck('total', 'reason')
             ->all();
@@ -313,9 +391,9 @@ class AdminReplacementController extends Controller
     /**
      * @return \Illuminate\Support\Collection<int, object>
      */
-    private function lecturerStats(?int $semesterId)
+    private function lecturerStats(array $filters)
     {
-        return ClassReplacement::query()
+        return $this->filteredBaseQuery($filters)
             ->join('users', 'users.id', '=', 'class_replacements.user_id')
             ->selectRaw("
                 users.id,
@@ -327,7 +405,6 @@ class AdminReplacementController extends Controller
                 SUM(status = 'rejected') as rejected,
                 SUM(status = 'overdue') as overdue
             ")
-            ->when($semesterId, fn ($query) => $query->where('class_replacements.semester_id', $semesterId))
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total')
             ->orderBy('users.name')
@@ -338,11 +415,20 @@ class AdminReplacementController extends Controller
     /**
      * @return array<string, \Illuminate\Database\Eloquent\Collection<int, ClassReplacement>>
      */
-    private function attentionItems(?int $semesterId): array
+    private function attentionItems(array $filters): array
     {
-        $base = ClassReplacement::query()
-            ->with(['course', 'programme', 'classes', 'lecturer'])
-            ->when($semesterId, fn ($query) => $query->where('semester_id', $semesterId));
+        $base = $this->filteredBaseQuery($filters)
+            ->with([
+                'academicSemester',
+                'academicSubjectOffering.subject',
+                'academicSubject',
+                'academicClassGroups',
+                'course',
+                'programme',
+                'classes',
+                'lecturer',
+            ])
+            ;
 
         return [
             'stalePending' => (clone $base)

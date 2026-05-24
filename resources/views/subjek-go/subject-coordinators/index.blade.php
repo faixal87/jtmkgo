@@ -16,7 +16,8 @@
                     <select id="session_id" name="session_id" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                         @foreach ($sessions as $session)
                             <option value="{{ $session->id }}" @selected((int) $selectedSessionId === $session->id)>
-                                {{ $session->name }} ({{ $session->academic_session }})
+                                {{ $session->name }} - {{ $session->academicSemester?->name ?: 'No linked academic semester' }}
+                                ({{ $session->academicSemester?->academic_session ?: $session->academic_session }})
                             </option>
                         @endforeach
                     </select>

@@ -158,7 +158,12 @@ class AcademicSubjectOfferingController extends Controller
                 ->get(['id', 'name', 'academic_session']),
             'subjects' => AcademicSubject::query()->active()->orderBy('course_code')->get(['id', 'course_code', 'course_name']),
             'programmes' => Programme::query()->active()->orderBy('code')->get(['id', 'code', 'name']),
-            'classGroups' => AcademicClassGroup::query()->active()->with('programme')->orderBy('class_name')->get(),
+            'classGroups' => AcademicClassGroup::query()
+                ->active()
+                ->with(['programme', 'semester', 'academicAdvisor'])
+                ->orderByDesc('academic_semester_id')
+                ->orderBy('class_name')
+                ->get(),
             'coordinators' => User::query()->approvedStaff()->orderBy('name')->get(['id', 'name']),
         ];
     }

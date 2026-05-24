@@ -23,25 +23,37 @@
             }"
             class="mx-auto max-w-6xl space-y-8 px-4 sm:px-6 lg:px-8"
         >
-            <section class="grid gap-5 md:grid-cols-2">
-                <x-ganti.workflow-card
-                    mode="planned"
-                    title="Planned Replacement"
-                    description="Create a replacement plan before the replacement class is conducted."
-                    accent="blue"
+            @if (! $activeSemester)
+                <x-empty-state
+                    title="No current academic semester has been configured."
+                    message="Ask an Academic Core administrator to activate the current semester before creating replacement records."
                 />
+            @elseif ($offerings->isEmpty())
+                <x-empty-state
+                    title="No subject offerings are available for the current semester."
+                    message="Add active Academic Core subject offerings before creating replacement records."
+                />
+            @else
+                <section class="grid gap-5 md:grid-cols-2">
+                    <x-ganti.workflow-card
+                        mode="planned"
+                        title="Planned Replacement"
+                        description="Create a replacement plan before the replacement class is conducted."
+                        accent="blue"
+                    />
 
-                <x-ganti.workflow-card
-                    mode="implemented"
-                    title="Already Implemented Replacement"
-                    description="Submit a replacement record for a class that has already been replaced."
-                    accent="amber"
-                />
-            </section>
+                    <x-ganti.workflow-card
+                        mode="implemented"
+                        title="Already Implemented Replacement"
+                        description="Submit a replacement record for a class that has already been replaced."
+                        accent="amber"
+                    />
+                </section>
+            @endif
 
             <section
                 id="replacement-form"
-                x-show="selectedWorkflow"
+                x-show="selectedWorkflow && @js($activeSemester !== null && $offerings->isNotEmpty())"
                 x-cloak
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 translate-y-4"

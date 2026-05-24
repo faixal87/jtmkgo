@@ -10,6 +10,7 @@ use App\Modules\SubjekGo\Models\Session;
 use App\Modules\SubjekGo\Requests\StoreSessionRequest;
 use App\Modules\SubjekGo\Requests\UpdateSessionRequest;
 use App\Modules\SubjekGo\Services\SessionWindowService;
+use App\Modules\SubjekGo\Services\OfferingManagementService;
 use App\Modules\SubjekGo\Services\SubjekGoRecordLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +27,8 @@ class SessionController extends Controller
 
         return view('subjek-go.sessions.index', [
             'sessions' => Session::query()
+                ->with('academicSemester')
+                ->canonicalForDisplay()
                 ->withCount(['offeredSubjects', 'preferences'])
                 ->latest('created_at')
                 ->paginate(12),
@@ -43,7 +46,11 @@ class SessionController extends Controller
         ]);
     }
 
-    public function store(StoreSessionRequest $request, SessionWindowService $sessions): RedirectResponse
+    public function store(
+        StoreSessionRequest $request,
+        SessionWindowService $sessions,
+        OfferingManagementService $offerings
+    ): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -51,9 +58,10 @@ class SessionController extends Controller
             $this->closeOtherOpenSessions();
         }
 
-        Session::query()->create($validated + [
+        $session = Session::query()->create($validated + [
             'created_by' => $request->user()->id,
         ]);
+        $offerings->syncSessionFromAcademicCore($session);
         $sessions->clearCache();
 
         return $this->safeListWithSuccess(
@@ -76,7 +84,12 @@ class SessionController extends Controller
         ]);
     }
 
-    public function update(UpdateSessionRequest $request, Session $session, SessionWindowService $sessions): RedirectResponse
+    public function update(
+        UpdateSessionRequest $request,
+        Session $session,
+        SessionWindowService $sessions,
+        OfferingManagementService $offerings
+    ): RedirectResponse
     {
         if ($session->status === Session::STATUS_ARCHIVED) {
             return back()->with('error', 'Archived records are read-only.');
@@ -89,6 +102,7 @@ class SessionController extends Controller
         }
 
         $session->update($validated);
+        $offerings->syncSessionFromAcademicCore($session);
         $sessions->clearCache();
 
         return $this->safeListWithSuccess(
@@ -98,7 +112,12 @@ class SessionController extends Controller
         );
     }
 
-    public function status(Request $request, Session $session, SessionWindowService $sessions): RedirectResponse
+    public function status(
+        Request $request,
+        Session $session,
+        SessionWindowService $sessions,
+        OfferingManagementService $offerings
+    ): RedirectResponse
     {
         Gate::authorize('manage-subjek-go');
 
@@ -115,6 +134,9 @@ class SessionController extends Controller
         }
 
         $session->update(['status' => $validated['status']]);
+        if ($validated['status'] === Session::STATUS_OPEN) {
+            $offerings->syncSessionFromAcademicCore($session);
+        }
         $sessions->clearCache();
 
         return $this->backWithSuccess('Session status updated successfully.');

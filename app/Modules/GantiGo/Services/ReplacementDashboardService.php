@@ -16,7 +16,7 @@ class ReplacementDashboardService
     {
         $baseQuery = ClassReplacement::query()
             ->forUser($user)
-            ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id));
+            ->forSemesterContext($activeSemester);
 
         return [
             'myPending' => (clone $baseQuery)->where('status', ClassReplacement::STATUS_PLANNED)->count(),
@@ -34,7 +34,7 @@ class ReplacementDashboardService
     public function adminStats(?Semester $activeSemester): array
     {
         $baseQuery = ClassReplacement::query()
-            ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id));
+            ->forSemesterContext($activeSemester);
 
         return [
             'allRecords' => (clone $baseQuery)->count(),
@@ -51,10 +51,18 @@ class ReplacementDashboardService
     private function upcomingForUser(User $user, ?Semester $activeSemester): Collection
     {
         return ClassReplacement::query()
-            ->with(['course', 'semester', 'classes'])
+            ->with([
+                'academicSemester',
+                'academicSubjectOffering.subject',
+                'academicSubject',
+                'academicClassGroups',
+                'course',
+                'semester',
+                'classes',
+            ])
             ->forUser($user)
             ->upcoming()
-            ->when($activeSemester, fn ($query) => $query->where('semester_id', $activeSemester->id))
+            ->forSemesterContext($activeSemester)
             ->orderBy('replacement_date')
             ->orderBy('replacement_start_time')
             ->take(5)

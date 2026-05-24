@@ -6,7 +6,7 @@
     <x-slot name="header">
         <x-ganti.section-header
             title="Replacement Details"
-            :description="$replacement->course?->course_code.' - '.$replacement->course?->course_name"
+            :description="$replacement->displayCourseLabel()"
         >
             <x-slot name="actions">
                 <x-ganti.status-badge :status="$replacement->status" />
@@ -32,11 +32,11 @@
                         </div>
                         <div>
                             <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Semester</dt>
-                            <dd class="mt-1 text-sm text-slate-800">{{ $replacement->semester?->name }}</dd>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $replacement->displaySemesterName() }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Course</dt>
-                            <dd class="mt-1 text-sm text-slate-800">{{ $replacement->course?->course_code }} - {{ $replacement->course?->course_name }}</dd>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $replacement->displayCourseLabel() }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Programme</dt>

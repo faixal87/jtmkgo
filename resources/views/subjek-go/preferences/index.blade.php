@@ -9,9 +9,10 @@
         : ($preference?->choiceIds() ?? [1 => null, 2 => null, 3 => null, 4 => null]);
     $subjectPayload = $subjectOptions->map(fn ($subject) => [
         'id' => $subject->id,
-        'label' => $subject->subjectMaster?->course_code.' - '.$subject->subjectMaster?->course_name,
-        'weekly_contact_hour' => (float) ($subject->subjectMaster?->weekly_contact_hour ?? 0),
+        'label' => $subject->label,
+        'weekly_contact_hour' => (float) ($subject->weekly_contact_hour ?? 0),
     ])->values();
+    $experienceByCourseCode = $experienceByCourseCode ?? collect();
 @endphp
 
 <x-app-layout>
@@ -61,7 +62,11 @@
                     <section class="enterprise-card min-w-0 rounded-2xl border p-5 shadow-sm">
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">{{ $session->academic_session }}</p>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                                    {{ $session->academicSemester?->name ?: 'No linked academic semester' }}
+                                    <span class="mx-1">|</span>
+                                    {{ $session->academicSemester?->academic_session ?: $session->academic_session }}
+                                </p>
                                 <h2 class="mt-2 break-words text-lg font-semibold text-[var(--color-text)]">{{ $session->name }}</h2>
                                 <p class="mt-1 text-sm text-[var(--color-muted)]">Select one unique subject for every ranking.</p>
                             </div>
@@ -85,7 +90,7 @@
                                 >
                                     <option value="">Select subject</option>
                                     @foreach ($subjectOptions as $subject)
-                                        <option value="{{ $subject->id }}">{{ $subject->subjectMaster?->course_code }} - {{ $subject->subjectMaster?->course_name }}</option>
+                                        <option value="{{ $subject->id }}">{{ $subject->label }}</option>
                                     @endforeach
                                 </select>
                                 <p class="mt-3 min-h-10 break-words text-sm font-medium text-[var(--color-text)]" x-text="selectedSubject({{ $rank }})?.label || 'No subject selected'"></p>
@@ -120,14 +125,17 @@
                         @foreach ($subjects as $subject)
                             <x-subjek.subject-card
                                 :subject="$subject"
-                                :history="$historyByCourseCode[$subject->subjectMaster?->course_code] ?? null"
+                                :experience="$experienceByCourseCode[$subject->course_code] ?? null"
                                 :selectable="$openSession && $session->id === $openSession->id"
                             />
                         @endforeach
                     </div>
                     {{ $subjects->links() }}
                 @elseif ($session)
-                    <x-empty-state title="No offered subjects found" message="Try another search term or ask the module admin to add subjects for this session." />
+                    <x-empty-state
+                        :title="$subjectOptions->isEmpty() ? 'No subject offerings are available for this session.' : 'No offered subjects found'"
+                        :message="$subjectOptions->isEmpty() ? 'A module admin needs to configure Academic Core offerings for the linked academic semester.' : 'Try another search term or ask the module admin to add subjects for this session.'"
+                    />
                 @endif
             </section>
         </div>

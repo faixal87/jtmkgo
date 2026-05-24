@@ -2,7 +2,7 @@
     <x-slot name="header">
         <x-ganti.section-header
             title="Edit Replacement"
-            :description="$replacement->course?->course_code.' - '.$replacement->course?->course_name"
+            :description="$replacement->displayCourseLabel()"
         />
     </x-slot>
 
@@ -11,7 +11,7 @@
             <form method="POST" action="{{ route('ganti-go.replacements.update', $replacement) }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('PATCH')
-                @include('ganti-go.replacements.partials.form', ['replacement' => $replacement, 'activeSemester' => $replacement->semester])
+                @include('ganti-go.replacements.partials.form', ['replacement' => $replacement])
             </form>
         </div>
     </div>
