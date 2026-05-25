@@ -47,7 +47,7 @@
                 <aside class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 class="text-sm font-semibold text-slate-900">CSV Requirements</h3>
                     <p class="mt-2 text-sm text-slate-600">Use a header row with these columns:</p>
-                    <pre class="mt-4 overflow-x-auto rounded-lg bg-slate-950 p-4 text-xs leading-6 text-slate-100">name,ic_number,email,phone,date_of_birth,profile_photo,department,position,grade,staff_short_code,mbot_membership,bem_membership,account_status,is_super_admin,password</pre>
+                    <pre class="mt-4 overflow-x-auto rounded-lg bg-slate-950 p-4 text-xs leading-6 text-slate-100">name,ic_number,email,phone,date_of_birth,profile_photo,department,position,grade,staff_short_code,mbot_membership,bem_membership,audit_requirement_link,account_status,is_super_admin,password</pre>
                     <ul class="mt-4 space-y-2 text-sm text-slate-600">
                         <li>IC number is matched after removing spaces and dashes.</li>
                         <li>Accepted statuses: pending, approved, rejected, inactive.</li>

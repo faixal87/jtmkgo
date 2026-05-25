@@ -23,6 +23,7 @@
             selectedUser: config.selectedUser,
             users: config.users || [],
             modules: config.modules || [],
+            featurePermissions: config.featurePermissions || [],
             userSearch: config.userSearch || '',
             userFilter: config.userFilter || 'all',
             moduleFilter: config.moduleFilter || 'all',
@@ -146,12 +147,20 @@
                 return (this.selectedUserRecord?.admin_module_ids || []).map(Number).includes(Number(moduleId));
             },
 
+            userHasFeaturePermission(permissionKey) {
+                return (this.selectedUserRecord?.feature_permission_keys || []).includes(permissionKey);
+            },
+
             moduleAccessCount() {
                 return this.selectedUserRecord?.module_access_ids?.length || 0;
             },
 
             moduleAdminCount() {
                 return this.selectedUserRecord?.admin_module_ids?.length || 0;
+            },
+
+            featurePermissionCount() {
+                return this.selectedUserRecord?.feature_permission_keys?.length || 0;
             },
 
             isLoading(type, moduleId) {
@@ -164,6 +173,39 @@
 
             async toggleModuleAdmin(moduleId, enabled) {
                 await this.toggleRequest('admin', this.urls.toggleAdmin, moduleId, enabled, 'Module admin updated');
+            },
+
+            async toggleFeaturePermission(permissionKey, enabled) {
+                if (!this.selectedUserRecord) {
+                    return;
+                }
+
+                if (this.selectedUserRecord.is_super_admin) {
+                    this.showToast('Super admin accounts already have sensitive Staff Directory visibility.', 'error');
+                    return;
+                }
+
+                const key = `feature:${permissionKey}`;
+                this.loadingToggles[key] = true;
+
+                try {
+                    const data = await this.postJson(this.urls.toggleFeaturePermission, {
+                        user_id: this.selectedUserRecord.id,
+                        permission_key: permissionKey,
+                        enabled,
+                    });
+
+                    if (data.user) {
+                        this.updateUser(data.user);
+                    }
+
+                    this.showToast(data.message || 'KJ/KPRO feature updated');
+                    this.persistState();
+                } catch (error) {
+                    this.showToast(error.message || 'Feature update failed.', 'error');
+                } finally {
+                    delete this.loadingToggles[key];
+                }
             },
 
             async toggleRequest(type, url, moduleId, enabled, fallbackMessage) {
@@ -300,6 +342,7 @@
             'selectedUser' => $selectedUserId ?: $firstUser?->id,
             'users' => $usersData,
             'modules' => $modulesData,
+            'featurePermissions' => $featurePermissionsData,
             'userSearch' => $userSearch ?? '',
             'userFilter' => $userFilter ?? 'all',
             'moduleFilter' => $moduleFilter ?? 'all',
@@ -309,6 +352,7 @@
                 'search' => route('super-admin.access-control.users.search'),
                 'toggleAccess' => route('super-admin.access-control.module-access.toggle'),
                 'toggleAdmin' => route('super-admin.access-control.module-admin.toggle'),
+                'toggleFeaturePermission' => route('super-admin.access-control.feature-permission.toggle'),
                 'bulkAccess' => route('super-admin.access-control.module-access.bulk'),
             ],
         ]))"
@@ -573,6 +617,7 @@
                                     </template>
 
                                     <template x-if="!selectedUserRecord.is_super_admin">
+                                        <div class="space-y-6">
                                         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                             <template x-for="module in modules" :key="`admin-module-${module.id}`">
                                                 <button
@@ -610,6 +655,64 @@
                                                     </span>
                                                 </button>
                                             </template>
+                                        </div>
+                                            <section class="enterprise-card rounded-xl border p-5 shadow-sm">
+                                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                                    <div class="min-w-0">
+                                                        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">KJ &amp; KPRO Features</p>
+                                                        <h4 class="mt-1 text-base font-semibold text-[var(--color-text)]">Staff Directory Sensitive View</h4>
+                                                        <p class="mt-2 max-w-3xl text-sm leading-6 text-[var(--color-muted)]">
+                                                            Grant selected users additional department/program leadership permissions to view staff audit requirement links and full staff identification details in Staff Directory.
+                                                        </p>
+                                                    </div>
+                                                    <span class="theme-badge"><span x-text="featurePermissionCount()"></span>&nbsp;feature(s)</span>
+                                                </div>
+
+                                                <div class="mt-5 grid gap-4 md:grid-cols-2">
+                                                    <template x-for="permission in featurePermissions" :key="permission.key">
+                                                        <button
+                                                            type="button"
+                                                            @click="toggleFeaturePermission(permission.key, !userHasFeaturePermission(permission.key))"
+                                                            :disabled="isLoading('feature', permission.key)"
+                                                            class="group flex min-h-36 flex-col justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:cursor-wait disabled:opacity-75"
+                                                        >
+                                                            <span class="flex items-start justify-between gap-3">
+                                                                <span class="min-w-0">
+                                                                    <span class="flex min-w-0 items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
+                                                                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]">
+                                                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                                                <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                                                                <path d="M9 12h6" />
+                                                                                <path d="M12 9v6" />
+                                                                            </svg>
+                                                                        </span>
+                                                                        <span class="min-w-0 break-words" x-text="permission.name"></span>
+                                                                    </span>
+                                                                    <span class="mt-2 block text-xs leading-5 text-[var(--color-muted)]" x-text="permission.description"></span>
+                                                                    <span class="mt-3 flex flex-wrap gap-2">
+                                                                        <template x-for="feature in permission.features" :key="feature">
+                                                                            <span class="rounded-full border border-[var(--color-border)] px-2 py-1 text-[0.68rem] font-semibold text-[var(--color-muted)]" x-text="feature"></span>
+                                                                        </template>
+                                                                    </span>
+                                                                </span>
+                                                                <span class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition" :class="userHasFeaturePermission(permission.key) ? 'bg-emerald-500' : 'bg-slate-300'">
+                                                                    <span class="inline-block h-5 w-5 rounded-full bg-white shadow transition" :class="userHasFeaturePermission(permission.key) ? 'translate-x-5' : 'translate-x-0.5'"></span>
+                                                                </span>
+                                                            </span>
+                                                            <span class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
+                                                                <span :class="userHasFeaturePermission(permission.key) ? 'text-emerald-600' : 'text-[var(--color-muted)]'" x-text="userHasFeaturePermission(permission.key) ? 'ON - Sensitive view enabled' : 'OFF - Standard Staff Directory view'"></span>
+                                                                <span x-show="isLoading('feature', permission.key)" class="inline-flex items-center gap-2 text-[var(--color-muted)]">
+                                                                    <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                                        <circle class="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3"></circle>
+                                                                        <path class="opacity-75" fill="currentColor" d="M12 3a9 9 0 0 1 9 9h-3a6 6 0 0 0-6-6V3Z"></path>
+                                                                    </svg>
+                                                                    Updating
+                                                                </span>
+                                                            </span>
+                                                        </button>
+                                                    </template>
+                                                </div>
+                                            </section>
                                         </div>
                                     </template>
                                 </div>

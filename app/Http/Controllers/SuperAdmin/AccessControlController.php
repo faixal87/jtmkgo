@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\FeaturePermission;
 use App\Models\Module;
 use App\Models\ModuleAdmin;
 use App\Models\ModuleAccessRequest;
@@ -15,6 +16,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AccessControlController extends Controller
@@ -49,11 +52,7 @@ class AccessControlController extends Controller
 
         $usersPaginator = User::query()
             ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
-            ->with([
-                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
-                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
-                'moduleAccessRequests' => fn ($query) => $query->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('requested_at')->latest(),
-            ])
+            ->with($this->accessControlRelations(true))
             ->withCount([
                 'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                 'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
@@ -82,11 +81,7 @@ class AccessControlController extends Controller
         if ($selectedUserId && ! $users->contains('id', $selectedUserId)) {
             $selectedUser = User::query()
                 ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
-                ->with([
-                    'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
-                    'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
-                    'moduleAccessRequests' => fn ($query) => $query->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('requested_at')->latest(),
-                ])
+                ->with($this->accessControlRelations(true))
                 ->withCount([
                     'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                     'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
@@ -165,6 +160,14 @@ class AccessControlController extends Controller
                 'slug' => $module->slug,
                 'description' => $module->description ?: 'Module access management',
             ])->values(),
+            'featurePermissionsData' => [
+                [
+                    'key' => FeaturePermission::STAFF_DIRECTORY_SENSITIVE_VIEW,
+                    'name' => 'Staff Directory Sensitive View',
+                    'description' => 'View staff audit requirement links and full staff identification details.',
+                    'features' => ['View Staff Audit Link', 'View Full Staff IC'],
+                ],
+            ],
         ]);
     }
 
@@ -321,6 +324,73 @@ class AccessControlController extends Controller
         }
 
         $this->clearUserAccessCaches([$user->id]);
+        $user = $this->freshAccessControlUser($user->id);
+
+        return response()->json([
+            'success' => true,
+            'access_state' => $enabled,
+            'message' => $message,
+            'user' => $this->serializeUserForAccessControl($user),
+        ]);
+    }
+
+    public function toggleFeaturePermission(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'permission_key' => ['required', 'string', Rule::in(FeaturePermission::allowedKeys())],
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        if (! Schema::hasTable('feature_permissions')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Feature permission storage is not ready. Please run the pending migrations.',
+            ], 422);
+        }
+
+        $user = User::query()
+            ->where('account_status', 'approved')
+            ->findOrFail($validated['user_id']);
+
+        if ($user->is_super_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Super admin accounts already have sensitive Staff Directory visibility.',
+            ], 422);
+        }
+
+        $enabled = $request->boolean('enabled');
+
+        if ($enabled) {
+            FeaturePermission::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'permission_key' => $validated['permission_key'],
+                ],
+                [
+                    'is_active' => true,
+                    'granted_by' => $request->user()->id,
+                    'granted_at' => now(),
+                    'revoked_at' => null,
+                ]
+            );
+
+            $message = 'KJ/KPRO feature enabled';
+        } else {
+            FeaturePermission::query()
+                ->where('user_id', $user->id)
+                ->where('permission_key', $validated['permission_key'])
+                ->where('is_active', true)
+                ->update([
+                    'is_active' => false,
+                    'revoked_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            $message = 'KJ/KPRO feature disabled';
+        }
+
         $user = $this->freshAccessControlUser($user->id);
 
         return response()->json([
@@ -548,6 +618,27 @@ class AccessControlController extends Controller
         return $this->redirectToIndexWithState($request, $user->id)->with('status', "Removed {$count} module admin role(s) for {$user->name}.");
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function accessControlRelations(bool $includeRequests = false): array
+    {
+        $relations = [
+            'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
+            'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
+        ];
+
+        if ($includeRequests) {
+            $relations['moduleAccessRequests'] = fn ($query) => $query->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('requested_at')->latest();
+        }
+
+        if (Schema::hasTable('feature_permissions')) {
+            $relations['featurePermissions'] = fn ($query) => $query->where('is_active', true)->latest('granted_at');
+        }
+
+        return $relations;
+    }
+
     private function applyUserPanelSearch(Builder $query, string $search): Builder
     {
         $normalizedSearch = strtolower($search);
@@ -578,10 +669,7 @@ class AccessControlController extends Controller
     {
         return User::query()
             ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
-            ->with([
-                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
-                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
-            ])
+            ->with($this->accessControlRelations())
             ->withCount([
                 'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                 'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
@@ -607,10 +695,7 @@ class AccessControlController extends Controller
     {
         return User::query()
             ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
-            ->with([
-                'moduleAccesses' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))->with('module')->latest('granted_at'),
-                'adminModules' => fn ($query) => $query->wherePivot('is_active', true)->where('modules.slug', '!=', 'passport-photo')->orderBy('modules.name'),
-            ])
+            ->with($this->accessControlRelations())
             ->withCount([
                 'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                 'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
@@ -636,6 +721,9 @@ class AccessControlController extends Controller
             'role_label' => $user->is_super_admin ? 'Super Admin' : ($isModuleAdmin ? 'Module Admin' : 'Staff'),
             'module_access_ids' => $user->moduleAccesses->pluck('module_id')->map(fn ($id) => (int) $id)->values()->all(),
             'admin_module_ids' => $user->adminModules->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+            'feature_permission_keys' => $user->relationLoaded('featurePermissions')
+                ? $user->featurePermissions->where('is_active', true)->pluck('permission_key')->values()->all()
+                : [],
             'active_module_access_count' => (int) ($user->active_module_access_count ?? $user->moduleAccesses->count()),
             'pending_module_access_request_count' => (int) ($user->pending_module_access_request_count ?? 0),
         ];

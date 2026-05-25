@@ -26,6 +26,7 @@ class UserCsvImportService
         'staff_short_code',
         'mbot_membership',
         'bem_membership',
+        'audit_requirement_link',
         'account_status',
         'is_super_admin',
         'password',
@@ -146,6 +147,7 @@ class UserCsvImportService
             'staff_short_code' => $row['staff_short_code'] ?? $user?->staff_short_code,
             'mbot_membership' => $row['mbot_membership'] ?? $user?->mbot_membership,
             'bem_membership' => $row['bem_membership'] ?? $user?->bem_membership,
+            'audit_requirement_link' => $row['audit_requirement_link'] ?? $user?->audit_requirement_link,
             'is_super_admin' => $isSuperAdmin,
         ];
 
@@ -187,6 +189,7 @@ class UserCsvImportService
             'staff_short_code' => ['nullable', 'string', 'max:20', 'regex:/^[A-Za-z0-9]+$/', Rule::unique('users', 'staff_short_code')->ignore($user?->id)],
             'mbot_membership' => ['nullable', 'string', 'max:255'],
             'bem_membership' => ['nullable', 'string', 'max:255'],
+            'audit_requirement_link' => ['nullable', 'url', 'max:2048'],
             'account_status' => ['sometimes', Rule::in(['pending', 'approved', 'rejected', 'inactive'])],
             'is_super_admin' => ['boolean'],
         ]);

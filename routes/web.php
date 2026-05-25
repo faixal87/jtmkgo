@@ -163,6 +163,7 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'super.adm
         Route::post('/access-control/module-access/toggle', [AccessControlController::class, 'toggleModuleAccess'])->name('access-control.module-access.toggle');
         Route::post('/access-control/module-access/bulk', [AccessControlController::class, 'bulkModuleAccess'])->name('access-control.module-access.bulk');
         Route::post('/access-control/module-admin/toggle', [AccessControlController::class, 'toggleModuleAdmin'])->name('access-control.module-admin.toggle');
+        Route::post('/access-control/feature-permission/toggle', [AccessControlController::class, 'toggleFeaturePermission'])->name('access-control.feature-permission.toggle');
         Route::post('/access-control/access', [AccessControlController::class, 'grantAccess'])->name('access-control.grant');
         Route::delete('/access-control/access/{access}', [AccessControlController::class, 'revokeAccess'])->name('access-control.revoke');
         Route::delete('/access-control/users/{user}/access', [AccessControlController::class, 'revokeUserAccess'])->name('access-control.revoke-user-access');

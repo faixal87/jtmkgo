@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\PhotoRepository\Models\MediaPhoto;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class StaffDirectoryController extends Controller
@@ -15,24 +16,32 @@ class StaffDirectoryController extends Controller
         $search = trim((string) $request->query('q'));
         $selectedUserId = $request->integer('user_id');
         $perPage = $search !== '' ? 50 : 20;
+        $canViewSensitiveStaffDirectory = $request->user()->canViewSensitiveStaffDirectory();
+        $canViewAuditRequirementLink = $canViewSensitiveStaffDirectory && Schema::hasColumn('users', 'audit_requirement_link');
+
+        $staffColumns = [
+            'id',
+            'name',
+            'email',
+            'ic_number',
+            'phone',
+            'profile_photo',
+            'date_of_birth',
+            'department',
+            'position',
+            'grade',
+            'mbot_membership',
+            'bem_membership',
+            'staff_short_code',
+        ];
+
+        if ($canViewAuditRequirementLink) {
+            $staffColumns[] = 'audit_requirement_link';
+        }
 
         $staffQuery = User::query()
             ->approvedStaff()
-            ->select([
-                'id',
-                'name',
-                'email',
-                'ic_number',
-                'phone',
-                'profile_photo',
-                'date_of_birth',
-                'department',
-                'position',
-                'grade',
-                'mbot_membership',
-                'bem_membership',
-                'staff_short_code',
-            ])
+            ->select($staffColumns)
             ->when($search !== '', fn (Builder $query) => $query->where(function (Builder $query) use ($search): void {
                 $query
                     ->where('name', 'like', "%{$search}%")
@@ -81,6 +90,8 @@ class StaffDirectoryController extends Controller
             'search' => $search,
             'selectedUserId' => $selectedUserId,
             'officialPhotoUrls' => $officialPhotoUrls,
+            'canViewSensitiveStaffDirectory' => $canViewSensitiveStaffDirectory,
+            'canViewAuditRequirementLink' => $canViewAuditRequirementLink,
         ]);
     }
 }

@@ -82,6 +82,7 @@ class UserApprovalController extends Controller
             'staff_short_code' => ['nullable', 'string', 'max:20', 'regex:/^[A-Za-z0-9]+$/', 'unique:users,staff_short_code'],
             'mbot_membership' => ['nullable', 'string', 'max:255'],
             'bem_membership' => ['nullable', 'string', 'max:255'],
+            'audit_requirement_link' => ['nullable', 'url', 'max:2048'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'module_access' => ['nullable', 'array'],
             'module_access.*' => ['integer', 'exists:modules,id'],
@@ -101,6 +102,7 @@ class UserApprovalController extends Controller
             'staff_short_code' => $validated['staff_short_code'] ?? null,
             'mbot_membership' => $validated['mbot_membership'] ?? null,
             'bem_membership' => $validated['bem_membership'] ?? null,
+            'audit_requirement_link' => $validated['audit_requirement_link'] ?? null,
             'password' => Hash::make($validated['password']),
             'account_status' => 'approved',
             'approved_at' => now(),
@@ -144,6 +146,7 @@ class UserApprovalController extends Controller
             'staff_short_code' => ['nullable', 'string', 'max:20', 'regex:/^[A-Za-z0-9]+$/', Rule::unique('users', 'staff_short_code')->ignore($user->id)],
             'mbot_membership' => ['nullable', 'string', 'max:255'],
             'bem_membership' => ['nullable', 'string', 'max:255'],
+            'audit_requirement_link' => ['nullable', 'url', 'max:2048'],
             'account_status' => ['required', Rule::in(['pending', 'approved', 'rejected', 'inactive'])],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'module_access' => ['nullable', 'array'],
@@ -168,6 +171,7 @@ class UserApprovalController extends Controller
             'staff_short_code' => $validated['staff_short_code'] ?? null,
             'mbot_membership' => $validated['mbot_membership'] ?? null,
             'bem_membership' => $validated['bem_membership'] ?? null,
+            'audit_requirement_link' => $validated['audit_requirement_link'] ?? null,
             'account_status' => $validated['account_status'],
         ];
 

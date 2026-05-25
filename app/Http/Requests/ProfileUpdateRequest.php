@@ -46,6 +46,7 @@ class ProfileUpdateRequest extends FormRequest
             ],
             'mbot_membership' => ['nullable', 'string', 'max:255'],
             'bem_membership' => ['nullable', 'string', 'max:255'],
+            'audit_requirement_link' => ['nullable', 'url', 'max:2048'],
             'theme_preference' => ['required', Rule::in(['default', 'blue', 'dark', 'purple-matcha'])],
             'language_preference' => ['required', Rule::in(['en', 'ms'])],
             'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],

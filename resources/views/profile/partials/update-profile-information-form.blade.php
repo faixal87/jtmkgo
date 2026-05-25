@@ -171,6 +171,15 @@
             </div>
 
             <div class="md:col-span-2">
+                <x-input-label for="audit_requirement_link" value="MBOT/MQA/Audit Requirement" />
+                <x-text-input id="audit_requirement_link" name="audit_requirement_link" type="url" class="mt-1 block w-full" :value="old('audit_requirement_link', $user->audit_requirement_link)" placeholder="https://drive.google.com/..." />
+                <p class="mt-2 text-xs leading-5 text-[var(--color-muted)]">
+                    This link may contain files such as Resume, CV, Academic Transcript (Degree / Master / PhD), Professional Certificates, MBOT/MQA evidence, audit documents, and related supporting files.
+                </p>
+                <x-input-error class="mt-2" :messages="$errors->get('audit_requirement_link')" />
+            </div>
+
+            <div class="md:col-span-2">
                 <x-input-label for="language_preference" :value="__('app.language.label')" />
                 <select id="language_preference" name="language_preference" class="mt-2 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                     <option value="en" @selected($selectedLanguage === 'en')>{{ __('app.language.english') }}</option>

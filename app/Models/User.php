@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
@@ -34,6 +35,7 @@ use Illuminate\Support\Facades\Storage;
     'staff_short_code',
     'mbot_membership',
     'bem_membership',
+    'audit_requirement_link',
     'account_status',
     'approved_at',
     'approved_by',
@@ -105,6 +107,16 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
+    public function featurePermissions(): HasMany
+    {
+        return $this->hasMany(FeaturePermission::class);
+    }
+
+    public function activeFeaturePermissions(): HasMany
+    {
+        return $this->featurePermissions()->where('is_active', true);
+    }
+
     public function createdNotifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'created_by');
@@ -172,6 +184,37 @@ class User extends Authenticatable
         return substr($icNumber, 0, 2)
             .str_repeat('*', max(strlen($icNumber) - 6, 0))
             .substr($icNumber, -4);
+    }
+
+    public function hasFeaturePermission(string $permissionKey): bool
+    {
+        if ($this->is_super_admin) {
+            return true;
+        }
+
+        static $featurePermissionsTableExists = null;
+        $featurePermissionsTableExists ??= Schema::hasTable('feature_permissions');
+
+        if (! $featurePermissionsTableExists) {
+            return false;
+        }
+
+        if ($this->relationLoaded('featurePermissions')) {
+            return $this->featurePermissions
+                ->where('permission_key', $permissionKey)
+                ->where('is_active', true)
+                ->isNotEmpty();
+        }
+
+        return $this->featurePermissions()
+            ->where('permission_key', $permissionKey)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    public function canViewSensitiveStaffDirectory(): bool
+    {
+        return $this->hasFeaturePermission(FeaturePermission::STAFF_DIRECTORY_SENSITIVE_VIEW);
     }
 
     /**

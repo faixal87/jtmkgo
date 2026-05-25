@@ -104,7 +104,9 @@
                                         </div>
                                         <div>
                                             <dt class="text-[var(--color-muted)]">IC Number</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->maskedIcNumber() }}</dd>
+                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">
+                                                {{ $canViewSensitiveStaffDirectory ? ($person->ic_number ?: 'Not provided') : $person->maskedIcNumber() }}
+                                            </dd>
                                         </div>
                                         <div>
                                             <dt class="text-[var(--color-muted)]">Date of Birth</dt>
@@ -158,6 +160,21 @@
                                         </div>
                                     </dl>
                                 </article>
+
+                                @if ($canViewAuditRequirementLink)
+                                    <article class="enterprise-card min-w-0 rounded-xl border p-4 lg:col-span-2">
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">MBOT/MQA/Audit Requirement</p>
+                                        <div class="mt-4 text-sm">
+                                            @if ($person->audit_requirement_link)
+                                                <a href="{{ $person->audit_requirement_link }}" target="_blank" rel="noopener noreferrer" class="break-all font-medium text-[var(--color-accent-text)] underline decoration-[var(--color-accent)] underline-offset-4">
+                                                    {{ $person->audit_requirement_link }}
+                                                </a>
+                                            @else
+                                                <p class="text-[var(--color-muted)]">Not provided</p>
+                                            @endif
+                                        </div>
+                                    </article>
+                                @endif
                             </div>
                         </section>
                     @empty

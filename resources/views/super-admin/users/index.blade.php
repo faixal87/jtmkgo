@@ -167,6 +167,18 @@
                                             <dt class="text-[var(--color-muted)]">Staff Short Code</dt>
                                             <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $user->staff_short_code ?: 'Not set' }}</dd>
                                         </div>
+                                        <div>
+                                            <dt class="text-[var(--color-muted)]">MBOT/MQA/Audit Requirement</dt>
+                                            <dd class="mt-1 break-all font-medium text-[var(--color-text)]">
+                                                @if ($user->audit_requirement_link)
+                                                    <a href="{{ $user->audit_requirement_link }}" target="_blank" rel="noopener noreferrer" class="text-[var(--color-accent-text)] underline decoration-[var(--color-accent)] underline-offset-4">
+                                                        {{ $user->audit_requirement_link }}
+                                                    </a>
+                                                @else
+                                                    Not set
+                                                @endif
+                                            </dd>
+                                        </div>
                                     </dl>
                                 </article>
 

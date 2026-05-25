@@ -71,6 +71,13 @@
         <x-input-error :messages="$errors->get('bem_membership')" class="mt-2" />
     </div>
 
+    <div class="md:col-span-2">
+        <x-input-label for="audit_requirement_link" value="MBOT/MQA/Audit Requirement" />
+        <x-text-input id="audit_requirement_link" name="audit_requirement_link" type="url" class="mt-1 block w-full" :value="old('audit_requirement_link', $user?->audit_requirement_link)" placeholder="https://drive.google.com/..." />
+        <x-form-helper>This link may contain Resume, CV, transcripts, certificates, MBOT/MQA evidence, audit documents, and related supporting files.</x-form-helper>
+        <x-input-error :messages="$errors->get('audit_requirement_link')" class="mt-2" />
+    </div>
+
     @if ($isEditing)
         <div>
             <x-input-label for="account_status" value="Account Status" />
