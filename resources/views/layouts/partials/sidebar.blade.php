@@ -92,6 +92,16 @@
                 <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.dashboard') }}</span>
             </a>
 
+            <a href="{{ route('staff-directory.index') }}" title="{{ __('app.sidebar.staff_directory') }}" class="{{ $navItem }} {{ request()->routeIs('staff-directory.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
+                <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M16 11a4 4 0 1 0-8 0" />
+                    <path d="M4 21a8 8 0 0 1 16 0" />
+                    <path d="M18 4h3" />
+                    <path d="M18 8h3" />
+                </svg>
+                <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.staff_directory') }}</span>
+            </a>
+
             <a href="{{ route('module-access-requests.index') }}" title="{{ __('app.sidebar.request_module_access') }}" class="{{ $navItem }} {{ request()->routeIs('module-access-requests.*') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
                 <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M12 5v14" />
@@ -290,6 +300,15 @@
                     <path d="M13 14.5a1.5 1.5 0 0 1 1.5-1.5h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a1.5 1.5 0 0 1-1.5-1.5v-4Z" />
                 </svg>
                 <span>{{ __('app.sidebar.dashboard') }}</span>
+            </a>
+            <a href="{{ route('staff-directory.index') }}" class="{{ $navItem }} {{ request()->routeIs('staff-directory.*') ? $navActive : $navIdle }}">
+                <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M16 11a4 4 0 1 0-8 0" />
+                    <path d="M4 21a8 8 0 0 1 16 0" />
+                    <path d="M18 4h3" />
+                    <path d="M18 8h3" />
+                </svg>
+                <span>{{ __('app.sidebar.staff_directory') }}</span>
             </a>
             <a href="{{ route('module-access-requests.index') }}" class="{{ $navItem }} {{ request()->routeIs('module-access-requests.*') ? $navActive : $navIdle }}">
                 <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

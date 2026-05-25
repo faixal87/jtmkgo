@@ -25,6 +25,7 @@ return [
         'modules' => 'Modul',
         'admin' => 'Admin',
         'dashboard' => 'Papan Pemuka',
+        'staff_directory' => 'Direktori Staf',
         'request_module_access' => 'Mohon Akses Modul',
         'no_modules_assigned' => 'Tiada modul diberikan.',
         'user_management' => 'Pengurusan Pengguna',

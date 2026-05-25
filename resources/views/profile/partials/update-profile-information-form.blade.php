@@ -152,6 +152,13 @@
             </div>
 
             <div>
+                <x-input-label for="staff_short_code" value="Staff Short Code" />
+                <x-text-input id="staff_short_code" name="staff_short_code" type="text" class="mt-1 block w-full uppercase" :value="old('staff_short_code', $user->staff_short_code)" placeholder="e.g. FAI" maxlength="20" />
+                <p class="mt-2 text-xs text-[var(--color-muted)]">Short timetable reference code. Use uppercase letters or numbers only.</p>
+                <x-input-error class="mt-2" :messages="$errors->get('staff_short_code')" />
+            </div>
+
+            <div>
                 <x-input-label for="mbot_membership" :value="__('app.profile.mbot_membership')" />
                 <x-text-input id="mbot_membership" name="mbot_membership" type="text" class="mt-1 block w-full" :value="old('mbot_membership', $user->mbot_membership)" />
                 <x-input-error class="mt-2" :messages="$errors->get('mbot_membership')" />

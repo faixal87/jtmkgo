@@ -53,6 +53,13 @@
     </div>
 
     <div>
+        <x-input-label for="staff_short_code" value="Staff Short Code" />
+        <x-text-input id="staff_short_code" name="staff_short_code" class="mt-1 block w-full uppercase" :value="old('staff_short_code', $user?->staff_short_code)" placeholder="e.g. FAI" maxlength="20" />
+        <x-form-helper>Short timetable reference code. Use letters or numbers only.</x-form-helper>
+        <x-input-error :messages="$errors->get('staff_short_code')" class="mt-2" />
+    </div>
+
+    <div>
         <x-input-label for="mbot_membership" value="MBOT Membership" />
         <x-text-input id="mbot_membership" name="mbot_membership" class="mt-1 block w-full" :value="old('mbot_membership', $user?->mbot_membership)" />
         <x-input-error :messages="$errors->get('mbot_membership')" class="mt-2" />

@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Storage;
     'department',
     'position',
     'grade',
+    'staff_short_code',
     'mbot_membership',
     'bem_membership',
     'account_status',
@@ -60,7 +61,8 @@ class User extends Authenticatable
             $query
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('ic_number', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('staff_short_code', 'like', "%{$search}%");
         });
     }
 
@@ -150,6 +152,26 @@ class User extends Authenticatable
             ->take(2)
             ->map(fn (string $part) => strtoupper(substr($part, 0, 1)))
             ->implode('');
+    }
+
+    public function setStaffShortCodeAttribute(?string $value): void
+    {
+        $this->attributes['staff_short_code'] = filled($value)
+            ? strtoupper(preg_replace('/[^A-Z0-9]/', '', $value))
+            : null;
+    }
+
+    public function maskedIcNumber(): string
+    {
+        $icNumber = (string) $this->ic_number;
+
+        if (strlen($icNumber) <= 4) {
+            return str_repeat('*', strlen($icNumber));
+        }
+
+        return substr($icNumber, 0, 2)
+            .str_repeat('*', max(strlen($icNumber) - 6, 0))
+            .substr($icNumber, -4);
     }
 
     /**

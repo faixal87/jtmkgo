@@ -6,6 +6,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\NotificationComposerController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StaffDirectoryController;
 use App\Http\Controllers\SuperAdmin\AccessControlController;
 use App\Http\Controllers\SuperAdmin\BrandingSettingsController;
 use App\Http\Controllers\SuperAdmin\ModuleController;
@@ -334,6 +335,8 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
     });
 
 Route::middleware(['auth', 'session.timeout', 'approved'])->group(function () {
+    Route::get('/staff-directory', StaffDirectoryController::class)->name('staff-directory.index');
+
     Route::get('/notifications', [NotificationCenterController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/feed', [NotificationCenterController::class, 'feed'])->name('notifications.feed');
     Route::post('/notifications/read-all', [NotificationCenterController::class, 'markAllRead'])->name('notifications.read-all');

@@ -37,6 +37,13 @@ class ProfileUpdateRequest extends FormRequest
             'department' => ['nullable', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
             'grade' => ['nullable', 'string', 'max:255'],
+            'staff_short_code' => [
+                'nullable',
+                'string',
+                'max:20',
+                'regex:/^[A-Za-z0-9]+$/',
+                Rule::unique(User::class)->ignore($this->user()->id),
+            ],
             'mbot_membership' => ['nullable', 'string', 'max:255'],
             'bem_membership' => ['nullable', 'string', 'max:255'],
             'theme_preference' => ['required', Rule::in(['default', 'blue', 'dark', 'purple-matcha'])],

@@ -25,6 +25,7 @@ return [
         'modules' => 'Modules',
         'admin' => 'Admin',
         'dashboard' => 'Dashboard',
+        'staff_directory' => 'Staff Directory',
         'request_module_access' => 'Request Module Access',
         'no_modules_assigned' => 'No modules assigned.',
         'user_management' => 'User Management',
