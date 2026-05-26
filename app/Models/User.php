@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Modules\GantiGo\Models\ClassReplacement;
+use App\Modules\ProgramGo\Models\ProgramActivity;
 use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
 use App\Modules\SubjekGo\Models\TeachingExperience as SubjekGoTeachingExperience;
 use App\Modules\SubjekGo\Models\TeachingHistory as SubjekGoTeachingHistory;
@@ -135,6 +136,11 @@ class User extends Authenticatable
     public function classReplacements(): HasMany
     {
         return $this->hasMany(ClassReplacement::class);
+    }
+
+    public function programGoActivities(): HasMany
+    {
+        return $this->hasMany(ProgramActivity::class);
     }
 
     public function subjekGoPreferences(): HasMany

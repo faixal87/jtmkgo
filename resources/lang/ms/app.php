@@ -75,6 +75,7 @@ return [
         'modules_meta' => [
             'ganti_go' => 'Pengurusan kelas ganti',
             'photo_repository' => 'Repositori potret rasmi dan foto profil',
+            'program_go' => 'Kertas kerja program dan pemantauan bajet',
             'subjek_go' => 'Pengurusan pilihan subjek pensyarah',
             'fallback' => 'Modul JTMK',
         ],

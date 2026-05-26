@@ -20,6 +20,13 @@
             'icon' => 'photo-repository',
             'href' => route('photo-repository.dashboard'),
         ],
+        'program-go' => [
+            'title' => 'ProgramGo',
+            'subtitle' => __('app.dashboard.modules_meta.program_go'),
+            'accent' => 'amber',
+            'icon' => 'program-go',
+            'href' => route('program-go.dashboard'),
+        ],
         'subjek-go' => [
             'title' => 'SubjekGo',
             'subtitle' => __('app.dashboard.modules_meta.subjek_go'),

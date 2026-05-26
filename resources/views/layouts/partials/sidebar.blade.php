@@ -11,13 +11,16 @@
     $subDisabled = 'cursor-not-allowed text-[var(--color-sidebar-disabled)]';
     $gantiGoModule = $sidebarModules->firstWhere('slug', 'ganti-go');
     $photoRepositoryModule = $sidebarModules->firstWhere('slug', 'photo-repository');
+    $programGoModule = $sidebarModules->firstWhere('slug', 'program-go');
     $subjekGoModule = $sidebarModules->firstWhere('slug', 'subjek-go');
-    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'subjek-go'], true));
+    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'program-go', 'subjek-go'], true));
     $isSuperAdmin = (bool) $user?->is_super_admin;
     $canManageGantiGo = $gantiGoModule && $managedModuleIds->contains($gantiGoModule->id);
     $canViewGantiGoAnalytics = $isSuperAdmin || $canManageGantiGo;
     $canManagePhotoRepository = $photoRepositoryModule && ! $isSuperAdmin && $managedModuleIds->contains($photoRepositoryModule->id);
     $canViewPhotoRepositoryAnalytics = $photoRepositoryModule && ($isSuperAdmin || $canManagePhotoRepository);
+    $canManageProgramGo = $programGoModule && $managedModuleIds->contains($programGoModule->id);
+    $canViewProgramGoAnalytics = $programGoModule && ($isSuperAdmin || $canManageProgramGo);
     $canManageSubjekGo = $subjekGoModule && ! $isSuperAdmin && $managedModuleIds->contains($subjekGoModule->id);
     $canViewSubjekGoAnalytics = $subjekGoModule && ($isSuperAdmin || $canManageSubjekGo);
     $canManageAcademicCore = $user?->can('manage-academic-core') ?? false;
@@ -31,6 +34,12 @@
         || request()->routeIs('admin.module-access-requests.*')
         || request()->routeIs('super-admin.access-control.*')
         || request()->routeIs('super-admin.settings.*');
+    $gantiGoAdminActive = request()->routeIs('ganti-go.admin.*')
+        || request()->routeIs('ganti-go.analytics')
+        || request()->routeIs('ganti-go.courses.*')
+        || request()->routeIs('ganti-go.classes.*')
+        || request()->routeIs('ganti-go.settings.*');
+    $photoRepositoryAdminActive = request()->routeIs('photo-repository.admin.*');
     $subjekGoAdminActive = request()->routeIs('subjek-go.admin.preferences.*')
         || request()->routeIs('subjek-go.sessions.*')
         || request()->routeIs('subjek-go.subject-masters.*')
@@ -38,6 +47,7 @@
         || request()->routeIs('subjek-go.offered-subjects.*')
         || request()->routeIs('subjek-go.subject-coordinators.*')
         || request()->routeIs('subjek-go.analytics');
+    $programGoAdminActive = request()->routeIs('program-go.admin.*');
     $workspaceLogo = $branding->asset($brandingSettings['sidebar_logo'] ?? null);
     $workspaceBrandText = $brandingSettings['sidebar_brand_text'] ?? $brandingSettings['workspace_brand_text'] ?? 'JTMK';
     $logoSize = in_array($brandingSettings['sidebar_logo_size'] ?? 'medium', ['large', 'medium', 'small'], true) ? $brandingSettings['sidebar_logo_size'] : 'medium';
@@ -125,15 +135,37 @@
 
                     <a href="{{ route('ganti-go.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.dashboard') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.dashboard') }}</a>
                     @unless ($isSuperAdmin)
-                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.replacements') }}</a>
+                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.*') && ! request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.replacements') }}</a>
+                        <a href="{{ route('ganti-go.replacements.create') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.create_replacement') }}</a>
                     @endunless
-                    @if ($canViewGantiGoAnalytics)
-                        <a href="{{ route('ganti-go.analytics') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.analytics') || request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.analytics') }}</a>
-                    @endif
-                    @if ($canManageGantiGo)
-                        <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.review_queue') }}</a>
-                        <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.admin') }}</span>
-                        <a href="{{ route('ganti-go.settings.edit') }}" class="{{ $subItem }} {{ request()->routeIs('ganti-go.settings.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.settings') }}</a>
+                    @if ($canManageGantiGo || ($isSuperAdmin && $canViewGantiGoAnalytics))
+                        <div class="px-2 pt-3">
+                            <x-sidebar.collapsible-submenu id="ganti-go-admin" title="ADMIN" :active="$gantiGoAdminActive">
+                                <x-slot name="icon">
+                                    <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                </x-slot>
+
+                                @if ($canManageGantiGo || $isSuperAdmin)
+                                    <a href="{{ route('ganti-go.admin.monitoring') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.monitoring') }}</a>
+                                @endif
+                                @if ($canManageGantiGo)
+                                    <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.review_queue') }}</a>
+                                @endif
+                                @if ($canViewGantiGoAnalytics)
+                                    <a href="{{ route('ganti-go.analytics') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.analytics') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.analytics') }}</a>
+                                @endif
+                                @if ($canManageGantiGo && $canManageAcademicCore)
+                                    <a href="{{ route('ganti-go.courses.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.courses') }}</a>
+                                    <a href="{{ route('ganti-go.classes.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.classes.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.classes') }}</a>
+                                @endif
+                                @if ($canManageGantiGo)
+                                    <a href="{{ route('ganti-go.settings.edit') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.settings.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.settings') }}</a>
+                                @endif
+                            </x-sidebar.collapsible-submenu>
+                        </div>
                     @endif
                 </x-sidebar.collapsible-submenu>
             @endif
@@ -155,15 +187,64 @@
                         <a href="{{ route('photo-repository.upload.create') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.upload.*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.upload_photo') }}</a>
                     @endunless
                     @if ($canViewPhotoRepositoryAnalytics || $canManagePhotoRepository)
-                        <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ $canManagePhotoRepository ? __('app.common.admin') : __('app.common.insights') }}</span>
+                        <div class="px-2 pt-3">
+                            <x-sidebar.collapsible-submenu id="photo-repository-admin" title="ADMIN" :active="$photoRepositoryAdminActive">
+                                <x-slot name="icon">
+                                    <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                </x-slot>
+
+                                @if ($canViewPhotoRepositoryAnalytics)
+                                    <a href="{{ route('photo-repository.admin.analytics') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('photo-repository.admin.analytics') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.analytics') }}</a>
+                                @endif
+                                @if ($canManagePhotoRepository)
+                                    <a href="{{ route('photo-repository.admin.review-queue') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('photo-repository.admin.review-queue') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.review_queue') }}</a>
+                                    <a href="{{ route('photo-repository.admin.profiles') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('photo-repository.admin.profiles*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.profiles') }}</a>
+                                    <a href="{{ route('photo-repository.admin.categories') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('photo-repository.admin.categories*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.categories') }}</a>
+                                @endif
+                            </x-sidebar.collapsible-submenu>
+                        </div>
                     @endif
-                    @if ($canViewPhotoRepositoryAnalytics)
-                        <a href="{{ route('photo-repository.admin.analytics') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.analytics') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.analytics') }}</a>
-                    @endif
-                    @if ($canManagePhotoRepository)
-                        <a href="{{ route('photo-repository.admin.review-queue') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.review-queue') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.review_queue') }}</a>
-                        <a href="{{ route('photo-repository.admin.profiles') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.profiles*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.profiles') }}</a>
-                        <a href="{{ route('photo-repository.admin.categories') }}" class="{{ $subItem }} {{ request()->routeIs('photo-repository.admin.categories*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.categories') }}</a>
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($programGoModule)
+                <x-sidebar.collapsible-submenu id="program-go" title="ProgramGo" :active="request()->routeIs('program-go.*')" :badge="$canManageProgramGo ? __('app.common.admin') : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M8 6h13" />
+                            <path d="M8 12h13" />
+                            <path d="M8 18h13" />
+                            <path d="M3 6h.01" />
+                            <path d="M3 12h.01" />
+                            <path d="M3 18h.01" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('program-go.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('program-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('program-go.activities.create') }}" class="{{ $subItem }} {{ request()->routeIs('program-go.activities.create') ? $subActive : $subIdle }}">Submit Activity</a>
+                        <a href="{{ route('program-go.activities.index') }}" class="{{ $subItem }} {{ request()->routeIs('program-go.activities.*') && ! request()->routeIs('program-go.activities.create') ? $subActive : $subIdle }}">Activities</a>
+                    @endunless
+                    @if ($canManageProgramGo)
+                        <div class="px-2 pt-3">
+                            <x-sidebar.collapsible-submenu id="program-go-admin" title="Admin" :active="$programGoAdminActive">
+                                <x-slot name="icon">
+                                    <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                </x-slot>
+
+                                <a href="{{ route('program-go.admin.review-submissions') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('program-go.admin.review-submissions') ? $subActive : $subIdle }}">Review Submissions</a>
+                                <a href="{{ route('program-go.admin.budget-monitoring') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('program-go.admin.budget-monitoring') ? $subActive : $subIdle }}">Budget Monitoring</a>
+                            </x-sidebar.collapsible-submenu>
+                        </div>
+                    @elseif ($isSuperAdmin && $canViewProgramGoAnalytics)
+                        <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.insights') }}</span>
+                        <a href="{{ route('program-go.admin.budget-monitoring') }}" class="{{ $subItem }} {{ request()->routeIs('program-go.admin.budget-monitoring') ? $subActive : $subIdle }}">Budget Monitoring</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
             @endif
@@ -333,15 +414,37 @@
 
                     <a href="{{ route('ganti-go.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.dashboard') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.dashboard') }}</a>
                     @unless ($isSuperAdmin)
-                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.replacements') }}</a>
+                        <a href="{{ route('ganti-go.replacements.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.*') && ! request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.replacements') }}</a>
+                        <a href="{{ route('ganti-go.replacements.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.replacements.create') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.create_replacement') }}</a>
                     @endunless
-                    @if ($canViewGantiGoAnalytics)
-                        <a href="{{ route('ganti-go.analytics') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.analytics') || request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.analytics') }}</a>
-                    @endif
-                    @if ($canManageGantiGo)
-                        <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.review_queue') }}</a>
-                        <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.admin') }}</span>
-                        <a href="{{ route('ganti-go.settings.edit') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('ganti-go.settings.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.settings') }}</a>
+                    @if ($canManageGantiGo || ($isSuperAdmin && $canViewGantiGoAnalytics))
+                        <div class="px-2 pt-3">
+                            <x-sidebar.collapsible-submenu id="mobile-ganti-go-admin" title="ADMIN" :active="$gantiGoAdminActive">
+                                <x-slot name="icon">
+                                    <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                </x-slot>
+
+                                @if ($canManageGantiGo || $isSuperAdmin)
+                                    <a href="{{ route('ganti-go.admin.monitoring') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.admin.monitoring') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.monitoring') }}</a>
+                                @endif
+                                @if ($canManageGantiGo)
+                                    <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.review_queue') }}</a>
+                                @endif
+                                @if ($canViewGantiGoAnalytics)
+                                    <a href="{{ route('ganti-go.analytics') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.analytics') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.analytics') }}</a>
+                                @endif
+                                @if ($canManageGantiGo && $canManageAcademicCore)
+                                    <a href="{{ route('ganti-go.courses.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.courses') }}</a>
+                                    <a href="{{ route('ganti-go.classes.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.classes.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.classes') }}</a>
+                                @endif
+                                @if ($canManageGantiGo)
+                                    <a href="{{ route('ganti-go.settings.edit') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.settings.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.settings') }}</a>
+                                @endif
+                            </x-sidebar.collapsible-submenu>
+                        </div>
                     @endif
                 </x-sidebar.collapsible-submenu>
             @endif
@@ -363,15 +466,64 @@
                         <a href="{{ route('photo-repository.upload.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.upload.*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.upload_photo') }}</a>
                     @endunless
                     @if ($canViewPhotoRepositoryAnalytics || $canManagePhotoRepository)
-                        <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ $canManagePhotoRepository ? __('app.common.admin') : __('app.common.insights') }}</span>
+                        <div class="px-2 pt-3">
+                            <x-sidebar.collapsible-submenu id="mobile-photo-repository-admin" title="ADMIN" :active="$photoRepositoryAdminActive">
+                                <x-slot name="icon">
+                                    <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                </x-slot>
+
+                                @if ($canViewPhotoRepositoryAnalytics)
+                                    <a href="{{ route('photo-repository.admin.analytics') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('photo-repository.admin.analytics') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.analytics') }}</a>
+                                @endif
+                                @if ($canManagePhotoRepository)
+                                    <a href="{{ route('photo-repository.admin.review-queue') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('photo-repository.admin.review-queue') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.review_queue') }}</a>
+                                    <a href="{{ route('photo-repository.admin.profiles') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('photo-repository.admin.profiles*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.profiles') }}</a>
+                                    <a href="{{ route('photo-repository.admin.categories') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('photo-repository.admin.categories*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.categories') }}</a>
+                                @endif
+                            </x-sidebar.collapsible-submenu>
+                        </div>
                     @endif
-                    @if ($canViewPhotoRepositoryAnalytics)
-                        <a href="{{ route('photo-repository.admin.analytics') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.analytics') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.analytics') }}</a>
-                    @endif
-                    @if ($canManagePhotoRepository)
-                        <a href="{{ route('photo-repository.admin.review-queue') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.review-queue') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.review_queue') }}</a>
-                        <a href="{{ route('photo-repository.admin.profiles') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.profiles*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.profiles') }}</a>
-                        <a href="{{ route('photo-repository.admin.categories') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('photo-repository.admin.categories*') ? $subActive : $subIdle }}">{{ __('photo_repository.menu.categories') }}</a>
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($programGoModule)
+                <x-sidebar.collapsible-submenu id="mobile-program-go" title="ProgramGo" :active="request()->routeIs('program-go.*')" :badge="$canManageProgramGo ? __('app.common.admin') : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M8 6h13" />
+                            <path d="M8 12h13" />
+                            <path d="M8 18h13" />
+                            <path d="M3 6h.01" />
+                            <path d="M3 12h.01" />
+                            <path d="M3 18h.01" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('program-go.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('program-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('program-go.activities.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('program-go.activities.create') ? $subActive : $subIdle }}">Submit Activity</a>
+                        <a href="{{ route('program-go.activities.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('program-go.activities.*') && ! request()->routeIs('program-go.activities.create') ? $subActive : $subIdle }}">Activities</a>
+                    @endunless
+                    @if ($canManageProgramGo)
+                        <div class="px-2 pt-3">
+                            <x-sidebar.collapsible-submenu id="mobile-program-go-admin" title="Admin" :active="$programGoAdminActive">
+                                <x-slot name="icon">
+                                    <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                </x-slot>
+
+                                <a href="{{ route('program-go.admin.review-submissions') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('program-go.admin.review-submissions') ? $subActive : $subIdle }}">Review Submissions</a>
+                                <a href="{{ route('program-go.admin.budget-monitoring') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('program-go.admin.budget-monitoring') ? $subActive : $subIdle }}">Budget Monitoring</a>
+                            </x-sidebar.collapsible-submenu>
+                        </div>
+                    @elseif ($isSuperAdmin && $canViewProgramGoAnalytics)
+                        <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.insights') }}</span>
+                        <a href="{{ route('program-go.admin.budget-monitoring') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('program-go.admin.budget-monitoring') ? $subActive : $subIdle }}">Budget Monitoring</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
             @endif

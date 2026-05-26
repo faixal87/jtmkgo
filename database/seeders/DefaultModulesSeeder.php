@@ -47,6 +47,17 @@ class DefaultModulesSeeder extends Seeder
             ]
         );
 
+        Module::updateOrCreate(
+            ['slug' => 'program-go'],
+            [
+                'name' => 'ProgramGo',
+                'icon' => 'PG',
+                'route_prefix' => '/program-go',
+                'description' => 'Programme paperwork, report links, verification workflow, and budget monitoring.',
+                'is_active' => true,
+            ]
+        );
+
         $this->retireModule('class-replacement', $gantiGo);
         $this->retireModule('passport-photo', $photoRepository);
     }

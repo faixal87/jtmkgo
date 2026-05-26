@@ -75,6 +75,7 @@ return [
         'modules_meta' => [
             'ganti_go' => 'Class replacement management',
             'photo_repository' => 'Official portrait and profile photo repository',
+            'program_go' => 'Programme paperwork and budget monitoring',
             'subjek_go' => 'Lecturer subject preference management',
             'fallback' => 'JTMK module',
         ],

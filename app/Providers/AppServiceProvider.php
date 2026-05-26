@@ -9,6 +9,7 @@ use App\Modules\AcademicCore\Policies\AcademicCorePolicy;
 use App\Modules\PhotoRepository\Models\MediaPhoto;
 use App\Modules\PhotoRepository\Policies\MediaPhotoPolicy;
 use App\Modules\PhotoRepository\Policies\PhotoRepositoryPolicy;
+use App\Modules\ProgramGo\Policies\ProgramGoPolicy;
 use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
 use App\Modules\SubjekGo\Policies\PreferencePolicy as SubjekGoPreferencePolicy;
 use App\Modules\SubjekGo\Policies\SubjekGoPolicy;
@@ -41,6 +42,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view-photo-repository', [PhotoRepositoryPolicy::class, 'view']);
         Gate::define('upload-photo-repository', [PhotoRepositoryPolicy::class, 'upload']);
         Gate::define('manage-photo-repository', [PhotoRepositoryPolicy::class, 'manage']);
+        Gate::define('view-program-go', [ProgramGoPolicy::class, 'view']);
+        Gate::define('submit-program-go', [ProgramGoPolicy::class, 'submit']);
+        Gate::define('manage-program-go', [ProgramGoPolicy::class, 'manage']);
+        Gate::define('view-program-go-analytics', [ProgramGoPolicy::class, 'viewAnalytics']);
         Gate::define('view-subjek-go', [SubjekGoPolicy::class, 'view']);
         Gate::define('select-subjek-go', [SubjekGoPolicy::class, 'select']);
         Gate::define('manage-subjek-go', [SubjekGoPolicy::class, 'manage']);

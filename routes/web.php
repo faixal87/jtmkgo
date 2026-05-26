@@ -38,6 +38,12 @@ use App\Modules\PhotoRepository\Controllers\MyPhotosController as PhotoRepositor
 use App\Modules\PhotoRepository\Controllers\PhotoController as PhotoRepositoryPhotoController;
 use App\Modules\PhotoRepository\Controllers\PhotoDownloadController as PhotoRepositoryPhotoDownloadController;
 use App\Modules\PhotoRepository\Controllers\UploadPhotoController as PhotoRepositoryUploadPhotoController;
+use App\Modules\ProgramGo\Controllers\Admin\ActivityCodeController as ProgramGoActivityCodeController;
+use App\Modules\ProgramGo\Controllers\Admin\BudgetMonitoringController as ProgramGoBudgetMonitoringController;
+use App\Modules\ProgramGo\Controllers\Admin\ReportController as ProgramGoReportController;
+use App\Modules\ProgramGo\Controllers\Admin\ReviewSubmissionController as ProgramGoReviewSubmissionController;
+use App\Modules\ProgramGo\Controllers\DashboardController as ProgramGoDashboardController;
+use App\Modules\ProgramGo\Controllers\ProgramActivityController as ProgramGoActivityController;
 use App\Modules\SubjekGo\Controllers\AdminPreferenceController as SubjekGoAdminPreferenceController;
 use App\Modules\SubjekGo\Controllers\AnalyticsController as SubjekGoAnalyticsController;
 use App\Modules\SubjekGo\Controllers\ClassGroupController as SubjekGoClassGroupController;
@@ -284,6 +290,30 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
             Route::post('/admin/categories', [PhotoRepositoryCategoryController::class, 'store'])->name('admin.categories.store');
             Route::patch('/admin/categories/{mediaCategory}', [PhotoRepositoryCategoryController::class, 'update'])->name('admin.categories.update');
             Route::patch('/admin/categories/{mediaCategory}/toggle', [PhotoRepositoryCategoryController::class, 'toggle'])->name('admin.categories.toggle');
+        });
+    });
+
+Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.access:program-go'])
+    ->prefix('program-go')
+    ->name('program-go.')
+    ->group(function () {
+        Route::get('/', ProgramGoDashboardController::class)->name('dashboard');
+        Route::get('/activities', [ProgramGoActivityController::class, 'index'])->name('activities.index');
+        Route::get('/activities/create', [ProgramGoActivityController::class, 'create'])->name('activities.create');
+        Route::post('/activities', [ProgramGoActivityController::class, 'store'])->name('activities.store');
+        Route::get('/activities/{activity}', [ProgramGoActivityController::class, 'show'])->name('activities.show');
+        Route::get('/activities/{activity}/edit', [ProgramGoActivityController::class, 'edit'])->name('activities.edit');
+        Route::patch('/activities/{activity}', [ProgramGoActivityController::class, 'update'])->name('activities.update');
+        Route::delete('/activities/{activity}', [ProgramGoActivityController::class, 'destroy'])->name('activities.destroy');
+
+        Route::middleware('module.admin:program-go')->group(function () {
+            Route::get('/admin/review-submissions', [ProgramGoReviewSubmissionController::class, 'index'])->name('admin.review-submissions');
+            Route::patch('/admin/activities/{activity}/approve', [ProgramGoReviewSubmissionController::class, 'approve'])->name('admin.activities.approve');
+            Route::patch('/admin/activities/{activity}/return', [ProgramGoReviewSubmissionController::class, 'returnForCorrection'])->name('admin.activities.return');
+            Route::patch('/admin/activities/{activity}/reject', [ProgramGoReviewSubmissionController::class, 'reject'])->name('admin.activities.reject');
+            Route::get('/admin/budget-monitoring', ProgramGoBudgetMonitoringController::class)->name('admin.budget-monitoring');
+            Route::get('/admin/activity-codes', ProgramGoActivityCodeController::class)->name('admin.activity-codes');
+            Route::get('/admin/reports', ProgramGoReportController::class)->name('admin.reports');
         });
     });
 
