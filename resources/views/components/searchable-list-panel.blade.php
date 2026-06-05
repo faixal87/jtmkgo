@@ -4,6 +4,7 @@
     'model' => 'search',
     'name' => null,
     'submitOnInput' => false,
+    'ajaxSearch' => false,
     'formRef' => 'searchForm',
 ])
 
@@ -18,7 +19,8 @@
             <input
                 x-model="{{ $model }}"
                 @if ($name) name="{{ $name }}" @endif
-                @if ($submitOnInput) x-on:input.debounce.450ms="$refs.{{ $formRef }}.requestSubmit()" @endif
+                @if ($ajaxSearch) data-ajax-list-search @endif
+                @if ($submitOnInput && ! $ajaxSearch) x-on:input.debounce.450ms="$refs.{{ $formRef }}.requestSubmit()" @endif
                 placeholder="{{ $placeholder }}"
                 class="min-w-0 w-full border-0 bg-transparent p-0 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:ring-0"
             >

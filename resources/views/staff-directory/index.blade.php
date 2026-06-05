@@ -1,5 +1,5 @@
 @php
-    $firstStaffId = $selectedUserId ?? $staff->first()?->id;
+    $firstStaffId = $selectedUserId ?? $selectedPerson?->id ?? $staff->first()?->id;
 @endphp
 
 <x-app-layout>
@@ -12,176 +12,260 @@
 
     <div class="py-8">
         <div
+            id="staff-directory-workspace"
             class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
             x-data="{
                 selectedStaff: @js($firstStaffId),
                 staffSearch: @js($search ?? ''),
-                selectStaff(staffId) {
-                    this.selectedStaff = staffId;
+                detailLoading: false,
+                async selectStaff(staffId, detailUrl = null) {
+                    this.selectedStaff = Number(staffId);
 
                     const url = new URL(window.location.href);
                     url.searchParams.set('user_id', staffId);
                     window.history.replaceState({}, '', url);
+
+                    if (!detailUrl) {
+                        return;
+                    }
+
+                    const detailTarget = document.getElementById('staff-directory-detail-panel');
+
+                    if (!detailTarget) {
+                        window.location.href = detailUrl;
+                        return;
+                    }
+
+                    const requestUrl = new URL(detailUrl, window.location.origin);
+                    requestUrl.searchParams.set('user_id', staffId);
+                    requestUrl.searchParams.set('_partial', 'staff-directory-detail');
+
+                    this.detailLoading = true;
+                    const scrollX = window.scrollX;
+                    const scrollY = window.scrollY;
+
+                    try {
+                        const response = await fetch(requestUrl, {
+                            headers: {
+                                Accept: 'text/html',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Unable to load staff profile.');
+                        }
+
+                        detailTarget.innerHTML = await response.text();
+
+                        if (window.Alpine?.initTree) {
+                            window.Alpine.initTree(detailTarget);
+                        }
+
+                        window.scrollTo(scrollX, scrollY);
+                    } catch (error) {
+                        console.error(error);
+                        window.location.href = detailUrl;
+                    } finally {
+                        this.detailLoading = false;
+                    }
                 },
             }"
         >
             <x-split-panel-layout>
-                <form x-ref="staffSearchForm" method="GET" action="{{ route('staff-directory.index') }}" class="contents">
-                    <input type="hidden" name="user_id" :value="selectedStaff">
-                    <x-searchable-list-panel title="Staff Directory" placeholder="Search name, code, department, grade" model="staffSearch" name="q" submit-on-input form-ref="staffSearchForm">
-                        @if (($search ?? '') !== '')
-                            <p class="mb-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs text-[var(--color-muted)]">
-                                Showing global results for "{{ $search }}".
-                            </p>
-                        @endif
+                <form id="staff-directory-search-form" x-ref="staffSearchForm" method="GET" action="{{ route('staff-directory.index') }}" class="contents">
+                    <input id="staff-directory-selected-user" type="hidden" name="user_id" value="{{ $firstStaffId }}">
 
-                        @forelse ($staff as $person)
-                            @php
-                                $photoUrl = $officialPhotoUrls[$person->id] ?? $person->profilePhotoUrl();
-                            @endphp
-                            <button
-                                type="button"
-                                @click="selectStaff({{ $person->id }})"
-                                class="min-w-0 w-full rounded-xl border px-3 py-3 text-left transition duration-200"
-                                :class="selectedStaff === {{ $person->id }} ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] shadow-sm' : 'border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-surface)]'"
-                            >
-                                <span class="flex min-w-0 items-center gap-3">
-                                    @if ($photoUrl)
-                                        <img src="{{ $photoUrl }}" alt="{{ $person->name }}" class="h-10 w-10 rounded-full object-cover ring-1 ring-[var(--color-border)]">
-                                    @else
-                                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent-soft)] text-xs font-semibold text-[var(--color-accent-text)]">
-                                            {{ $person->initials() ?: 'JG' }}
-                                        </span>
-                                    @endif
-                                    <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-sm font-semibold text-[var(--color-text)]">{{ $person->name }}</span>
-                                    </span>
-                                </span>
-                            </button>
-                        @empty
-                            <x-empty-state title="No staff found" message="Try another name, department, grade, or short code." />
-                        @endforelse
-
-                        @if ($staff->hasPages())
-                            <div class="pt-3">
-                                {{ $staff->links() }}
-                            </div>
-                        @endif
+                    <x-searchable-list-panel
+                        title="Staff Directory"
+                        placeholder="Search name, code, department, grade"
+                        model="staffSearch"
+                        name="q"
+                        form-ref="staffSearchForm"
+                    >
+                        <div id="staff-directory-list" class="space-y-1">
+                            @include('staff-directory.partials.list', [
+                                'staff' => $staff,
+                                'search' => $search,
+                                'selectedUserId' => $selectedUserId,
+                                'officialPhotoUrls' => $officialPhotoUrls,
+                            ])
+                        </div>
                     </x-searchable-list-panel>
                 </form>
 
                 <x-context-detail-panel>
-                    @forelse ($staff as $person)
-                        @php
-                            $photoUrl = $officialPhotoUrls[$person->id] ?? $person->profilePhotoUrl();
-                        @endphp
-                        <section x-show="selectedStaff === {{ $person->id }}" x-cloak class="space-y-6">
-                            <div class="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
-                                <div class="flex min-w-0 items-center gap-4">
-                                    @if ($photoUrl)
-                                        <img src="{{ $photoUrl }}" alt="{{ $person->name }}" class="h-20 w-20 rounded-2xl object-cover ring-1 ring-[var(--color-border)]">
-                                    @else
-                                        <span class="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--color-accent-soft)] text-xl font-semibold text-[var(--color-accent-text)]">
-                                            {{ $person->initials() ?: 'JG' }}
-                                        </span>
-                                    @endif
-                                    <div class="min-w-0">
-                                        <h2 class="break-words text-xl font-semibold text-[var(--color-text)]">{{ $person->name }}</h2>
-                                        <p class="mt-2 inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-secondary-bg)] px-3 py-1 text-xs font-semibold text-[var(--color-text)]">
-                                            {{ $person->staff_short_code ?: 'No short code' }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                    <div x-show="detailLoading" x-cloak class="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold text-[var(--color-muted)]">
+                        Loading staff profile...
+                    </div>
 
-                            <div class="grid gap-4 lg:grid-cols-2">
-                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Identity</p>
-                                    <dl class="mt-4 space-y-3 text-sm">
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">Full Name</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->name }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">IC Number</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">
-                                                {{ $canViewSensitiveStaffDirectory ? ($person->ic_number ?: 'Not provided') : $person->maskedIcNumber() }}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">Date of Birth</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->date_of_birth?->format('d M Y') ?: 'Not provided' }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">Staff Short Code</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->staff_short_code ?: 'Not set' }}</dd>
-                                        </div>
-                                    </dl>
-                                </article>
-
-                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Contact</p>
-                                    <dl class="mt-4 space-y-3 text-sm">
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">Email</dt>
-                                            <dd class="mt-1 break-all font-medium text-[var(--color-text)]">{{ $person->email ?: 'Not provided' }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">Phone Number</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->phone ?: 'Not provided' }}</dd>
-                                        </div>
-                                    </dl>
-                                </article>
-
-                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Department</p>
-                                    <dl class="mt-4 space-y-3 text-sm">
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">Department</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->department ?: 'Not provided' }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">Grade</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->grade ?: 'Not provided' }}</dd>
-                                        </div>
-                                    </dl>
-                                </article>
-
-                                <article class="enterprise-card min-w-0 rounded-xl border p-4">
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">Professional Membership</p>
-                                    <dl class="mt-4 space-y-3 text-sm">
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">MBOT Membership</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->mbot_membership ?: 'Not provided' }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-[var(--color-muted)]">BEM Membership</dt>
-                                            <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->bem_membership ?: 'Not provided' }}</dd>
-                                        </div>
-                                    </dl>
-                                </article>
-
-                                @if ($canViewAuditRequirementLink)
-                                    <article class="enterprise-card min-w-0 rounded-xl border p-4 lg:col-span-2">
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">MBOT/MQA/Audit Requirement</p>
-                                        <div class="mt-4 text-sm">
-                                            @if ($person->audit_requirement_link)
-                                                <a href="{{ $person->audit_requirement_link }}" target="_blank" rel="noopener noreferrer" class="break-all font-medium text-[var(--color-accent-text)] underline decoration-[var(--color-accent)] underline-offset-4">
-                                                    {{ $person->audit_requirement_link }}
-                                                </a>
-                                            @else
-                                                <p class="text-[var(--color-muted)]">Not provided</p>
-                                            @endif
-                                        </div>
-                                    </article>
-                                @endif
-                            </div>
-                        </section>
-                    @empty
-                        <x-empty-state title="No staff selected" message="Use the directory list to select a staff profile." />
-                    @endforelse
+                    <div id="staff-directory-detail-panel">
+                        @include('staff-directory.partials.detail', [
+                            'person' => $selectedPerson,
+                            'photoUrl' => $selectedPerson ? ($officialPhotoUrls[$selectedPerson->id] ?? $selectedPerson->profilePhotoUrl()) : null,
+                            'canViewSensitiveStaffDirectory' => $canViewSensitiveStaffDirectory,
+                            'canViewAuditRequirementLink' => $canViewAuditRequirementLink,
+                        ])
+                    </div>
                 </x-context-detail-panel>
             </x-split-panel-layout>
         </div>
     </div>
+
+    <script>
+        (() => {
+            const root = document.getElementById('staff-directory-workspace');
+
+            if (!root || root.dataset.staffDirectoryBound === '1') {
+                return;
+            }
+
+            root.dataset.staffDirectoryBound = '1';
+
+            const form = document.getElementById('staff-directory-search-form');
+            const selectedInput = document.getElementById('staff-directory-selected-user');
+            const listTarget = document.getElementById('staff-directory-list');
+            const detailTarget = document.getElementById('staff-directory-detail-panel');
+            const searchInput = form?.querySelector('[name="q"]');
+            let searchTimer = null;
+
+            const activeClasses = ['border-[var(--color-accent)]', 'bg-[var(--color-accent-soft)]', 'shadow-sm'];
+            const idleClasses = ['border-transparent', 'hover:border-[var(--color-border)]', 'hover:bg-[var(--color-surface)]'];
+
+            const cleanUrl = (url) => {
+                const cleaned = new URL(url, window.location.origin);
+                cleaned.searchParams.delete('_ajax_list');
+                cleaned.searchParams.delete('_partial');
+
+                return cleaned;
+            };
+
+            const setSelectedHighlight = (userId) => {
+                root.querySelectorAll('[data-staff-directory-staff-link]').forEach((link) => {
+                    const isSelected = Number(link.dataset.userId) === Number(userId);
+
+                    link.classList.toggle(activeClasses[0], isSelected);
+                    link.classList.toggle(activeClasses[1], isSelected);
+                    link.classList.toggle(activeClasses[2], isSelected);
+                    idleClasses.forEach((className) => link.classList.toggle(className, !isSelected));
+                });
+            };
+
+            const fetchList = async (url) => {
+                if (!listTarget) {
+                    window.location.href = url;
+                    return;
+                }
+
+                const requestUrl = new URL(url, window.location.origin);
+                requestUrl.searchParams.set('_ajax_list', 'staff-directory-list');
+                const scrollX = window.scrollX;
+                const scrollY = window.scrollY;
+
+                listTarget.classList.add('opacity-60', 'pointer-events-none');
+
+                try {
+                    const response = await fetch(requestUrl, {
+                        headers: {
+                            Accept: 'text/html',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Unable to update staff list.');
+                    }
+
+                    listTarget.innerHTML = await response.text();
+                    window.history.pushState({}, '', cleanUrl(requestUrl));
+                    setSelectedHighlight(selectedInput?.value);
+                    window.scrollTo(scrollX, scrollY);
+                } catch (error) {
+                    console.error(error);
+                    window.location.href = cleanUrl(requestUrl);
+                } finally {
+                    listTarget.classList.remove('opacity-60', 'pointer-events-none');
+                }
+            };
+
+            const listUrlFromForm = () => {
+                const url = new URL(form.action || window.location.href, window.location.origin);
+                url.search = new URLSearchParams(new FormData(form)).toString();
+
+                return url;
+            };
+
+            const fetchDetail = async (userId, detailUrl) => {
+                if (!detailTarget) {
+                    window.location.href = detailUrl;
+                    return;
+                }
+
+                const requestUrl = new URL(detailUrl, window.location.origin);
+                requestUrl.searchParams.set('user_id', userId);
+                requestUrl.searchParams.set('_partial', 'staff-directory-detail');
+                const scrollX = window.scrollX;
+                const scrollY = window.scrollY;
+
+                detailTarget.classList.add('opacity-60', 'pointer-events-none');
+
+                try {
+                    const response = await fetch(requestUrl, {
+                        headers: {
+                            Accept: 'text/html',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Unable to load staff profile.');
+                    }
+
+                    detailTarget.innerHTML = await response.text();
+                    window.history.replaceState({}, '', cleanUrl(requestUrl));
+                    window.scrollTo(scrollX, scrollY);
+                } catch (error) {
+                    console.error(error);
+                    window.location.href = cleanUrl(requestUrl);
+                } finally {
+                    detailTarget.classList.remove('opacity-60', 'pointer-events-none');
+                }
+            };
+
+            form?.addEventListener('submit', (event) => {
+                event.preventDefault();
+                fetchList(listUrlFromForm());
+            });
+
+            searchInput?.addEventListener('input', () => {
+                window.clearTimeout(searchTimer);
+                searchTimer = window.setTimeout(() => fetchList(listUrlFromForm()), 300);
+            });
+
+            root.addEventListener('click', (event) => {
+                const staffLink = event.target.closest('[data-staff-directory-staff-link]');
+
+                if (staffLink) {
+                    event.preventDefault();
+                    const userId = staffLink.dataset.userId;
+
+                    if (selectedInput) {
+                        selectedInput.value = userId;
+                    }
+
+                    setSelectedHighlight(userId);
+                    fetchDetail(userId, staffLink.dataset.detailUrl || staffLink.href);
+
+                    return;
+                }
+
+                const pageLink = event.target.closest('[data-staff-directory-pagination] a');
+
+                if (pageLink) {
+                    event.preventDefault();
+                    fetchList(pageLink.href);
+                }
+            });
+        })();
+    </script>
 </x-app-layout>
