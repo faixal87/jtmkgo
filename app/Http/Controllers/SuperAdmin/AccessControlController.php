@@ -50,29 +50,8 @@ class AccessControlController extends Controller
             $moduleFilter = 'all';
         }
 
-        $usersPaginator = User::query()
-            ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
-            ->with($this->accessControlRelations(true))
-            ->withCount([
-                'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
-                'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
-            ])
-            ->where('account_status', 'approved')
-            ->when($userFilter === 'normal', fn ($query) => $query
-                ->where('is_super_admin', false)
-                ->whereDoesntHave('adminModules', fn ($query) => $query->where('module_admins.is_active', true)->where('modules.slug', '!=', 'passport-photo')))
-            ->when($userFilter === 'module_admins', fn ($query) => $query
-                ->where('is_super_admin', false)
-                ->whereHas('adminModules', fn ($query) => $query->where('module_admins.is_active', true)->where('modules.slug', '!=', 'passport-photo')))
-            ->when($userFilter === 'super_admins', fn ($query) => $query->where('is_super_admin', true))
-            ->when($moduleFilter !== 'all', fn ($query) => $query->whereHas('adminModules', function ($query) use ($moduleFilter): void {
-                $query
-                    ->where('module_admins.is_active', true)
-                    ->where('modules.slug', $moduleFilter);
-            }))
-            ->when($userSearch !== '', fn ($query) => $this->applyUserPanelSearch($query, $userSearch))
-            ->orderBy('name')
-            ->paginate($userSearch !== '' ? 30 : $this->perPage($request, 'user_per_page'), ['*'], 'user_page')
+        $usersPaginator = $this->accessControlUserQuery($userSearch, $userFilter, $moduleFilter, true)
+            ->paginate($this->perPage($request, 'user_per_page'), ['*'], 'user_page')
             ->withQueryString();
 
         $users = $usersPaginator->getCollection();
@@ -80,7 +59,7 @@ class AccessControlController extends Controller
 
         if ($selectedUserId && ! $users->contains('id', $selectedUserId)) {
             $selectedUser = User::query()
-                ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
+                ->select(['id', 'name', 'email', 'ic_number', 'phone', 'staff_short_code', 'profile_photo', 'account_status', 'is_super_admin'])
                 ->with($this->accessControlRelations(true))
                 ->withCount([
                     'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
@@ -153,6 +132,11 @@ class AccessControlController extends Controller
             'userFilter' => $userFilter,
             'moduleFilter' => $moduleFilter,
             'isSearchingUsers' => $userSearch !== '',
+            'userResultsTotal' => $usersPaginator->total(),
+            'userCurrentPage' => $usersPaginator->currentPage(),
+            'userLastPage' => $usersPaginator->lastPage(),
+            'userPageFrom' => $usersPaginator->firstItem(),
+            'userPageTo' => $usersPaginator->lastItem(),
             'usersData' => $users->map(fn (User $user) => $this->serializeUserForAccessControl($user))->values(),
             'modulesData' => $modules->map(fn (Module $module) => [
                 'id' => $module->id,
@@ -176,12 +160,13 @@ class AccessControlController extends Controller
         $search = trim((string) $request->query('q'));
         $userFilter = (string) $request->query('user_filter', 'all');
         $moduleFilter = (string) $request->query('module_filter', 'all');
-        $limit = (int) $request->query('limit', 30);
+        $perPage = (int) $request->query('per_page', $request->query('limit', 10));
+        $page = max(1, (int) $request->query('user_page', 1));
 
         $userFilter = in_array($userFilter, ['all', 'normal', 'module_admins', 'super_admins'], true)
             ? $userFilter
             : 'all';
-        $limit = in_array($limit, [10, 20, 30, 80], true) ? $limit : 30;
+        $perPage = in_array($perPage, [10, 20, 50, 100], true) ? $perPage : 10;
 
         $activeModuleSlugs = Module::query()
             ->where('is_active', true)
@@ -192,15 +177,23 @@ class AccessControlController extends Controller
             $moduleFilter = 'all';
         }
 
-        $users = $this->accessControlUserQuery($search, $userFilter, $moduleFilter)
-            ->limit($search !== '' ? 50 : $limit)
-            ->get()
+        $usersPaginator = $this->accessControlUserQuery($search, $userFilter, $moduleFilter)
+            ->paginate($perPage, ['*'], 'user_page', $page);
+
+        $users = $usersPaginator
+            ->getCollection()
             ->map(fn (User $user) => $this->serializeUserForAccessControl($user))
             ->values();
 
         return response()->json([
             'success' => true,
             'users' => $users,
+            'total' => $usersPaginator->total(),
+            'per_page' => $usersPaginator->perPage(),
+            'current_page' => $usersPaginator->currentPage(),
+            'last_page' => $usersPaginator->lastPage(),
+            'from' => $usersPaginator->firstItem(),
+            'to' => $usersPaginator->lastItem(),
         ]);
     }
 
@@ -665,11 +658,11 @@ class AccessControlController extends Controller
         });
     }
 
-    private function accessControlUserQuery(string $search, string $userFilter, string $moduleFilter): Builder
+    private function accessControlUserQuery(string $search, string $userFilter, string $moduleFilter, bool $includeRequests = false): Builder
     {
         return User::query()
-            ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
-            ->with($this->accessControlRelations())
+            ->select(['id', 'name', 'email', 'ic_number', 'phone', 'staff_short_code', 'profile_photo', 'account_status', 'is_super_admin'])
+            ->with($this->accessControlRelations($includeRequests))
             ->withCount([
                 'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
                 'moduleAccessRequests as pending_module_access_request_count' => fn ($query) => $query->where('status', ModuleAccessRequest::STATUS_PENDING),
@@ -694,7 +687,7 @@ class AccessControlController extends Controller
     private function freshAccessControlUser(int $userId): User
     {
         return User::query()
-            ->select(['id', 'name', 'email', 'ic_number', 'profile_photo', 'account_status', 'is_super_admin'])
+            ->select(['id', 'name', 'email', 'ic_number', 'phone', 'staff_short_code', 'profile_photo', 'account_status', 'is_super_admin'])
             ->with($this->accessControlRelations())
             ->withCount([
                 'moduleAccesses as active_module_access_count' => fn ($query) => $query->where('is_active', true)->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo')),
@@ -715,6 +708,8 @@ class AccessControlController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'ic_number' => $user->ic_number,
+            'phone' => $user->phone,
+            'staff_short_code' => $user->staff_short_code,
             'profile_photo_url' => $user->profilePhotoUrl(),
             'initials' => $user->initials(),
             'is_super_admin' => (bool) $user->is_super_admin,
@@ -733,7 +728,7 @@ class AccessControlController extends Controller
     {
         $perPage = (int) $request->query($key, 10);
 
-        return in_array($perPage, [10, 20, 30], true) ? $perPage : 10;
+        return in_array($perPage, [10, 20, 50, 100], true) ? $perPage : 10;
     }
 
     private function redirectToIndexWithState(Request $request, ?int $selectedUserId = null): RedirectResponse
@@ -753,6 +748,7 @@ class AccessControlController extends Controller
             'user_id' => $selectedUserId ?: null,
             'user_q' => $request->input('user_q'),
             'user_per_page' => $request->input('user_per_page'),
+            'user_page' => $request->input('user_page'),
             'user_filter' => $request->input('user_filter'),
             'module_filter' => $request->input('module_filter'),
         ])

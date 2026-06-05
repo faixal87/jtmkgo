@@ -11,6 +11,7 @@
         'user_id' => $selectedUserId,
         'user_q' => $userSearch ?? null,
         'user_per_page' => $userPerPage ?? null,
+        'user_page' => $userCurrentPage ?? null,
         'user_filter' => $userFilter ?? null,
         'module_filter' => $moduleFilter ?? null,
     ], fn ($value) => filled($value));
@@ -28,6 +29,11 @@
             userFilter: config.userFilter || 'all',
             moduleFilter: config.moduleFilter || 'all',
             userPerPage: config.userPerPage || 10,
+            userPage: config.userPage || 1,
+            userLastPage: config.userLastPage || 1,
+            userResultsTotal: config.userResultsTotal || 0,
+            userPageFrom: config.userPageFrom || null,
+            userPageTo: config.userPageTo || null,
             csrf: config.csrf,
             urls: config.urls,
             loadingSearch: false,
@@ -78,6 +84,7 @@
 
                 this.setOrDelete(url, 'user_q', this.userSearch);
                 this.setOrDelete(url, 'user_per_page', this.userPerPage);
+                this.setOrDelete(url, 'user_page', this.userPage);
                 this.setOrDelete(url, 'user_filter', this.userFilter);
                 this.setOrDelete(url, 'module_filter', this.moduleFilter);
 
@@ -89,6 +96,7 @@
                     user_filter: this.userFilter,
                     module_filter: this.moduleFilter,
                     user_per_page: this.userPerPage,
+                    user_page: this.userPage,
                 }));
             },
 
@@ -100,7 +108,7 @@
                 }
             },
 
-            async searchUsers() {
+            async searchUsers(page = 1) {
                 this.loadingSearch = true;
 
                 try {
@@ -108,7 +116,8 @@
                     this.setOrDelete(url, 'q', this.userSearch);
                     this.setOrDelete(url, 'user_filter', this.userFilter);
                     this.setOrDelete(url, 'module_filter', this.moduleFilter);
-                    this.setOrDelete(url, 'limit', this.userSearch.trim() ? 80 : this.userPerPage);
+                    this.setOrDelete(url, 'per_page', this.userPerPage);
+                    this.setOrDelete(url, 'user_page', page);
 
                     const response = await fetch(url, {
                         headers: {
@@ -124,6 +133,11 @@
 
                     const previousUser = this.selectedUser;
                     this.users = data.users || [];
+                    this.userResultsTotal = data.total || 0;
+                    this.userPage = data.current_page || page;
+                    this.userLastPage = data.last_page || 1;
+                    this.userPageFrom = data.from || null;
+                    this.userPageTo = data.to || null;
 
                     if (this.users.some((user) => Number(user.id) === Number(previousUser))) {
                         this.selectedUser = previousUser;
@@ -137,6 +151,22 @@
                 } finally {
                     this.loadingSearch = false;
                 }
+            },
+
+            previousUserPage() {
+                if (this.userPage <= 1 || this.loadingSearch) {
+                    return;
+                }
+
+                this.searchUsers(this.userPage - 1);
+            },
+
+            nextUserPage() {
+                if (this.userPage >= this.userLastPage || this.loadingSearch) {
+                    return;
+                }
+
+                this.searchUsers(this.userPage + 1);
             },
 
             userHasAccess(moduleId) {
@@ -347,6 +377,11 @@
             'userFilter' => $userFilter ?? 'all',
             'moduleFilter' => $moduleFilter ?? 'all',
             'userPerPage' => $userPerPage ?? 10,
+            'userPage' => $userCurrentPage ?? 1,
+            'userLastPage' => $userLastPage ?? 1,
+            'userResultsTotal' => $userResultsTotal ?? 0,
+            'userPageFrom' => $userPageFrom,
+            'userPageTo' => $userPageTo,
             'csrf' => csrf_token(),
             'urls' => [
                 'search' => route('super-admin.access-control.users.search'),
@@ -422,25 +457,32 @@
                                     </svg>
                                 </div>
                                 <div class="grid gap-2">
-                                    <select x-model="userFilter" @change="searchUsers()" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                                    <select x-model="userFilter" @change="searchUsers(1)" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                                         <option value="all">All approved users</option>
                                         <option value="normal">Normal users</option>
                                         <option value="module_admins">Module admins</option>
                                         <option value="super_admins">Super admin</option>
                                     </select>
-                                    <select x-model="moduleFilter" @change="searchUsers()" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                                    <select x-model="moduleFilter" @change="searchUsers(1)" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                                         <option value="all">All module types</option>
                                         <template x-for="module in modules" :key="`filter-${module.id}`">
                                             <option :value="module.slug" x-text="`${module.name} admins`"></option>
                                         </template>
                                     </select>
-                                    <select x-model="userPerPage" @change="searchUsers()" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
+                                    <select x-model="userPerPage" @change="searchUsers(1)" class="rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
                                         <option value="10">10 users</option>
                                         <option value="20">20 users</option>
-                                        <option value="30">30 users</option>
+                                        <option value="50">50 users</option>
+                                        <option value="100">100 users</option>
                                     </select>
                                 </div>
-                                <p class="text-xs text-[var(--color-muted)]">Search is global across name, IC number, email, and role labels.</p>
+                                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--color-muted)]">
+                                    <span class="font-semibold text-[var(--color-text)]">Results Found: <span x-text="userResultsTotal"></span> users</span>
+                                    <span x-show="userResultsTotal > 0">
+                                        Showing <span x-text="userPageFrom || 0"></span>-<span x-text="userPageTo || 0"></span>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-[var(--color-muted)]">Search is global across name, email, staff short code, IC number, and phone number.</p>
                             </div>
                         </div>
 
@@ -479,7 +521,28 @@
                                 <x-access.empty-state title="No users found" message="Try another search, role, or module filter." />
                             </div>
 
-                            <p class="px-3 pt-2 text-xs text-[var(--color-muted)]">Use search or list size to refine the user list without leaving this workspace.</p>
+                            <div class="px-3 pt-2">
+                                <div class="flex items-center justify-between gap-2 text-xs text-[var(--color-muted)]">
+                                    <button
+                                        type="button"
+                                        @click="previousUserPage()"
+                                        :disabled="userPage <= 1 || loadingSearch"
+                                        class="rounded-lg border border-[var(--color-border)] px-2 py-1 font-semibold transition hover:bg-[var(--color-accent-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Previous
+                                    </button>
+                                    <span>Page <span x-text="userPage"></span> of <span x-text="userLastPage"></span></span>
+                                    <button
+                                        type="button"
+                                        @click="nextUserPage()"
+                                        :disabled="userPage >= userLastPage || loadingSearch"
+                                        class="rounded-lg border border-[var(--color-border)] px-2 py-1 font-semibold transition hover:bg-[var(--color-accent-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                                <p class="mt-2 text-xs text-[var(--color-muted)]">Pagination applies after the full database search and filters are applied.</p>
+                            </div>
                         </div>
                     </aside>
 
@@ -815,6 +878,7 @@
                                     <input type="hidden" name="user_id" :value="selectedUser">
                                     <input type="hidden" name="user_q" value="{{ $userSearch ?? '' }}">
                                     <input type="hidden" name="user_per_page" value="{{ $userPerPage ?? 10 }}">
+                                    <input type="hidden" name="user_page" value="{{ $userCurrentPage ?? 1 }}">
                                     <input type="hidden" name="user_filter" value="{{ $userFilter ?? 'all' }}">
                                     <input type="hidden" name="module_filter" value="{{ $moduleFilter ?? 'all' }}">
                                     <input name="notification_q" value="{{ $notificationSearch }}" placeholder="Search notifications" class="rounded-lg border-[var(--color-border)] text-sm shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
