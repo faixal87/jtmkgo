@@ -1,10 +1,5 @@
 @php
-    $monthNames = collect(range(1, 12))->mapWithKeys(fn ($month) => [$month => DateTime::createFromFormat('!m', $month)->format('M')]);
     $fullMonthNames = collect(range(1, 12))->mapWithKeys(fn ($month) => [$month => DateTime::createFromFormat('!m', $month)->format('F')]);
-    $chartMonths = (int) $filters['year'] === (int) now()->year ? range(1, (int) now()->month) : range(1, 12);
-    $chartMonthlyValues = collect($chartMonths)->map(fn ($month) => (float) ($monthlyBudget[$month] ?? 0));
-    $maxMonthlyBudget = max(1, (float) $chartMonthlyValues->max());
-    $yearUsage = max(1, (float) $kpis['yearBudgetUsage']);
     $sortUrl = function (string $column) use ($filters): string {
         $query = request()->except('page');
         $query['sort'] = $column;
@@ -12,16 +7,25 @@
 
         return route('program-go.admin.budget-monitoring', $query);
     };
-    $sortMark = fn (string $column) => $filters['sort'] === $column ? ($filters['direction'] === 'asc' ? '↑' : '↓') : '';
-    $quarterLabels = [
-        1 => 'Q1 (Jan - Mar)',
-        2 => 'Q2 (Apr - Jun)',
-        3 => 'Q3 (Jul - Sep)',
-        4 => 'Q4 (Oct - Dec)',
-    ];
+    $sortMark = fn (string $column) => $filters['sort'] === $column ? ($filters['direction'] === 'asc' ? ' ASC' : ' DESC') : '';
 @endphp
 
 <x-app-layout>
+    <style>
+        .program-chart-toggle {
+            border-color: var(--color-border);
+            background: var(--color-surface);
+            color: var(--color-muted);
+        }
+
+        .program-chart-toggle.is-active {
+            border-color: var(--color-accent);
+            background: var(--color-accent-soft, rgba(245, 158, 11, 0.14));
+            color: var(--color-accent-text, var(--color-text));
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+        }
+    </style>
+
     <x-slot name="header">
         <div>
             <h1 class="text-xl font-semibold tracking-tight text-[var(--color-text)]">Budget Usage Analytics Workspace</h1>
@@ -80,64 +84,24 @@
             </section>
 
             <section class="enterprise-card rounded-xl border p-5 shadow-sm">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <h2 class="text-sm font-semibold text-[var(--color-text)]">Budget Usage by Month</h2>
+                        <h2 class="text-sm font-semibold text-[var(--color-text)]">Budget Usage Visualization</h2>
                         <p class="mt-1 text-sm text-[var(--color-muted)]">Approved activity budget usage for {{ $filters['year'] }}.</p>
                     </div>
-                    <span class="theme-badge">RM {{ number_format((float) $kpis['yearBudgetUsage'], 2) }} yearly usage</span>
-                </div>
 
-                <div class="mt-6 overflow-x-auto">
-                    <div class="grid min-w-[42rem] items-end gap-3" style="grid-template-columns: repeat({{ count($chartMonths) }}, minmax(0, 1fr));">
-                        @foreach ($chartMonths as $month)
-                            @php
-                                $label = $monthNames[$month];
-                                $total = (float) ($monthlyBudget[$month] ?? 0);
-                                $activityCount = (int) ($monthlyActivityCounts[$month] ?? 0);
-                                $height = $total > 0 ? max(0.75, ($total / $maxMonthlyBudget) * 12) : 0.25;
-                            @endphp
-                            <div class="flex min-w-0 flex-col items-center gap-2">
-                                <div class="flex h-64 w-full flex-col justify-end rounded-lg bg-[var(--color-secondary-bg)] p-1.5" title="{{ $label }} {{ $filters['year'] }}: RM {{ number_format($total, 2) }} across {{ $activityCount }} approved activit{{ $activityCount === 1 ? 'y' : 'ies' }}">
-                                    <span class="mb-1 truncate text-center text-[0.65rem] font-semibold text-[var(--color-text)]">RM {{ number_format($total, 0) }}</span>
-                                    <div class="w-full rounded-md bg-[var(--color-accent)] shadow-sm transition-all duration-300" style="height: {{ $height }}rem"></div>
-                                </div>
-                                <span class="text-xs font-semibold text-[var(--color-muted)]">{{ $label }}</span>
-                                <span class="text-[0.65rem] text-[var(--color-muted)]">{{ $activityCount }} activit{{ $activityCount === 1 ? 'y' : 'ies' }}</span>
-                            </div>
-                        @endforeach
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <span class="theme-badge w-fit">RM {{ number_format((float) $kpis['yearBudgetUsage'], 2) }} yearly usage</span>
+                        <div class="flex w-fit rounded-xl border border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-1">
+                            <button type="button" class="program-chart-toggle rounded-lg px-3 py-1.5 text-xs font-semibold transition" data-program-chart-view="quarterly">Quarterly</button>
+                            <button type="button" class="program-chart-toggle rounded-lg px-3 py-1.5 text-xs font-semibold transition" data-program-chart-view="last6">Last 6 Months</button>
+                            <button type="button" class="program-chart-toggle rounded-lg px-3 py-1.5 text-xs font-semibold transition" data-program-chart-view="fullYear">Full Year</button>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            <section class="enterprise-card rounded-xl border p-5 shadow-sm">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <h2 class="text-sm font-semibold text-[var(--color-text)]">Quarterly Budget Usage</h2>
-                        <p class="mt-1 text-sm text-[var(--color-muted)]">Quarterly usage and percentage share of {{ $filters['year'] }} approved budget usage.</p>
-                    </div>
-                    <span class="theme-badge">{{ $quarterLabels[$filters['quarterForCard']] }} is used for the current quarter card</span>
-                </div>
-
-                <div class="mt-6 grid gap-4 lg:grid-cols-2">
-                    @foreach ($quarterLabels as $quarter => $label)
-                        @php
-                            $total = (float) ($quarterlyBudget[$quarter] ?? 0);
-                            $percentage = $yearUsage > 0 ? min(100, ($total / $yearUsage) * 100) : 0;
-                        @endphp
-                        <article class="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <h3 class="text-sm font-semibold text-[var(--color-text)]">{{ $label }}</h3>
-                                    <p class="mt-1 text-xs text-[var(--color-muted)]">{{ number_format($percentage, 1) }}% of yearly usage</p>
-                                </div>
-                                <span class="text-sm font-semibold text-[var(--color-text)]">RM {{ number_format($total, 2) }}</span>
-                            </div>
-                            <div class="mt-4 h-3 overflow-hidden rounded-full bg-[var(--color-secondary-bg)]" title="{{ $label }}: RM {{ number_format($total, 2) }}">
-                                <div class="h-full rounded-full bg-[var(--color-accent)]" style="width: {{ $percentage }}%"></div>
-                            </div>
-                        </article>
-                    @endforeach
+                <div class="mt-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-3 sm:px-4">
+                    <div id="program-go-budget-chart" class="h-[180px] w-full"></div>
                 </div>
             </section>
 
@@ -154,14 +118,14 @@
                     <table class="min-w-full divide-y divide-[var(--color-border)] text-sm">
                         <thead>
                             <tr class="text-left text-xs uppercase tracking-wide text-[var(--color-muted)]">
-                                <th class="px-3 py-2"><a href="{{ $sortUrl('reference_no') }}" class="hover:text-[var(--color-text)]">Reference No {{ $sortMark('reference_no') }}</a></th>
-                                <th class="px-3 py-2"><a href="{{ $sortUrl('activity_name') }}" class="hover:text-[var(--color-text)]">Activity Name {{ $sortMark('activity_name') }}</a></th>
-                                <th class="px-3 py-2"><a href="{{ $sortUrl('activity_date') }}" class="hover:text-[var(--color-text)]">Activity Date {{ $sortMark('activity_date') }}</a></th>
-                                <th class="px-3 py-2"><a href="{{ $sortUrl('venue') }}" class="hover:text-[var(--color-text)]">Venue {{ $sortMark('venue') }}</a></th>
-                                <th class="px-3 py-2"><a href="{{ $sortUrl('lecturer') }}" class="hover:text-[var(--color-text)]">Lecturer {{ $sortMark('lecturer') }}</a></th>
-                                <th class="px-3 py-2"><a href="{{ $sortUrl('activity_code') }}" class="hover:text-[var(--color-text)]">Activity Code {{ $sortMark('activity_code') }}</a></th>
-                                <th class="px-3 py-2 text-right"><a href="{{ $sortUrl('total_budget') }}" class="hover:text-[var(--color-text)]">Total Budget {{ $sortMark('total_budget') }}</a></th>
-                                <th class="px-3 py-2"><a href="{{ $sortUrl('status') }}" class="hover:text-[var(--color-text)]">Status {{ $sortMark('status') }}</a></th>
+                                <th class="px-3 py-2"><a href="{{ $sortUrl('reference_no') }}" class="hover:text-[var(--color-text)]">Reference No{{ $sortMark('reference_no') }}</a></th>
+                                <th class="px-3 py-2"><a href="{{ $sortUrl('activity_name') }}" class="hover:text-[var(--color-text)]">Activity Name{{ $sortMark('activity_name') }}</a></th>
+                                <th class="px-3 py-2"><a href="{{ $sortUrl('activity_date') }}" class="hover:text-[var(--color-text)]">Activity Date{{ $sortMark('activity_date') }}</a></th>
+                                <th class="px-3 py-2"><a href="{{ $sortUrl('venue') }}" class="hover:text-[var(--color-text)]">Venue{{ $sortMark('venue') }}</a></th>
+                                <th class="px-3 py-2"><a href="{{ $sortUrl('lecturer') }}" class="hover:text-[var(--color-text)]">Lecturer{{ $sortMark('lecturer') }}</a></th>
+                                <th class="px-3 py-2"><a href="{{ $sortUrl('activity_code') }}" class="hover:text-[var(--color-text)]">Activity Code{{ $sortMark('activity_code') }}</a></th>
+                                <th class="px-3 py-2 text-right"><a href="{{ $sortUrl('total_budget') }}" class="hover:text-[var(--color-text)]">Total Budget{{ $sortMark('total_budget') }}</a></th>
+                                <th class="px-3 py-2"><a href="{{ $sortUrl('status') }}" class="hover:text-[var(--color-text)]">Status{{ $sortMark('status') }}</a></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[var(--color-border)]">
@@ -190,4 +154,157 @@
             </section>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chartElement = document.getElementById('program-go-budget-chart');
+            const chartData = @json($chartData);
+
+            if (! chartElement || ! chartData) {
+                return;
+            }
+
+            const renderChart = (ApexCharts) => {
+                const buttons = document.querySelectorAll('[data-program-chart-view]');
+                const currencyFormatter = new Intl.NumberFormat('en-MY', {
+                    style: 'currency',
+                    currency: 'MYR',
+                });
+                const cssValue = (name, fallback) => {
+                    const bodyValue = getComputedStyle(document.body).getPropertyValue(name).trim();
+                    const rootValue = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+                    return bodyValue || rootValue || fallback;
+                };
+                const isDarkTheme = () => document.documentElement.classList.contains('theme-dark') || document.body.classList.contains('theme-dark');
+                const optionsFor = (payload) => ({
+                    chart: {
+                        type: 'bar',
+                        height: 180,
+                        toolbar: { show: false },
+                        fontFamily: 'inherit',
+                        foreColor: cssValue('--color-muted', '#64748b'),
+                        animations: {
+                            enabled: true,
+                            speed: 260,
+                        },
+                    },
+                    series: [{
+                        name: 'Budget Usage',
+                        data: payload.budgets,
+                    }],
+                    colors: [cssValue('--color-accent', '#f59e0b')],
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 5,
+                            columnWidth: '42%',
+                        },
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        formatter: (value) => value > 0 ? `RM ${Math.round(value).toLocaleString('en-MY')}` : '',
+                        style: {
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            colors: [cssValue('--color-text', '#0f172a')],
+                        },
+                        offsetY: -18,
+                    },
+                    grid: {
+                        borderColor: cssValue('--color-border', '#e2e8f0'),
+                        strokeDashArray: 4,
+                        padding: {
+                            top: 16,
+                            right: 8,
+                            left: 8,
+                        },
+                    },
+                    xaxis: {
+                        categories: payload.labels,
+                        labels: {
+                            style: {
+                                colors: payload.labels.map(() => cssValue('--color-muted', '#64748b')),
+                                fontSize: '11px',
+                                fontWeight: 600,
+                            },
+                        },
+                        axisBorder: {
+                            color: cssValue('--color-border', '#e2e8f0'),
+                        },
+                        axisTicks: {
+                            color: cssValue('--color-border', '#e2e8f0'),
+                        },
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: (value) => value >= 1000 ? `RM ${(value / 1000).toFixed(1)}k` : `RM ${Math.round(value)}`,
+                            style: {
+                                colors: [cssValue('--color-muted', '#64748b')],
+                                fontSize: '10px',
+                            },
+                        },
+                    },
+                    tooltip: {
+                        theme: isDarkTheme() ? 'dark' : 'light',
+                        custom: ({ dataPointIndex }) => {
+                            const label = payload.labels[dataPointIndex] || '-';
+                            const value = Number(payload.budgets[dataPointIndex] || 0);
+                            const count = Number(payload.counts[dataPointIndex] || 0);
+                            const activityLabel = count === 1 ? 'approved activity' : 'approved activities';
+
+                            return `
+                                <div class="px-3 py-2 text-sm">
+                                    <div class="font-semibold">${label}</div>
+                                    <div>${currencyFormatter.format(value)}</div>
+                                    <div>${count} ${activityLabel}</div>
+                                </div>
+                            `;
+                        },
+                    },
+                    noData: {
+                        text: 'No approved budget usage found',
+                    },
+                });
+
+                const chart = new ApexCharts(chartElement, optionsFor(chartData.quarterly));
+                chart.render();
+
+                const setActive = (view) => {
+                    buttons.forEach((button) => {
+                        const isActive = button.dataset.programChartView === view;
+                        button.classList.toggle('is-active', isActive);
+                        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                    });
+                };
+
+                buttons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const view = button.dataset.programChartView;
+                        const payload = chartData[view] || chartData.quarterly;
+
+                        chart.updateOptions(optionsFor(payload), true, true);
+                        setActive(view);
+                    });
+                });
+
+                setActive('quarterly');
+            };
+
+            const initChart = () => {
+                if (window.loadApexCharts) {
+                    window.loadApexCharts().then(renderChart);
+                    return;
+                }
+
+                if (window.ApexCharts) {
+                    renderChart(window.ApexCharts);
+                    return;
+                }
+
+                window.setTimeout(initChart, 50);
+            };
+
+            initChart();
+        });
+    </script>
 </x-app-layout>

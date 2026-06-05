@@ -78,6 +78,31 @@ class BudgetMonitoringController extends Controller
             ->whereIn(DB::raw('MONTH(activity_date)'), $quarterMonths)
             ->sum('total_budget');
 
+        $monthlyBudget = (clone $approvedYearQuery)
+            ->selectRaw('MONTH(activity_date) as month_number, SUM(total_budget) as total')
+            ->whereNotNull('activity_date')
+            ->groupByRaw('MONTH(activity_date)')
+            ->orderByRaw('MONTH(activity_date)')
+            ->pluck('total', 'month_number');
+        $monthlyActivityCounts = (clone $approvedYearQuery)
+            ->selectRaw('MONTH(activity_date) as month_number, COUNT(*) as total')
+            ->whereNotNull('activity_date')
+            ->groupByRaw('MONTH(activity_date)')
+            ->orderByRaw('MONTH(activity_date)')
+            ->pluck('total', 'month_number');
+        $quarterlyBudget = (clone $approvedYearQuery)
+            ->selectRaw('QUARTER(activity_date) as quarter_number, SUM(total_budget) as total')
+            ->whereNotNull('activity_date')
+            ->groupByRaw('QUARTER(activity_date)')
+            ->orderByRaw('QUARTER(activity_date)')
+            ->pluck('total', 'quarter_number');
+        $quarterlyActivityCounts = (clone $approvedYearQuery)
+            ->selectRaw('QUARTER(activity_date) as quarter_number, COUNT(*) as total')
+            ->whereNotNull('activity_date')
+            ->groupByRaw('QUARTER(activity_date)')
+            ->orderByRaw('QUARTER(activity_date)')
+            ->pluck('total', 'quarter_number');
+
         return view('program-go.admin.budget-monitoring', [
             'activities' => $activities,
             'kpis' => [
@@ -86,24 +111,7 @@ class BudgetMonitoringController extends Controller
                 'quarterBudgetUsage' => $quarterBudgetUsage,
                 'approvedActivities' => (clone $filteredApprovedQuery)->count(),
             ],
-            'monthlyBudget' => (clone $approvedYearQuery)
-                ->selectRaw('MONTH(activity_date) as month_number, SUM(total_budget) as total')
-                ->whereNotNull('activity_date')
-                ->groupByRaw('MONTH(activity_date)')
-                ->orderByRaw('MONTH(activity_date)')
-                ->pluck('total', 'month_number'),
-            'monthlyActivityCounts' => (clone $approvedYearQuery)
-                ->selectRaw('MONTH(activity_date) as month_number, COUNT(*) as total')
-                ->whereNotNull('activity_date')
-                ->groupByRaw('MONTH(activity_date)')
-                ->orderByRaw('MONTH(activity_date)')
-                ->pluck('total', 'month_number'),
-            'quarterlyBudget' => (clone $approvedYearQuery)
-                ->selectRaw('QUARTER(activity_date) as quarter_number, SUM(total_budget) as total')
-                ->whereNotNull('activity_date')
-                ->groupByRaw('QUARTER(activity_date)')
-                ->orderByRaw('QUARTER(activity_date)')
-                ->pluck('total', 'quarter_number'),
+            'chartData' => $this->chartData($year, $monthlyBudget, $monthlyActivityCounts, $quarterlyBudget, $quarterlyActivityCounts),
             'filters' => compact('year', 'month', 'search', 'status', 'sort', 'direction', 'monthForCard', 'quarterForCard'),
             'yearOptions' => $yearOptions,
             'statuses' => ProgramActivity::statuses(),
@@ -183,5 +191,45 @@ class BudgetMonitoringController extends Controller
             3 => [7, 8, 9],
             default => [10, 11, 12],
         };
+    }
+
+    /**
+     * @param  Collection<int, mixed>  $monthlyBudget
+     * @param  Collection<int, mixed>  $monthlyActivityCounts
+     * @param  Collection<int, mixed>  $quarterlyBudget
+     * @param  Collection<int, mixed>  $quarterlyActivityCounts
+     * @return array<string, array<string, array<int, float|int|string>>>
+     */
+    private function chartData(
+        int $year,
+        Collection $monthlyBudget,
+        Collection $monthlyActivityCounts,
+        Collection $quarterlyBudget,
+        Collection $quarterlyActivityCounts
+    ): array {
+        $monthLabels = collect(range(1, 12))->mapWithKeys(fn ($month) => [
+            $month => \DateTime::createFromFormat('!m', (string) $month)->format('M'),
+        ]);
+        $currentYear = (int) now()->year;
+        $endMonth = $year === $currentYear ? (int) now()->month : 12;
+        $lastSixMonths = range(max(1, $endMonth - 5), $endMonth);
+
+        $monthlyPayload = function (array $months) use ($monthLabels, $monthlyBudget, $monthlyActivityCounts): array {
+            return [
+                'labels' => collect($months)->map(fn ($month) => $monthLabels[$month])->values()->all(),
+                'budgets' => collect($months)->map(fn ($month) => round((float) ($monthlyBudget[$month] ?? 0), 2))->values()->all(),
+                'counts' => collect($months)->map(fn ($month) => (int) ($monthlyActivityCounts[$month] ?? 0))->values()->all(),
+            ];
+        };
+
+        return [
+            'quarterly' => [
+                'labels' => ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)'],
+                'budgets' => collect(range(1, 4))->map(fn ($quarter) => round((float) ($quarterlyBudget[$quarter] ?? 0), 2))->values()->all(),
+                'counts' => collect(range(1, 4))->map(fn ($quarter) => (int) ($quarterlyActivityCounts[$quarter] ?? 0))->values()->all(),
+            ],
+            'last6' => $monthlyPayload($lastSixMonths),
+            'fullYear' => $monthlyPayload(range(1, 12)),
+        ];
     }
 }
