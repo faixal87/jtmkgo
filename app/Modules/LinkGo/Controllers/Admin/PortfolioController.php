@@ -25,12 +25,21 @@ class PortfolioController extends Controller
         ]);
     }
 
+    public function show(Portfolio $portfolio): View
+    {
+        Gate::authorize('manage-link-go');
+
+        return view('link-go.admin.portfolio-detail', [
+            'portfolio' => $portfolio->loadCount('links'),
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         Gate::authorize('manage-link-go');
 
         $request->merge([
-            'slug' => Str::slug($request->input('slug') ?: $request->input('name', '')),
+            'slug' => Str::slug($request->input('name', '')),
         ]);
 
         $validated = $request->validate([
@@ -45,7 +54,9 @@ class PortfolioController extends Controller
 
         Portfolio::create($validated);
 
-        return back()->with('status', 'Portfolio created successfully.');
+        return redirect()
+            ->route('link-go.admin.portfolios.index')
+            ->with('status', 'Portfolio created successfully.');
     }
 
     public function update(Request $request, Portfolio $portfolio): RedirectResponse
@@ -53,7 +64,7 @@ class PortfolioController extends Controller
         Gate::authorize('manage-link-go');
 
         $request->merge([
-            'slug' => Str::slug($request->input('slug') ?: $request->input('name', '')),
+            'slug' => Str::slug($request->input('name', '')),
         ]);
 
         $validated = $request->validate([
@@ -67,7 +78,9 @@ class PortfolioController extends Controller
 
         $portfolio->update($validated);
 
-        return back()->with('status', 'Portfolio updated successfully.');
+        return redirect()
+            ->route('link-go.admin.portfolios.show', $portfolio)
+            ->with('status', 'Portfolio updated successfully.');
     }
 
     public function toggle(Request $request, Portfolio $portfolio): RedirectResponse

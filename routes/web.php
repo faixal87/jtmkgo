@@ -348,6 +348,7 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
 
             Route::get('/admin/portfolios', [LinkGoPortfolioController::class, 'index'])->name('admin.portfolios.index');
             Route::post('/admin/portfolios', [LinkGoPortfolioController::class, 'store'])->name('admin.portfolios.store');
+            Route::get('/admin/portfolios/{portfolio}', [LinkGoPortfolioController::class, 'show'])->name('admin.portfolios.show');
             Route::patch('/admin/portfolios/{portfolio}', [LinkGoPortfolioController::class, 'update'])->name('admin.portfolios.update');
             Route::patch('/admin/portfolios/{portfolio}/toggle', [LinkGoPortfolioController::class, 'toggle'])->name('admin.portfolios.toggle');
 
