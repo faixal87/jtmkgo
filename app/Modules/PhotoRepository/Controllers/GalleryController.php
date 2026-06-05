@@ -18,18 +18,31 @@ class GalleryController extends Controller
 
         $search = trim((string) $request->query('q'));
         $categorySlug = $request->query('category');
+        $perPageInput = (string) $request->query('per_page', '20');
+        $requestedPerPage = match ($perPageInput) {
+            '40' => 40,
+            '60' => 60,
+            'all' => null,
+            default => 20,
+        };
         $selectedCategory = $categorySlug
             ? MediaCategory::active()->where('slug', $categorySlug)->first()
             : null;
 
-        $photos = MediaPhoto::query()
+        $photoQuery = MediaPhoto::query()
             ->with(['profile', 'category'])
             ->approved()
             ->whereHas('profile', fn (Builder $query) => $query->where('is_active', true))
             ->when($selectedCategory, fn (Builder $query) => $query->where('media_category_id', $selectedCategory->id))
             ->search($search)
-            ->latest()
-            ->paginate(12)
+            ->latest();
+
+        $perPage = $perPageInput === 'all'
+            ? max((clone $photoQuery)->count(), 1)
+            : $requestedPerPage;
+
+        $photos = $photoQuery
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('photo-repository.gallery', [
@@ -37,6 +50,7 @@ class GalleryController extends Controller
             'categories' => MediaCategory::active()->orderBy('name')->get(),
             'selectedCategory' => $selectedCategory,
             'search' => $search,
+            'perPage' => $perPageInput,
             'canManagePhotos' => $request->user()?->is_super_admin || Gate::allows('manage-photo-repository'),
         ]);
     }
