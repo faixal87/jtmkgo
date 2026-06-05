@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             DefaultModulesSeeder::class,
             GantiGoMasterDataSeeder::class,
             PhotoRepositoryCategorySeeder::class,
+            LinkGoPortfolioSeeder::class,
             BrandingSettingsSeeder::class,
         ]);
     }

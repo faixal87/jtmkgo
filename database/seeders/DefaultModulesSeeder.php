@@ -58,6 +58,17 @@ class DefaultModulesSeeder extends Seeder
             ]
         );
 
+        Module::updateOrCreate(
+            ['slug' => 'link-go'],
+            [
+                'name' => 'LinkGo',
+                'icon' => 'LG',
+                'route_prefix' => '/link-go',
+                'description' => 'Centralized JTMK link repository for important shared links.',
+                'is_active' => true,
+            ]
+        );
+
         $this->retireModule('class-replacement', $gantiGo);
         $this->retireModule('passport-photo', $photoRepository);
     }

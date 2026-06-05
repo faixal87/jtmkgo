@@ -12,8 +12,9 @@
     $gantiGoModule = $sidebarModules->firstWhere('slug', 'ganti-go');
     $photoRepositoryModule = $sidebarModules->firstWhere('slug', 'photo-repository');
     $programGoModule = $sidebarModules->firstWhere('slug', 'program-go');
+    $linkGoModule = $sidebarModules->firstWhere('slug', 'link-go');
     $subjekGoModule = $sidebarModules->firstWhere('slug', 'subjek-go');
-    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'program-go', 'subjek-go'], true));
+    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'program-go', 'link-go', 'subjek-go'], true));
     $isSuperAdmin = (bool) $user?->is_super_admin;
     $canManageGantiGo = $gantiGoModule && $managedModuleIds->contains($gantiGoModule->id);
     $canViewGantiGoAnalytics = $isSuperAdmin || $canManageGantiGo;
@@ -21,6 +22,8 @@
     $canViewPhotoRepositoryAnalytics = $photoRepositoryModule && ($isSuperAdmin || $canManagePhotoRepository);
     $canManageProgramGo = $programGoModule && $managedModuleIds->contains($programGoModule->id);
     $canViewProgramGoAnalytics = $programGoModule && ($isSuperAdmin || $canManageProgramGo);
+    $canManageLinkGo = $linkGoModule && $managedModuleIds->contains($linkGoModule->id);
+    $canViewLinkGoAnalytics = $linkGoModule && ($isSuperAdmin || $canManageLinkGo);
     $canManageSubjekGo = $subjekGoModule && ! $isSuperAdmin && $managedModuleIds->contains($subjekGoModule->id);
     $canViewSubjekGoAnalytics = $subjekGoModule && ($isSuperAdmin || $canManageSubjekGo);
     $canManageAcademicCore = $user?->can('manage-academic-core') ?? false;
@@ -48,6 +51,7 @@
         || request()->routeIs('subjek-go.subject-coordinators.*')
         || request()->routeIs('subjek-go.analytics');
     $programGoAdminActive = request()->routeIs('program-go.admin.*');
+    $linkGoAdminActive = request()->routeIs('link-go.admin.*');
     $workspaceLogo = $branding->asset($brandingSettings['sidebar_logo'] ?? null);
     $workspaceBrandText = $brandingSettings['sidebar_brand_text'] ?? $brandingSettings['workspace_brand_text'] ?? 'JTMK';
     $logoSize = in_array($brandingSettings['sidebar_logo_size'] ?? 'medium', ['large', 'medium', 'small'], true) ? $brandingSettings['sidebar_logo_size'] : 'medium';
@@ -245,6 +249,43 @@
                     @elseif ($isSuperAdmin && $canViewProgramGoAnalytics)
                         <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.insights') }}</span>
                         <a href="{{ route('program-go.admin.budget-monitoring') }}" class="{{ $subItem }} {{ request()->routeIs('program-go.admin.budget-monitoring') ? $subActive : $subIdle }}">Budget Monitoring</a>
+                    @endif
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($linkGoModule)
+                <x-sidebar.collapsible-submenu id="link-go" title="LinkGo" :active="request()->routeIs('link-go.*')" :badge="$canManageLinkGo ? __('app.common.admin') : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M10 13a5 5 0 0 0 7.1 0l1.4-1.4a5 5 0 0 0-7.1-7.1L10.7 5" />
+                            <path d="M14 11a5 5 0 0 0-7.1 0L5.5 12.4a5 5 0 0 0 7.1 7.1l.7-.7" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('link-go.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('link-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                    <a href="{{ route('link-go.library') }}" class="{{ $subItem }} {{ request()->routeIs('link-go.library') || request()->routeIs('link-go.links.show') ? $subActive : $subIdle }}">Link Library</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('link-go.links.create') }}" class="{{ $subItem }} {{ request()->routeIs('link-go.links.create') ? $subActive : $subIdle }}">Submit Link</a>
+                        <a href="{{ route('link-go.my-links') }}" class="{{ $subItem }} {{ request()->routeIs('link-go.my-links') || request()->routeIs('link-go.links.edit') ? $subActive : $subIdle }}">My Links</a>
+                    @endunless
+                    @if ($canManageLinkGo)
+                        <div class="px-2 pt-3">
+                            <x-sidebar.collapsible-submenu id="link-go-admin" title="Admin" :active="$linkGoAdminActive">
+                                <x-slot name="icon">
+                                    <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                </x-slot>
+
+                                <a href="{{ route('link-go.admin.links.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('link-go.admin.links.*') ? $subActive : $subIdle }}">Manage Links</a>
+                                <a href="{{ route('link-go.admin.portfolios.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('link-go.admin.portfolios.*') ? $subActive : $subIdle }}">Portfolios</a>
+                                <a href="{{ route('link-go.admin.analytics') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('link-go.admin.analytics') ? $subActive : $subIdle }}">Analytics</a>
+                            </x-sidebar.collapsible-submenu>
+                        </div>
+                    @elseif ($isSuperAdmin && $canViewLinkGoAnalytics)
+                        <span class="block px-9 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.insights') }}</span>
+                        <a href="{{ route('link-go.admin.analytics') }}" class="{{ $subItem }} {{ request()->routeIs('link-go.admin.analytics') ? $subActive : $subIdle }}">Analytics</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
             @endif
@@ -524,6 +565,43 @@
                     @elseif ($isSuperAdmin && $canViewProgramGoAnalytics)
                         <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.insights') }}</span>
                         <a href="{{ route('program-go.admin.budget-monitoring') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('program-go.admin.budget-monitoring') ? $subActive : $subIdle }}">Budget Monitoring</a>
+                    @endif
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($linkGoModule)
+                <x-sidebar.collapsible-submenu id="mobile-link-go" title="LinkGo" :active="request()->routeIs('link-go.*')" :badge="$canManageLinkGo ? __('app.common.admin') : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M10 13a5 5 0 0 0 7.1 0l1.4-1.4a5 5 0 0 0-7.1-7.1L10.7 5" />
+                            <path d="M14 11a5 5 0 0 0-7.1 0L5.5 12.4a5 5 0 0 0 7.1 7.1l.7-.7" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('link-go.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('link-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                    <a href="{{ route('link-go.library') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('link-go.library') || request()->routeIs('link-go.links.show') ? $subActive : $subIdle }}">Link Library</a>
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('link-go.links.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('link-go.links.create') ? $subActive : $subIdle }}">Submit Link</a>
+                        <a href="{{ route('link-go.my-links') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('link-go.my-links') || request()->routeIs('link-go.links.edit') ? $subActive : $subIdle }}">My Links</a>
+                    @endunless
+                    @if ($canManageLinkGo)
+                        <div class="px-2 pt-3">
+                            <x-sidebar.collapsible-submenu id="mobile-link-go-admin" title="Admin" :active="$linkGoAdminActive">
+                                <x-slot name="icon">
+                                    <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <path d="M12 3 4 7v6c0 5 3.4 7.5 8 8 4.6-.5 8-3 8-8V7l-8-4Z" />
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                </x-slot>
+
+                                <a href="{{ route('link-go.admin.links.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('link-go.admin.links.*') ? $subActive : $subIdle }}">Manage Links</a>
+                                <a href="{{ route('link-go.admin.portfolios.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('link-go.admin.portfolios.*') ? $subActive : $subIdle }}">Portfolios</a>
+                                <a href="{{ route('link-go.admin.analytics') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('link-go.admin.analytics') ? $subActive : $subIdle }}">Analytics</a>
+                            </x-sidebar.collapsible-submenu>
+                        </div>
+                    @elseif ($isSuperAdmin && $canViewLinkGoAnalytics)
+                        <span class="block px-3 pt-3 text-[0.65rem] font-semibold uppercase tracking-wide text-[var(--color-sidebar-muted)]">{{ __('app.common.insights') }}</span>
+                        <a href="{{ route('link-go.admin.analytics') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('link-go.admin.analytics') ? $subActive : $subIdle }}">Analytics</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
             @endif

@@ -44,6 +44,11 @@ use App\Modules\ProgramGo\Controllers\Admin\ReportController as ProgramGoReportC
 use App\Modules\ProgramGo\Controllers\Admin\ReviewSubmissionController as ProgramGoReviewSubmissionController;
 use App\Modules\ProgramGo\Controllers\DashboardController as ProgramGoDashboardController;
 use App\Modules\ProgramGo\Controllers\ProgramActivityController as ProgramGoActivityController;
+use App\Modules\LinkGo\Controllers\Admin\AnalyticsController as LinkGoAnalyticsController;
+use App\Modules\LinkGo\Controllers\Admin\LinkManagementController as LinkGoLinkManagementController;
+use App\Modules\LinkGo\Controllers\Admin\PortfolioController as LinkGoPortfolioController;
+use App\Modules\LinkGo\Controllers\DashboardController as LinkGoDashboardController;
+use App\Modules\LinkGo\Controllers\LinkController as LinkGoLinkController;
 use App\Modules\SubjekGo\Controllers\AdminPreferenceController as SubjekGoAdminPreferenceController;
 use App\Modules\SubjekGo\Controllers\AnalyticsController as SubjekGoAnalyticsController;
 use App\Modules\SubjekGo\Controllers\ClassGroupController as SubjekGoClassGroupController;
@@ -314,6 +319,39 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
             Route::get('/admin/budget-monitoring', ProgramGoBudgetMonitoringController::class)->name('admin.budget-monitoring');
             Route::get('/admin/activity-codes', ProgramGoActivityCodeController::class)->name('admin.activity-codes');
             Route::get('/admin/reports', ProgramGoReportController::class)->name('admin.reports');
+        });
+    });
+
+Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.access:link-go'])
+    ->prefix('link-go')
+    ->name('link-go.')
+    ->group(function () {
+        Route::get('/', LinkGoDashboardController::class)->name('dashboard');
+        Route::get('/library', [LinkGoLinkController::class, 'library'])->name('library');
+        Route::get('/submit', [LinkGoLinkController::class, 'create'])->name('links.create');
+        Route::post('/links', [LinkGoLinkController::class, 'store'])->name('links.store');
+        Route::get('/my-links', [LinkGoLinkController::class, 'myLinks'])->name('my-links');
+        Route::get('/links/{link}', [LinkGoLinkController::class, 'show'])->name('links.show');
+        Route::get('/links/{link}/edit', [LinkGoLinkController::class, 'edit'])->name('links.edit');
+        Route::patch('/links/{link}', [LinkGoLinkController::class, 'update'])->name('links.update');
+        Route::delete('/links/{link}', [LinkGoLinkController::class, 'destroy'])->name('links.destroy');
+        Route::get('/links/{link}/open', [LinkGoLinkController::class, 'open'])->name('links.open');
+        Route::post('/links/{link}/copy', [LinkGoLinkController::class, 'copy'])->name('links.copy');
+        Route::get('/links/{link}/qr', [LinkGoLinkController::class, 'qr'])->name('links.qr');
+        Route::get('/links/{link}/qr/download', [LinkGoLinkController::class, 'downloadQr'])->name('links.qr.download');
+
+        Route::middleware('module.admin:link-go')->group(function () {
+            Route::get('/admin/links', [LinkGoLinkManagementController::class, 'index'])->name('admin.links.index');
+            Route::patch('/admin/links/{link}/toggle', [LinkGoLinkManagementController::class, 'toggle'])->name('admin.links.toggle');
+            Route::patch('/admin/links/{link}/pin', [LinkGoLinkManagementController::class, 'pin'])->name('admin.links.pin');
+            Route::delete('/admin/links/{link}', [LinkGoLinkManagementController::class, 'destroy'])->name('admin.links.destroy');
+
+            Route::get('/admin/portfolios', [LinkGoPortfolioController::class, 'index'])->name('admin.portfolios.index');
+            Route::post('/admin/portfolios', [LinkGoPortfolioController::class, 'store'])->name('admin.portfolios.store');
+            Route::patch('/admin/portfolios/{portfolio}', [LinkGoPortfolioController::class, 'update'])->name('admin.portfolios.update');
+            Route::patch('/admin/portfolios/{portfolio}/toggle', [LinkGoPortfolioController::class, 'toggle'])->name('admin.portfolios.toggle');
+
+            Route::get('/admin/analytics', LinkGoAnalyticsController::class)->name('admin.analytics');
         });
     });
 
