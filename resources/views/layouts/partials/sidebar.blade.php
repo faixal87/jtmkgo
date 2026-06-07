@@ -72,7 +72,11 @@
     ][$logoSize];
 @endphp
 
-<aside class="fixed inset-y-0 left-0 z-40 hidden border-r border-[var(--color-sidebar-border)] bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] shadow-xl transition-all duration-300 lg:flex lg:flex-col" :class="sidebarCollapsed ? 'w-20' : 'w-64'">
+<aside
+    class="fixed inset-y-0 left-0 z-40 hidden border-r border-[var(--color-sidebar-border)] bg-[var(--color-sidebar)] text-[var(--color-sidebar-text)] shadow-xl lg:flex lg:flex-col"
+    :class="resizingSidebar ? 'transition-none' : 'transition-all duration-300'"
+    :style="{ width: 'var(--sidebar-width)' }"
+>
     <div class="relative flex h-20 items-center justify-center border-b border-[var(--color-sidebar-border)] px-3">
         <div class="flex min-w-0 items-center justify-center" :class="sidebarCollapsed ? 'w-full' : 'w-full pe-9'">
             @if ($workspaceLogo)
@@ -391,6 +395,18 @@
             </div>
         @endif
     </nav>
+
+    <button
+        type="button"
+        x-show="!sidebarCollapsed"
+        x-cloak
+        @pointerdown="startSidebarResize($event)"
+        class="absolute -right-1 top-0 hidden h-full w-2 cursor-col-resize touch-none items-center justify-center outline-none transition hover:bg-[var(--color-accent-soft)] focus:bg-[var(--color-accent-soft)] lg:flex"
+        aria-label="Resize sidebar"
+        title="Resize sidebar"
+    >
+        <span class="h-12 w-0.5 rounded-full bg-[var(--color-sidebar-border)] opacity-80"></span>
+    </button>
 </aside>
 
 <div x-show="sidebarOpen" x-cloak x-transition.opacity class="fixed inset-0 z-50 bg-slate-950/50 lg:hidden" @click="sidebarOpen = false"></div>

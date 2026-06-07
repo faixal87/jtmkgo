@@ -105,15 +105,48 @@
             x-data="{
                 sidebarOpen: false,
                 sidebarCollapsed: localStorage.getItem('jtmkSidebarCollapsed') === 'true',
+                sidebarWidth: Number(localStorage.getItem('jtmkSidebarWidth')) || 256,
+                resizingSidebar: false,
+                minSidebarWidth: 224,
+                maxSidebarWidth: 384,
+                sidebarOffset() {
+                    return this.sidebarCollapsed ? '5rem' : `${this.sidebarWidth}px`;
+                },
                 toggleSidebar() {
                     this.sidebarCollapsed = ! this.sidebarCollapsed;
                     localStorage.setItem('jtmkSidebarCollapsed', this.sidebarCollapsed);
+                },
+                startSidebarResize(event) {
+                    if (this.sidebarCollapsed) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    this.resizingSidebar = true;
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+
+                    const onMove = (moveEvent) => {
+                        const nextWidth = Math.min(this.maxSidebarWidth, Math.max(this.minSidebarWidth, moveEvent.clientX));
+                        this.sidebarWidth = nextWidth;
+                        localStorage.setItem('jtmkSidebarWidth', String(nextWidth));
+                    };
+                    const onEnd = () => {
+                        this.resizingSidebar = false;
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+                        window.removeEventListener('pointermove', onMove);
+                    };
+
+                    window.addEventListener('pointermove', onMove);
+                    window.addEventListener('pointerup', onEnd, { once: true });
                 }
             }"
+            :style="{ '--sidebar-width': sidebarOffset() }"
         >
             @include('layouts.partials.sidebar')
 
-            <div class="transition-all duration-300" :class="sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'">
+            <div :class="resizingSidebar ? 'transition-none' : 'transition-all duration-300'" class="lg:pl-[var(--sidebar-width)]">
                 @include('layouts.partials.topbar')
 
                 <main>
