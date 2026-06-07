@@ -94,6 +94,10 @@
                         <div class="mt-5">
                             @include('photo-repository.partials.admin-photo-actions', ['photo' => $photo, 'canManagePhotos' => true])
                         </div>
+                    @elseif ($canDeleteOwnPhoto)
+                        <div class="mt-5">
+                            @include('photo-repository.partials.user-photo-actions', ['photo' => $photo])
+                        </div>
                     @endif
                 </article>
             </section>

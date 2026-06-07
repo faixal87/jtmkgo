@@ -277,6 +277,7 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
         Route::get('/upload', [PhotoRepositoryUploadPhotoController::class, 'create'])->name('upload.create');
         Route::post('/upload', [PhotoRepositoryUploadPhotoController::class, 'store'])->name('upload.store');
         Route::get('/photos/{mediaPhoto}', [PhotoRepositoryPhotoController::class, 'show'])->name('photos.show');
+        Route::delete('/photos/{mediaPhoto}', [PhotoRepositoryMyPhotosController::class, 'destroy'])->name('photos.destroy');
         Route::get('/photos/{mediaPhoto}/download', PhotoRepositoryPhotoDownloadController::class)->name('photos.download');
 
         Route::middleware('module.admin:photo-repository')->group(function () {

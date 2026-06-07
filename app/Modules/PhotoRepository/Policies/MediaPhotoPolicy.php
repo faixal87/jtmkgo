@@ -48,6 +48,14 @@ class MediaPhotoPolicy
         return $user->is_super_admin || $this->isModuleAdmin($user);
     }
 
+    public function deleteOwn(User $user, MediaPhoto $photo): bool
+    {
+        $photo->loadMissing('profile');
+
+        return (int) $photo->uploaded_by === (int) $user->id
+            || (int) $photo->profile?->linked_user_id === (int) $user->id;
+    }
+
     private function isModuleAdmin(User $user): bool
     {
         return $user->adminModules()

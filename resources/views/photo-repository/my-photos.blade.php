@@ -20,7 +20,10 @@
             @else
                 <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     @foreach ($photos as $photo)
-                        @include('photo-repository.partials.photo-card', ['photo' => $photo, 'showStatus' => true])
+                        <div class="space-y-3">
+                            @include('photo-repository.partials.photo-card', ['photo' => $photo, 'showStatus' => true])
+                            @include('photo-repository.partials.user-photo-actions', ['photo' => $photo])
+                        </div>
                     @endforeach
                 </div>
 

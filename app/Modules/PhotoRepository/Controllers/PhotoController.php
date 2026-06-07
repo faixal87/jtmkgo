@@ -23,6 +23,7 @@ class PhotoController extends Controller
         return view('photo-repository.show', [
             'photo' => $mediaPhoto,
             'canManagePhotos' => $request->user()?->is_super_admin || Gate::allows('manage-photo-repository'),
+            'canDeleteOwnPhoto' => Gate::allows('deleteOwn', $mediaPhoto),
         ]);
     }
 }
