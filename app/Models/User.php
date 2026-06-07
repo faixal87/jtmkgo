@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Modules\GantiGo\Models\ClassReplacement;
 use App\Modules\LinkGo\Models\Link as LinkGoLink;
+use App\Modules\PhotoRepository\Models\MediaPhoto;
 use App\Modules\ProgramGo\Models\ProgramActivity;
 use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
 use App\Modules\SubjekGo\Models\TeachingExperience as SubjekGoTeachingExperience;
@@ -167,7 +168,36 @@ class User extends Authenticatable
 
     public function profilePhotoUrl(): ?string
     {
-        return $this->profile_photo ? Storage::url($this->profile_photo) : null;
+        if ($this->profile_photo) {
+            return Storage::url($this->profile_photo);
+        }
+
+        return $this->officialRepositoryPhotoUrl();
+    }
+
+    public function officialRepositoryPhotoUrl(): ?string
+    {
+        static $photoRepositoryTablesExist = null;
+        static $repositoryPhotoUrlCache = [];
+        $photoRepositoryTablesExist ??= Schema::hasTable('media_profiles') && Schema::hasTable('media_photos');
+
+        if (! $photoRepositoryTablesExist || ! $this->getKey()) {
+            return null;
+        }
+
+        if (array_key_exists($this->getKey(), $repositoryPhotoUrlCache)) {
+            return $repositoryPhotoUrlCache[$this->getKey()];
+        }
+
+        $photo = MediaPhoto::query()
+            ->approved()
+            ->whereHas('profile', fn (Builder $query) => $query->where('linked_user_id', $this->id))
+            ->orderByDesc('is_current_official')
+            ->latest('approved_at')
+            ->latest()
+            ->first();
+
+        return $repositoryPhotoUrlCache[$this->getKey()] = $photo?->thumbnailUrl() ?: $photo?->photoUrl();
     }
 
     public function initials(): string
