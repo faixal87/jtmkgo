@@ -32,10 +32,10 @@ class GalleryController extends Controller
         $photoQuery = MediaPhoto::query()
             ->with(['profile', 'category'])
             ->approved()
-            ->where('is_featured', true)
             ->whereHas('profile', fn (Builder $query) => $query->where('is_active', true))
             ->when($selectedCategory, fn (Builder $query) => $query->where('media_category_id', $selectedCategory->id))
             ->search($search)
+            ->orderByDesc('is_featured')
             ->latest();
 
         $perPage = $perPageInput === 'all'

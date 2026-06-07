@@ -20,6 +20,9 @@
 
         <div class="flex flex-wrap items-center gap-1.5">
             <span class="rounded-full border border-[var(--color-border)] bg-[var(--color-secondary-bg)] px-2 py-0.5 text-[0.68rem] font-semibold text-[var(--color-muted)]">{{ $photo->category?->name ?? 'Uncategorized' }}</span>
+            @if ($photo->is_featured)
+                <span class="rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[0.68rem] font-semibold text-amber-700">Featured</span>
+            @endif
             @if ($photo->is_current_official)
                 <span class="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[0.68rem] font-semibold text-emerald-700">Official</span>
             @endif

@@ -115,7 +115,7 @@
                                                     </label>
                                                     <label class="flex items-center gap-2 text-xs font-medium text-[var(--color-muted)]">
                                                         <input type="checkbox" name="is_featured" value="1" class="rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]">
-                                                        Feature in gallery
+                                                        Highlight in gallery
                                                     </label>
                                                 </div>
                                                 <button class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">Approve Photo</button>

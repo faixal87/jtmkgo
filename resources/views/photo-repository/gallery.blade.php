@@ -30,7 +30,7 @@
             </form>
 
             @if ($photos->isEmpty())
-                <x-empty-state title="No featured photos found" message="Try a different search term or category, or feature approved photos from the review queue." />
+                <x-empty-state title="No approved photos found" message="Try a different search term or category." />
             @else
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <p class="text-sm font-semibold text-[var(--color-text)]">
