@@ -37,6 +37,12 @@
                         <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->date_of_birth?->format('d M Y') ?: 'Not provided' }}</dd>
                     </div>
                     <div>
+                        <dt class="text-[var(--color-muted)]">Age</dt>
+                        <dd class="mt-1 break-words font-medium text-[var(--color-text)]">
+                            {{ $person->date_of_birth ? $person->date_of_birth->age.' years old' : 'Not provided' }}
+                        </dd>
+                    </div>
+                    <div>
                         <dt class="text-[var(--color-muted)]">Staff Short Code</dt>
                         <dd class="mt-1 break-words font-medium text-[var(--color-text)]">{{ $person->staff_short_code ?: 'Not set' }}</dd>
                     </div>
