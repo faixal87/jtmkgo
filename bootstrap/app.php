@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureModuleAccess;
 use App\Http\Middleware\EnsureModuleAdmin;
+use App\Http\Middleware\EnsureForcedBaselineSurveyCompleted;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureUserApproved;
 use App\Http\Middleware\HandleSessionTimeout;
@@ -19,7 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: SetLocale::class);
+        $middleware->web(append: [
+            SetLocale::class,
+            EnsureForcedBaselineSurveyCompleted::class,
+        ]);
 
         $middleware->alias([
             'approved' => EnsureUserApproved::class,

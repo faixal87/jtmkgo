@@ -14,14 +14,16 @@ use Illuminate\View\View;
 
 class ModuleAccessRequestController extends Controller
 {
+    private const HIDDEN_MODULE_SLUGS = ['passport-photo', 'survey-go'];
+
     public function index(Request $request): View
     {
         $user = $request->user();
         $activeAccessIds = $user->is_super_admin
-            ? Module::query()->where('is_active', true)->where('slug', '!=', 'passport-photo')->pluck('id')
+            ? Module::query()->where('is_active', true)->whereNotIn('slug', self::HIDDEN_MODULE_SLUGS)->pluck('id')
             : $user->accessibleModules()
                 ->where('modules.is_active', true)
-                ->where('modules.slug', '!=', 'passport-photo')
+                ->whereNotIn('modules.slug', self::HIDDEN_MODULE_SLUGS)
                 ->wherePivot('is_active', true)
                 ->pluck('modules.id');
 
@@ -33,14 +35,14 @@ class ModuleAccessRequestController extends Controller
         return view('module-access-requests.index', [
             'modules' => Module::query()
                 ->where('is_active', true)
-                ->where('slug', '!=', 'passport-photo')
+                ->whereNotIn('slug', self::HIDDEN_MODULE_SLUGS)
                 ->whereNotIn('id', $activeAccessIds)
                 ->orderBy('name')
                 ->get(),
             'pendingModuleIds' => $pendingRequests,
             'recentRequests' => $user->moduleAccessRequests()
                 ->with('module')
-                ->whereHas('module', fn ($query) => $query->where('slug', '!=', 'passport-photo'))
+                ->whereHas('module', fn ($query) => $query->whereNotIn('slug', self::HIDDEN_MODULE_SLUGS))
                 ->latest()
                 ->take(6)
                 ->get(),
@@ -56,7 +58,7 @@ class ModuleAccessRequestController extends Controller
         $user = $request->user();
         $module = Module::query()
             ->where('is_active', true)
-            ->where('slug', '!=', 'passport-photo')
+            ->whereNotIn('slug', self::HIDDEN_MODULE_SLUGS)
             ->findOrFail($validated['module_id']);
 
         if ($user->is_super_admin || $this->hasActiveAccess($user, $module)) {
@@ -211,12 +213,12 @@ class ModuleAccessRequestController extends Controller
     private function manageableModuleIds(User $user)
     {
         if ($user->is_super_admin) {
-            return Module::query()->where('is_active', true)->where('slug', '!=', 'passport-photo')->pluck('id');
+            return Module::query()->where('is_active', true)->whereNotIn('slug', self::HIDDEN_MODULE_SLUGS)->pluck('id');
         }
 
         return $user->adminModules()
             ->wherePivot('is_active', true)
-            ->where('modules.slug', '!=', 'passport-photo')
+            ->whereNotIn('modules.slug', self::HIDDEN_MODULE_SLUGS)
             ->pluck('modules.id');
     }
 

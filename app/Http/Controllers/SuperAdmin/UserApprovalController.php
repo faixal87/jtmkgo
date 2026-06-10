@@ -327,7 +327,7 @@ class UserApprovalController extends Controller
     {
         return Module::query()
             ->where('is_active', true)
-            ->where('slug', '!=', 'passport-photo')
+            ->whereNotIn('slug', ['passport-photo', 'survey-go'])
             ->orderBy('name')
             ->get();
     }

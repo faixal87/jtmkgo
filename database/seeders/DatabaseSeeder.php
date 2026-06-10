@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             GantiGoMasterDataSeeder::class,
             PhotoRepositoryCategorySeeder::class,
             LinkGoPortfolioSeeder::class,
+            SurveyGoDefaultSurveySeeder::class,
             BrandingSettingsSeeder::class,
         ]);
     }

@@ -14,7 +14,7 @@
     $programGoModule = $sidebarModules->firstWhere('slug', 'program-go');
     $linkGoModule = $sidebarModules->firstWhere('slug', 'link-go');
     $subjekGoModule = $sidebarModules->firstWhere('slug', 'subjek-go');
-    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'program-go', 'link-go', 'subjek-go'], true));
+    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'program-go', 'link-go', 'survey-go', 'subjek-go'], true));
     $isSuperAdmin = (bool) $user?->is_super_admin;
     $canManageGantiGo = $gantiGoModule && $managedModuleIds->contains($gantiGoModule->id);
     $canViewGantiGoAnalytics = $isSuperAdmin || $canManageGantiGo;
@@ -24,6 +24,7 @@
     $canViewProgramGoAnalytics = $programGoModule && ($isSuperAdmin || $canManageProgramGo);
     $canManageLinkGo = $linkGoModule && $managedModuleIds->contains($linkGoModule->id);
     $canViewLinkGoAnalytics = $linkGoModule && ($isSuperAdmin || $canManageLinkGo);
+    $canManageSurvey = $isSuperAdmin;
     $canManageSubjekGo = $subjekGoModule && ! $isSuperAdmin && $managedModuleIds->contains($subjekGoModule->id);
     $canViewSubjekGoAnalytics = $subjekGoModule && ($isSuperAdmin || $canManageSubjekGo);
     $canManageAcademicCore = $user?->can('manage-academic-core') ?? false;
@@ -33,6 +34,7 @@
     $adminRoutesActive = request()->routeIs('super-admin.users.*')
         || $academicCoreActive
         || request()->routeIs('admin.notifications.*')
+        || request()->routeIs('survey-go.*')
         || request()->routeIs('notifications.*')
         || request()->routeIs('admin.module-access-requests.*')
         || request()->routeIs('super-admin.access-control.*')
@@ -52,6 +54,10 @@
         || request()->routeIs('subjek-go.analytics');
     $programGoAdminActive = request()->routeIs('program-go.admin.*');
     $linkGoAdminActive = request()->routeIs('link-go.admin.*');
+    $surveyGoActive = request()->routeIs('survey-go.*');
+    $surveyGoDueCount = (! $isSuperAdmin && ($user?->account_status === 'approved'))
+        ? app(\App\Modules\SurveyGo\Services\SurveyGoService::class)->dueSurveyCount($user)
+        : 0;
     $workspaceLogo = $branding->asset($brandingSettings['sidebar_logo'] ?? null);
     $workspaceBrandText = $brandingSettings['sidebar_brand_text'] ?? $brandingSettings['workspace_brand_text'] ?? 'JTMK';
     $logoSize = in_array($brandingSettings['sidebar_logo_size'] ?? 'medium', ['large', 'medium', 'small'], true) ? $brandingSettings['sidebar_logo_size'] : 'medium';
@@ -127,6 +133,20 @@
                 </svg>
                 <span x-show="!sidebarCollapsed" x-cloak>{{ __('app.sidebar.request_module_access') }}</span>
             </a>
+
+            @unless ($isSuperAdmin)
+                <a href="{{ route('survey-go.dashboard') }}" title="Survey" class="{{ $navItem }} {{ $surveyGoActive ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
+                    <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M6 4h12a2 2 0 0 1 2 2v14H4V6a2 2 0 0 1 2-2Z" />
+                        <path d="M8 9h8" />
+                        <path d="M8 13h5" />
+                    </svg>
+                    <span class="min-w-0 flex-1 truncate" x-show="!sidebarCollapsed" x-cloak>Survey</span>
+                    @if ($surveyGoDueCount > 0)
+                        <span x-show="!sidebarCollapsed" x-cloak class="rounded-full bg-amber-100 px-2 py-0.5 text-[0.65rem] font-bold text-amber-700">{{ $surveyGoDueCount }}</span>
+                    @endif
+                </a>
+            @endunless
         </x-sidebar.section>
 
         <x-sidebar.section :title="__('app.sidebar.modules')">
@@ -384,6 +404,25 @@
                         </x-sidebar.collapsible-submenu>
                     @endif
 
+                    @if ($canManageSurvey)
+                        <x-sidebar.collapsible-submenu id="admin-survey-go" title="Survey" :active="$surveyGoActive" :nested="true">
+                            <x-slot name="icon">
+                                <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M6 3h12a2 2 0 0 1 2 2v14H4V5a2 2 0 0 1 2-2Z" />
+                                    <path d="M7 9h10" />
+                                    <path d="M7 13h6" />
+                                    <path d="M8 19h8" />
+                                </svg>
+                            </x-slot>
+
+                            <a href="{{ route('survey-go.dashboard') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('survey-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                            <a href="{{ route('survey-go.admin.surveys.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('survey-go.admin.surveys.*') ? $subActive : $subIdle }}">Surveys</a>
+                            <a href="{{ route('survey-go.admin.questions.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('survey-go.admin.questions.*') ? $subActive : $subIdle }}">Questions</a>
+                            <a href="{{ route('survey-go.admin.responses.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('survey-go.admin.responses.*') ? $subActive : $subIdle }}">Responses</a>
+                            <a href="{{ route('survey-go.admin.analytics') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('survey-go.admin.analytics') ? $subActive : $subIdle }}">Analytics</a>
+                        </x-sidebar.collapsible-submenu>
+                    @endif
+
                     <a href="{{ route('admin.notifications.create') }}" class="{{ $subItem }} {{ request()->routeIs('admin.notifications.*') || request()->routeIs('notifications.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.notifications') }}</a>
                     <a href="{{ route('admin.module-access-requests.index') }}" class="{{ $subItem }} {{ request()->routeIs('admin.module-access-requests.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.access_requests') }}</a>
 
@@ -455,6 +494,19 @@
                 </svg>
                 <span>{{ __('app.sidebar.request_module_access') }}</span>
             </a>
+            @unless ($isSuperAdmin)
+                <a href="{{ route('survey-go.dashboard') }}" class="{{ $navItem }} {{ $surveyGoActive ? $navActive : $navIdle }}">
+                    <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M6 4h12a2 2 0 0 1 2 2v14H4V6a2 2 0 0 1 2-2Z" />
+                        <path d="M8 9h8" />
+                        <path d="M8 13h5" />
+                    </svg>
+                    <span class="min-w-0 flex-1 truncate">Survey</span>
+                    @if ($surveyGoDueCount > 0)
+                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[0.65rem] font-bold text-amber-700">{{ $surveyGoDueCount }}</span>
+                    @endif
+                </a>
+            @endunless
         </x-sidebar.section>
 
         <x-sidebar.section :title="__('app.sidebar.modules')">
@@ -694,6 +746,25 @@
                             <a href="{{ route('academic-core.subjects.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('academic-core.subjects.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.academic_subjects') }}</a>
                             <a href="{{ route('academic-core.class-groups.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('academic-core.class-groups.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.academic_class_groups') }}</a>
                             <a href="{{ route('academic-core.offerings.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('academic-core.offerings.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.subject_offerings') }}</a>
+                        </x-sidebar.collapsible-submenu>
+                    @endif
+
+                    @if ($canManageSurvey)
+                        <x-sidebar.collapsible-submenu id="mobile-admin-survey-go" title="Survey" :active="$surveyGoActive" :nested="true">
+                            <x-slot name="icon">
+                                <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M6 3h12a2 2 0 0 1 2 2v14H4V5a2 2 0 0 1 2-2Z" />
+                                    <path d="M7 9h10" />
+                                    <path d="M7 13h6" />
+                                    <path d="M8 19h8" />
+                                </svg>
+                            </x-slot>
+
+                            <a href="{{ route('survey-go.dashboard') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('survey-go.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
+                            <a href="{{ route('survey-go.admin.surveys.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('survey-go.admin.surveys.*') ? $subActive : $subIdle }}">Surveys</a>
+                            <a href="{{ route('survey-go.admin.questions.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('survey-go.admin.questions.*') ? $subActive : $subIdle }}">Questions</a>
+                            <a href="{{ route('survey-go.admin.responses.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('survey-go.admin.responses.*') ? $subActive : $subIdle }}">Responses</a>
+                            <a href="{{ route('survey-go.admin.analytics') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('survey-go.admin.analytics') ? $subActive : $subIdle }}">Analytics</a>
                         </x-sidebar.collapsible-submenu>
                     @endif
 

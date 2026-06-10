@@ -49,6 +49,12 @@ use App\Modules\LinkGo\Controllers\Admin\LinkManagementController as LinkGoLinkM
 use App\Modules\LinkGo\Controllers\Admin\PortfolioController as LinkGoPortfolioController;
 use App\Modules\LinkGo\Controllers\DashboardController as LinkGoDashboardController;
 use App\Modules\LinkGo\Controllers\LinkController as LinkGoLinkController;
+use App\Modules\SurveyGo\Controllers\Admin\AnalyticsController as SurveyGoAnalyticsController;
+use App\Modules\SurveyGo\Controllers\Admin\QuestionController as SurveyGoQuestionController;
+use App\Modules\SurveyGo\Controllers\Admin\ResponseController as SurveyGoResponseController;
+use App\Modules\SurveyGo\Controllers\Admin\SurveyController as SurveyGoSurveyController;
+use App\Modules\SurveyGo\Controllers\DashboardController as SurveyGoDashboardController;
+use App\Modules\SurveyGo\Controllers\SurveyResponseController as SurveyGoSurveyResponseController;
 use App\Modules\SubjekGo\Controllers\AdminPreferenceController as SubjekGoAdminPreferenceController;
 use App\Modules\SubjekGo\Controllers\AnalyticsController as SubjekGoAnalyticsController;
 use App\Modules\SubjekGo\Controllers\ClassGroupController as SubjekGoClassGroupController;
@@ -104,7 +110,7 @@ Route::get('/dashboard', function (Request $request) {
                 Module::query()
                     ->select(['id', 'name', 'slug', 'icon', 'route_prefix', 'description', 'is_active'])
                     ->where('is_active', true)
-                    ->where('slug', '!=', 'passport-photo')
+                    ->whereNotIn('slug', ['passport-photo', 'survey-go'])
                     ->orderBy('name')
                     ->get()
                     ->map(fn (Module $module) => $module->only(['id', 'name', 'slug', 'icon', 'route_prefix', 'description', 'is_active']))
@@ -123,7 +129,7 @@ Route::get('/dashboard', function (Request $request) {
             $user->accessibleModules()
                 ->select(['modules.id', 'modules.name', 'modules.slug', 'modules.icon', 'modules.route_prefix', 'modules.description', 'modules.is_active'])
                 ->where('modules.is_active', true)
-                ->where('modules.slug', '!=', 'passport-photo')
+                ->whereNotIn('modules.slug', ['passport-photo', 'survey-go'])
                 ->wherePivot('is_active', true)
                 ->orderBy('modules.name')
                 ->get()
@@ -354,6 +360,30 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
             Route::patch('/admin/portfolios/{portfolio}/toggle', [LinkGoPortfolioController::class, 'toggle'])->name('admin.portfolios.toggle');
 
             Route::get('/admin/analytics', LinkGoAnalyticsController::class)->name('admin.analytics');
+        });
+    });
+
+Route::middleware(['auth', 'session.timeout', 'verified', 'approved'])
+    ->prefix('survey-go')
+    ->name('survey-go.')
+    ->group(function () {
+        Route::get('/', SurveyGoDashboardController::class)->name('dashboard');
+        Route::get('/surveys/{survey}', [SurveyGoSurveyResponseController::class, 'show'])->name('surveys.show');
+        Route::post('/surveys/{survey}', [SurveyGoSurveyResponseController::class, 'store'])->name('surveys.store');
+        Route::get('/surveys/{survey}/thank-you', [SurveyGoSurveyResponseController::class, 'thankYou'])->name('surveys.thank-you');
+
+        Route::middleware('super.admin')->group(function () {
+            Route::patch('/admin/surveys/{survey}/status', [SurveyGoSurveyController::class, 'status'])->name('admin.surveys.status');
+            Route::patch('/admin/surveys/{survey}/launch-impact', [SurveyGoSurveyController::class, 'launchImpact'])->name('admin.surveys.launch-impact');
+            Route::resource('admin/surveys', SurveyGoSurveyController::class)->names('admin.surveys')->except(['show']);
+
+            Route::patch('/admin/questions/{question}/toggle', [SurveyGoQuestionController::class, 'toggle'])->name('admin.questions.toggle');
+            Route::resource('admin/questions', SurveyGoQuestionController::class)->names('admin.questions')->except(['show']);
+
+            Route::get('/admin/responses', [SurveyGoResponseController::class, 'index'])->name('admin.responses.index');
+            Route::get('/admin/responses/{response}', [SurveyGoResponseController::class, 'show'])->name('admin.responses.show');
+            Route::delete('/admin/responses/{response}', [SurveyGoResponseController::class, 'destroy'])->name('admin.responses.destroy');
+            Route::get('/admin/analytics', SurveyGoAnalyticsController::class)->name('admin.analytics');
         });
     });
 

@@ -116,13 +116,13 @@ class NotificationComposerController extends Controller
         if ($user->is_super_admin) {
             return Module::query()
                 ->where('is_active', true)
-                ->where('slug', '!=', 'passport-photo')
+                ->whereNotIn('slug', ['passport-photo', 'survey-go'])
                 ->pluck('id');
         }
 
         return $user->adminModules()
             ->wherePivot('is_active', true)
-            ->where('modules.slug', '!=', 'passport-photo')
+            ->whereNotIn('modules.slug', ['passport-photo', 'survey-go'])
             ->pluck('modules.id');
     }
 
@@ -130,7 +130,7 @@ class NotificationComposerController extends Controller
     {
         return Module::query()
             ->where('is_active', true)
-            ->where('slug', '!=', 'passport-photo')
+            ->whereNotIn('slug', ['passport-photo', 'survey-go'])
             ->whereIn('id', $manageableModuleIds)
             ->orderBy('name');
     }

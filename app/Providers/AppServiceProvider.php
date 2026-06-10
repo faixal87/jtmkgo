@@ -11,6 +11,7 @@ use App\Modules\PhotoRepository\Policies\MediaPhotoPolicy;
 use App\Modules\PhotoRepository\Policies\PhotoRepositoryPolicy;
 use App\Modules\ProgramGo\Policies\ProgramGoPolicy;
 use App\Modules\LinkGo\Policies\LinkGoPolicy;
+use App\Modules\SurveyGo\Policies\SurveyGoPolicy;
 use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
 use App\Modules\SubjekGo\Policies\PreferencePolicy as SubjekGoPreferencePolicy;
 use App\Modules\SubjekGo\Policies\SubjekGoPolicy;
@@ -51,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('submit-link-go', [LinkGoPolicy::class, 'submit']);
         Gate::define('manage-link-go', [LinkGoPolicy::class, 'manage']);
         Gate::define('view-link-go-analytics', [LinkGoPolicy::class, 'viewAnalytics']);
+        Gate::define('answer-survey-go', [SurveyGoPolicy::class, 'answer']);
+        Gate::define('manage-survey-go', [SurveyGoPolicy::class, 'manage']);
+        Gate::define('view-survey-go-analytics', [SurveyGoPolicy::class, 'viewAnalytics']);
         Gate::define('view-subjek-go', [SubjekGoPolicy::class, 'view']);
         Gate::define('select-subjek-go', [SubjekGoPolicy::class, 'select']);
         Gate::define('manage-subjek-go', [SubjekGoPolicy::class, 'manage']);
