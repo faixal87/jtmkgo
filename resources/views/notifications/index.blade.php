@@ -75,6 +75,12 @@
                                 </div>
 
                                 <div class="flex flex-wrap gap-2">
+                                    @if ($notification->action_url)
+                                        <a href="{{ $notification->action_url }}" class="theme-button-primary rounded-lg px-3 py-2 text-xs font-semibold">
+                                            {{ $notification->action_label ?: 'Open' }}
+                                        </a>
+                                    @endif
+
                                     @if ($notification->read_at)
                                         <form method="POST" action="{{ route('notifications.unread', $notification) }}">
                                             @csrf

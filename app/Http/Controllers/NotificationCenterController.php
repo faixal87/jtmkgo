@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class NotificationCenterController extends Controller
@@ -24,11 +25,17 @@ class NotificationCenterController extends Controller
     public function feed(Request $request): JsonResponse
     {
         $user = $request->user();
+        $select = ['id', 'user_id', 'title', 'message', 'read_at', 'created_at'];
+
+        if ($this->hasActionColumns()) {
+            $select[] = 'action_url';
+            $select[] = 'action_label';
+        }
 
         return response()->json([
             'unread_count' => $user->notifications()->whereNull('read_at')->count(),
             'notifications' => $user->notifications()
-                ->select(['id', 'user_id', 'title', 'message', 'read_at', 'created_at'])
+                ->select($select)
                 ->latest()
                 ->take(8)
                 ->get()
@@ -38,6 +45,8 @@ class NotificationCenterController extends Controller
                     'message' => $notification->message,
                     'created_at' => $notification->created_at?->diffForHumans(),
                     'is_read' => $notification->read_at !== null,
+                    'action_url' => $notification->action_url,
+                    'action_label' => $notification->action_label ?: 'Open',
                 ]),
         ]);
     }
@@ -83,5 +92,14 @@ class NotificationCenterController extends Controller
         }
 
         return back()->with('status', 'All notifications marked as read.');
+    }
+
+    private function hasActionColumns(): bool
+    {
+        static $hasColumns = null;
+
+        return $hasColumns ??= Schema::hasTable('notifications')
+            && Schema::hasColumn('notifications', 'action_url')
+            && Schema::hasColumn('notifications', 'action_label');
     }
 }

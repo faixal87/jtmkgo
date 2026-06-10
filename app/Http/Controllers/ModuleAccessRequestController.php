@@ -47,7 +47,7 @@ class ModuleAccessRequestController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, NotificationService $notifications): RedirectResponse
     {
         $validated = $request->validate([
             'module_id' => ['required', 'integer', 'exists:modules,id'],
@@ -79,6 +79,16 @@ class ModuleAccessRequestController extends Controller
             'status' => ModuleAccessRequest::STATUS_PENDING,
             'requested_at' => now(),
         ]);
+
+        $notifications->sendToModuleReviewers(
+            $module,
+            'New Module Access Request',
+            "{$user->name} requested access to {$module->name}.",
+            'module-access-request',
+            $user,
+            route('admin.module-access-requests.index', ['q' => $user->name]),
+            'Review Access Request'
+        );
 
         return back()->with('status', "Access request submitted for {$module->name}.");
     }

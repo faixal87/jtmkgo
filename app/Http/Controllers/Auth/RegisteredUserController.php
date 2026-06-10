@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Services\NotificationService;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -28,7 +29,7 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, NotificationService $notifications): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -48,6 +49,14 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
+
+        $notifications->sendToSuperAdmins(
+            'New Account Registration',
+            "{$user->name} has registered and is waiting for account approval.",
+            'user-registration',
+            actionUrl: route('super-admin.users.pending'),
+            actionLabel: 'Review Pending Users'
+        );
 
         Auth::login($user);
 

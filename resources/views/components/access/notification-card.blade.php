@@ -20,16 +20,24 @@
             <p class="mt-2 break-words text-xs font-medium text-[var(--color-muted)]">{{ $notification->created_at?->format('d M Y, h:i A') }}</p>
         </div>
 
-        @if ($notification->read_at)
-            <form method="POST" action="{{ route('notifications.unread', $notification) }}">
-                @csrf
-                <button class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">Mark Unread</button>
-            </form>
-        @else
-            <form method="POST" action="{{ route('notifications.read', $notification) }}">
-                @csrf
-                <button class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">Mark Read</button>
-            </form>
-        @endif
+        <div class="flex shrink-0 flex-wrap gap-2">
+            @if ($notification->action_url)
+                <a href="{{ $notification->action_url }}" class="theme-button-primary rounded-lg px-3 py-2 text-xs font-semibold">
+                    {{ $notification->action_label ?: 'Open' }}
+                </a>
+            @endif
+
+            @if ($notification->read_at)
+                <form method="POST" action="{{ route('notifications.unread', $notification) }}">
+                    @csrf
+                    <button class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">Mark Unread</button>
+                </form>
+            @else
+                <form method="POST" action="{{ route('notifications.read', $notification) }}">
+                    @csrf
+                    <button class="theme-button-secondary rounded-lg px-3 py-2 text-xs font-semibold">Mark Read</button>
+                </form>
+            @endif
+        </div>
     </div>
 </article>

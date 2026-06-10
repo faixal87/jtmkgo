@@ -65,18 +65,25 @@
                                 this.notifications = data.notifications;
                             });
                     },
-                    markRead(id) {
+                    markRead(notification) {
                         if (! this.ready) {
                             return;
                         }
 
-                        fetch(`${this.baseUrl}/${id}/read`, {
+                        fetch(`${this.baseUrl}/${notification.id}/read`, {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': this.csrf,
                             },
-                        }).then(() => this.load());
+                        }).then(() => {
+                            if (notification.action_url) {
+                                window.location.href = notification.action_url;
+                                return;
+                            }
+
+                            this.load();
+                        });
                     },
                     markAll() {
                         if (! this.ready) {
@@ -119,14 +126,17 @@
                         </template>
 
                         <template x-for="notification in notifications" :key="notification.id">
-                            <button type="button" @click="markRead(notification.id)" class="block w-full rounded-lg px-3 py-3 text-left transition hover:bg-[var(--color-accent-soft)]">
+                            <button type="button" @click="markRead(notification)" class="block w-full rounded-lg px-3 py-3 text-left transition hover:bg-[var(--color-accent-soft)]">
                                 <div class="flex items-start gap-3">
                                     <span x-show="! notification.is_read" class="mt-1 h-2 w-2 rounded-full bg-[var(--color-accent)]"></span>
                                     <span x-show="notification.is_read" class="mt-1 h-2 w-2"></span>
                                     <span class="min-w-0 flex-1">
                                         <span class="block text-sm font-semibold text-[var(--color-text)]" x-text="notification.title"></span>
                                         <span class="mt-1 line-clamp-2 block text-xs leading-5 text-[var(--color-muted)]" x-text="notification.message"></span>
-                                        <span class="mt-1 block text-[11px] font-medium text-[var(--color-muted)]" x-text="notification.created_at"></span>
+                                        <span class="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-medium text-[var(--color-muted)]">
+                                            <span x-text="notification.created_at"></span>
+                                            <span x-show="notification.action_url" class="rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 font-semibold text-[var(--color-accent-text)]" x-text="notification.action_label"></span>
+                                        </span>
                                     </span>
                                 </div>
                             </button>
