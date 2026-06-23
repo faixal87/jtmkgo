@@ -13,10 +13,10 @@
                     @include('program-go.activities.partials.delete-modal', [
                         'activity' => $activity,
                         'modalName' => 'delete-program-activity-show-'.$activity->id,
-                        'redirectTo' => route('program-go.activities.index', ['view' => $activity->user_id === auth()->id() ? 'my' : 'other']),
+                        'redirectTo' => route('program-go.activities.index', ['view' => $backView]),
                     ])
                 @endif
-                <a href="{{ route('program-go.activities.index', ['view' => $activity->user_id === auth()->id() ? 'my' : 'other']) }}" class="theme-button-secondary rounded-lg px-4 py-2 text-sm font-semibold">Back</a>
+                <a href="{{ route('program-go.activities.index', ['view' => $backView]) }}" class="theme-button-secondary rounded-lg px-4 py-2 text-sm font-semibold">Back</a>
             </div>
         </div>
     </x-slot>
@@ -62,6 +62,40 @@
                     </dl>
                 </section>
             </div>
+
+            <section class="enterprise-card rounded-xl border p-5 shadow-sm">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-[var(--color-text)]">Co-Authors</h3>
+                        <p class="mt-1 text-sm text-[var(--color-muted)]">Staff members allowed to help update or submit this activity.</p>
+                    </div>
+                    <span class="theme-badge">{{ $activity->collaborators->count() }} assigned</span>
+                </div>
+
+                @if ($activity->collaborators->isNotEmpty())
+                    <div class="mt-4 grid gap-3 md:grid-cols-2">
+                        @foreach ($activity->collaborators as $collaborator)
+                            <div class="min-w-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-secondary-bg)] p-4">
+                                <p class="truncate text-sm font-semibold text-[var(--color-text)]">{{ $collaborator->user?->name }}</p>
+                                <p class="mt-1 truncate text-xs text-[var(--color-muted)]">{{ $collaborator->user?->email ?: 'No email' }}</p>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @if ($collaborator->can_edit)
+                                        <span class="theme-badge">Can edit</span>
+                                    @endif
+                                    @if ($collaborator->can_submit)
+                                        <span class="theme-badge">Can submit</span>
+                                    @endif
+                                    @unless ($collaborator->can_edit || $collaborator->can_submit)
+                                        <span class="theme-badge">View only</span>
+                                    @endunless
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="mt-4 rounded-lg border border-dashed border-[var(--color-border)] p-4 text-sm text-[var(--color-muted)]">No co-author has been assigned.</p>
+                @endif
+            </section>
 
             <section class="enterprise-card rounded-xl border p-5 shadow-sm">
                 <h3 class="text-sm font-semibold text-[var(--color-text)]">Document Links</h3>

@@ -3,6 +3,7 @@
 namespace App\Modules\ProgramGo\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\ProgramGo\Models\ProgramActivity;
 use App\Modules\ProgramGo\Requests\StoreProgramActivityRequest;
 use App\Modules\ProgramGo\Services\ProgramGoService;
@@ -15,7 +16,7 @@ class ProgramActivityController extends Controller
 {
     public function index(Request $request, ProgramGoService $programGo): View
     {
-        $workspace = in_array($request->query('view'), ['my', 'other'], true)
+        $workspace = in_array($request->query('view'), ['my', 'shared', 'other'], true)
             ? (string) $request->query('view')
             : null;
         $search = trim((string) $request->query('q'));
@@ -27,16 +28,25 @@ class ProgramActivityController extends Controller
 
         if ($workspace) {
             $activities = ProgramActivity::query()
-                ->with('lecturer:id,name,email,profile_photo')
+                ->with([
+                    'lecturer:id,name,email,profile_photo',
+                    'collaborators.user:id,name,email,profile_photo,staff_short_code',
+                ])
                 ->when(
                     $workspace === 'my',
                     fn ($query) => $query->where('user_id', $request->user()->id),
-                    fn ($query) => $query
-                        ->where('user_id', '!=', $request->user()->id)
-                        ->where('status', ProgramActivity::STATUS_APPROVED)
+                    fn ($query) => $query->when(
+                        $workspace === 'shared',
+                        fn ($query) => $query
+                            ->where('user_id', '!=', $request->user()->id)
+                            ->whereHas('collaborators', fn ($query) => $query->where('user_id', $request->user()->id)),
+                        fn ($query) => $query
+                            ->where('user_id', '!=', $request->user()->id)
+                            ->where('status', ProgramActivity::STATUS_APPROVED)
+                    )
                 )
                 ->search($search)
-                ->when($workspace === 'my' && $status !== 'all', fn ($query) => $query->where('status', $status))
+                ->when(in_array($workspace, ['my', 'shared'], true) && $status !== 'all', fn ($query) => $query->where('status', $status))
                 ->when($activityCode !== 'all', fn ($query) => $query->where('activity_code', $activityCode))
                 ->when($speakerType !== 'all', fn ($query) => $query->where('speaker_type', $speakerType))
                 ->latest()
@@ -67,6 +77,9 @@ class ProgramActivityController extends Controller
             'activityCodes' => ProgramActivity::activityCodes(),
             'speakerTypes' => ProgramActivity::speakerTypes(),
             'participantRanges' => ProgramActivity::participantRanges(),
+            'collaboratorOptions' => $this->collaboratorOptions($request->user()->id),
+            'canManageCollaborators' => true,
+            'canSubmitActivity' => true,
         ]);
     }
 
@@ -77,6 +90,7 @@ class ProgramActivityController extends Controller
         $data['status'] = $this->statusFromIntent((string) $request->input('intent'));
 
         $activity = ProgramActivity::query()->create($data);
+        $this->syncCollaborators($activity, $request);
 
         if ($activity->status === ProgramActivity::STATUS_PENDING) {
             $programGo->notifySubmission($activity, $request->user());
@@ -91,16 +105,28 @@ class ProgramActivityController extends Controller
     {
         $this->authorizeView($request, $activity, $programGo);
 
+        $activity->load([
+            'lecturer:id,name,email',
+            'approvedBy:id,name',
+            'rejectedBy:id,name',
+            'verifiedBy:id,name',
+            'collaborators.user:id,name,email,profile_photo,staff_short_code',
+        ]);
+        $canManage = $programGo->isModuleAdmin($request->user());
+
         return view('program-go.activities.show', [
-            'activity' => $activity->load(['lecturer:id,name,email', 'approvedBy:id,name', 'rejectedBy:id,name', 'verifiedBy:id,name']),
+            'activity' => $activity,
             'canEdit' => $activity->canBeEditedBy($request->user()),
-            'canManage' => $programGo->isModuleAdmin($request->user()),
-            'canDelete' => $activity->canBeDeletedBy($request->user(), $programGo->isModuleAdmin($request->user())),
+            'canManage' => $canManage,
+            'canDelete' => $activity->canBeDeletedBy($request->user(), $canManage),
+            'backView' => $this->backViewFor($activity, $request->user()),
         ]);
     }
 
     public function edit(Request $request, ProgramActivity $activity): View
     {
+        $activity->load('collaborators.user:id,name,email,profile_photo,staff_short_code');
+
         abort_unless($activity->canBeEditedBy($request->user()), 403, 'Only editable own submissions can be updated.');
 
         return view('program-go.activities.edit', [
@@ -108,15 +134,26 @@ class ProgramActivityController extends Controller
             'activityCodes' => ProgramActivity::activityCodes(),
             'speakerTypes' => ProgramActivity::speakerTypes(),
             'participantRanges' => ProgramActivity::participantRanges(),
+            'collaboratorOptions' => $this->collaboratorOptions($activity->user_id),
+            'canManageCollaborators' => $activity->canManageCollaborators($request->user()),
+            'canSubmitActivity' => $activity->canBeSubmittedBy($request->user()),
         ]);
     }
 
     public function update(StoreProgramActivityRequest $request, ProgramActivity $activity, ProgramGoService $programGo): RedirectResponse
     {
+        $activity->load('collaborators');
+
         abort_unless($activity->canBeEditedBy($request->user()), 403, 'Only editable own submissions can be updated.');
 
         $data = $this->payload($request, $programGo);
         $data['status'] = $this->statusFromIntent((string) $request->input('intent'));
+
+        abort_if(
+            $data['status'] !== $activity->status && ! $activity->canBeSubmittedBy($request->user()),
+            403,
+            'You can edit this activity, but only the owner or a submit-enabled collaborator can change its workflow status.'
+        );
 
         if ($data['status'] === ProgramActivity::STATUS_PENDING) {
             $data['admin_remarks'] = null;
@@ -126,12 +163,16 @@ class ProgramActivityController extends Controller
 
         $activity->update($data);
 
+        if ($activity->canManageCollaborators($request->user())) {
+            $this->syncCollaborators($activity, $request);
+        }
+
         if ($activity->status === ProgramActivity::STATUS_PENDING) {
             $programGo->notifySubmission($activity->fresh('lecturer'), $request->user());
         }
 
         return redirect()
-            ->route('program-go.activities.index', ['view' => 'my'])
+            ->route('program-go.activities.index', ['view' => $this->backViewFor($activity->loadMissing('collaborators'), $request->user())])
             ->with('status', $this->flashMessageForStatus($activity->status));
     }
 
@@ -190,7 +231,7 @@ class ProgramActivityController extends Controller
     private function payload(StoreProgramActivityRequest $request, ProgramGoService $programGo): array
     {
         $data = collect($request->validated())
-            ->except('intent')
+            ->except(['intent', 'collaborators'])
             ->all();
 
         $data['activity_code_label'] = $programGo->activityCodeLabel($data['activity_code']);
@@ -204,12 +245,73 @@ class ProgramActivityController extends Controller
 
     private function authorizeView(Request $request, ProgramActivity $activity, ProgramGoService $programGo): void
     {
+        $activity->loadMissing('collaborators');
+
         abort_unless(
-            $activity->user_id === $request->user()->id
-                || $programGo->canViewAdminInsights($request->user())
-                || $activity->status === ProgramActivity::STATUS_APPROVED,
+            $activity->canBeViewedBy($request->user(), $programGo->canViewAdminInsights($request->user())),
             403,
             'You are not authorized to view this ProgramGo activity.'
         );
+    }
+
+    private function syncCollaborators(ProgramActivity $activity, StoreProgramActivityRequest $request): void
+    {
+        $collaborators = collect($request->validated('collaborators', []))
+            ->map(fn (array $collaborator): array => [
+                'user_id' => (int) $collaborator['user_id'],
+                'role' => 'co_author',
+                'can_edit' => (bool) ($collaborator['can_edit'] ?? false) || (bool) ($collaborator['can_submit'] ?? false),
+                'can_submit' => (bool) ($collaborator['can_submit'] ?? false),
+                'added_by' => $request->user()->id,
+            ])
+            ->filter(fn (array $collaborator): bool => $collaborator['user_id'] !== $activity->user_id)
+            ->unique('user_id')
+            ->values();
+
+        if ($collaborators->isEmpty()) {
+            $activity->collaborators()->delete();
+
+            return;
+        }
+
+        $activity->collaborators()
+            ->whereNotIn('user_id', $collaborators->pluck('user_id')->all())
+            ->delete();
+
+        foreach ($collaborators as $collaborator) {
+            $activity->collaborators()->updateOrCreate(
+                ['user_id' => $collaborator['user_id']],
+                $collaborator
+            );
+        }
+    }
+
+    private function collaboratorOptions(int $ownerId)
+    {
+        return User::query()
+            ->approvedStaff()
+            ->where('id', '!=', $ownerId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'staff_short_code', 'profile_photo'])
+            ->map(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'short_code' => $user->staff_short_code,
+                'label' => trim($user->name.' '.($user->staff_short_code ? "({$user->staff_short_code})" : '')),
+            ]);
+    }
+
+    private function backViewFor(ProgramActivity $activity, User $user): string
+    {
+        if ($activity->user_id === $user->id) {
+            return 'my';
+        }
+
+        if ($activity->collaborators->contains('user_id', $user->id)) {
+            return 'shared';
+        }
+
+        return 'other';
     }
 }

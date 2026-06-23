@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProgramActivity extends Model
@@ -131,6 +133,18 @@ class ProgramActivity extends Model
         return $this->belongsTo(User::class, 'rejected_by');
     }
 
+    public function collaborators(): HasMany
+    {
+        return $this->hasMany(ProgramActivityCollaborator::class, 'program_activity_id');
+    }
+
+    public function collaboratorUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'program_go_activity_collaborators', 'program_activity_id', 'user_id')
+            ->withPivot(['id', 'role', 'can_edit', 'can_submit', 'added_by'])
+            ->withTimestamps();
+    }
+
     public function scopeApproved(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_APPROVED);
@@ -155,14 +169,53 @@ class ProgramActivity extends Model
 
     public function canBeEditedBy(User $user): bool
     {
+        if ($user->is_super_admin || ! in_array($this->status, self::editableStatuses(), true)) {
+            return false;
+        }
+
+        if ($this->user_id === $user->id) {
+            return true;
+        }
+
+        return (bool) $this->collaboratorRecordFor($user)?->can_edit;
+    }
+
+    public function canBeSubmittedBy(User $user): bool
+    {
+        if ($user->is_super_admin || ! in_array($this->status, self::editableStatuses(), true)) {
+            return false;
+        }
+
+        if ($this->user_id === $user->id) {
+            return true;
+        }
+
+        return (bool) $this->collaboratorRecordFor($user)?->can_submit;
+    }
+
+    public function canBeViewedBy(User $user, bool $canViewAdminInsights = false): bool
+    {
         return $this->user_id === $user->id
-            && ! $user->is_super_admin
-            && in_array($this->status, [
-                self::STATUS_DRAFT,
-                self::STATUS_IN_PROGRESS,
-                self::STATUS_COMPLETED,
-                self::STATUS_RETURNED,
-            ], true);
+            || $canViewAdminInsights
+            || $this->status === self::STATUS_APPROVED
+            || $this->isCollaborator($user);
+    }
+
+    public function canManageCollaborators(User $user): bool
+    {
+        return ! $user->is_super_admin
+            && $this->user_id === $user->id
+            && in_array($this->status, self::editableStatuses(), true);
+    }
+
+    public static function editableStatuses(): array
+    {
+        return [
+            self::STATUS_DRAFT,
+            self::STATUS_IN_PROGRESS,
+            self::STATUS_COMPLETED,
+            self::STATUS_RETURNED,
+        ];
     }
 
     public function canBeDeletedBy(User $user, bool $isModuleAdmin = false): bool
@@ -216,5 +269,21 @@ class ProgramActivity extends Model
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',
         ];
+    }
+
+    private function isCollaborator(User $user): bool
+    {
+        return $this->collaboratorRecordFor($user) !== null;
+    }
+
+    private function collaboratorRecordFor(User $user): ?ProgramActivityCollaborator
+    {
+        if (! $this->exists || $this->relationLoaded('collaborators')) {
+            return $this->collaborators->firstWhere('user_id', $user->id);
+        }
+
+        return $this->collaborators()
+            ->where('user_id', $user->id)
+            ->first();
     }
 }

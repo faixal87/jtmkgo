@@ -33,6 +33,10 @@ class StoreProgramActivityRequest extends FormRequest
             'hep_allocation' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'paperwork_link' => ['nullable', 'url', 'max:2048'],
             'implementation_report_link' => ['nullable', 'url', 'max:2048'],
+            'collaborators' => ['nullable', 'array'],
+            'collaborators.*.user_id' => ['required_with:collaborators', 'integer', 'exists:users,id'],
+            'collaborators.*.can_edit' => ['nullable', 'boolean'],
+            'collaborators.*.can_submit' => ['nullable', 'boolean'],
         ];
     }
 }

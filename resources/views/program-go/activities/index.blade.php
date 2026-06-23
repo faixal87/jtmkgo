@@ -2,11 +2,13 @@
     $user = auth()->user();
     $pageTitle = match ($workspace) {
         'my' => 'My Activities',
+        'shared' => 'Shared With Me',
         'other' => 'Other Activities',
         default => 'Activities',
     };
     $pageDescription = match ($workspace) {
         'my' => 'View and manage programmes submitted under your account.',
+        'shared' => 'Edit or submit activities where you have been added as a co-author.',
         'other' => 'Browse approved programme activities submitted by other staff members.',
         default => 'Choose the activity workspace you want to open.',
     };
@@ -30,7 +32,7 @@
             <x-toast />
 
             @if (! $workspace)
-                <section class="grid gap-5 lg:grid-cols-2">
+                <section class="grid gap-5 lg:grid-cols-3">
                     <a href="{{ route('program-go.activities.index', ['view' => 'my']) }}" class="enterprise-card group min-w-0 rounded-xl border p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-lg">
                         <div class="flex items-start gap-4">
                             <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]">
@@ -46,6 +48,24 @@
                             <span class="min-w-0">
                                 <span class="block text-lg font-semibold text-[var(--color-text)]">My Activities</span>
                                 <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">View and manage programmes submitted under your account.</span>
+                                <span class="mt-5 inline-flex text-sm font-semibold text-[var(--color-accent-text)]">Open workspace</span>
+                            </span>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('program-go.activities.index', ['view' => 'shared']) }}" class="enterprise-card group min-w-0 rounded-xl border p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[var(--color-accent)] hover:shadow-lg">
+                        <div class="flex items-start gap-4">
+                            <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]">
+                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                            </span>
+                            <span class="min-w-0">
+                                <span class="block text-lg font-semibold text-[var(--color-text)]">Shared With Me</span>
+                                <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">Open activities where you are assigned as a co-author.</span>
                                 <span class="mt-5 inline-flex text-sm font-semibold text-[var(--color-accent-text)]">Open workspace</span>
                             </span>
                         </div>
@@ -73,6 +93,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <a href="{{ route('program-go.activities.index') }}" class="theme-button-secondary rounded-lg px-4 py-2 text-sm font-semibold">Activities Home</a>
                     <a href="{{ route('program-go.activities.index', ['view' => 'my']) }}" class="{{ $workspace === 'my' ? 'theme-button-primary' : 'theme-button-secondary' }} rounded-lg px-4 py-2 text-sm font-semibold">My Activities</a>
+                    <a href="{{ route('program-go.activities.index', ['view' => 'shared']) }}" class="{{ $workspace === 'shared' ? 'theme-button-primary' : 'theme-button-secondary' }} rounded-lg px-4 py-2 text-sm font-semibold">Shared With Me</a>
                     <a href="{{ route('program-go.activities.index', ['view' => 'other']) }}" class="{{ $workspace === 'other' ? 'theme-button-primary' : 'theme-button-secondary' }} rounded-lg px-4 py-2 text-sm font-semibold">Other Activities</a>
                 </div>
 
@@ -104,7 +125,7 @@
                         </select>
                     </div>
 
-                    @if ($workspace === 'my')
+                    @if (in_array($workspace, ['my', 'shared'], true))
                         <div>
                             <x-input-label for="status" value="Status" />
                             <select id="status" name="status" class="mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]">
@@ -134,8 +155,17 @@
                                     <div class="flex flex-wrap items-center gap-2">
                                         @include('program-go.activities.partials.status-badge', ['status' => $activity->status])
                                         <span class="theme-badge">{{ $activity->activity_code }} {{ $activity->activity_code_label }}</span>
-                                        @if ($workspace === 'other')
+                                        @if (in_array($workspace, ['other', 'shared'], true))
                                             <span class="theme-badge">{{ $activity->lecturer?->name ?: 'Unknown staff' }}</span>
+                                        @endif
+                                        @if ($workspace === 'shared')
+                                            @php($collaborator = $activity->collaborators->firstWhere('user_id', $user->id))
+                                            @if ($collaborator?->can_edit)
+                                                <span class="theme-badge">Can edit</span>
+                                            @endif
+                                            @if ($collaborator?->can_submit)
+                                                <span class="theme-badge">Can submit</span>
+                                            @endif
                                         @endif
                                     </div>
                                     <h2 class="mt-3 break-words text-lg font-semibold text-[var(--color-text)]">{{ $activity->activity_name }}</h2>
@@ -143,7 +173,7 @@
                                 </div>
                                 <div class="flex flex-wrap gap-2">
                                     <a href="{{ route('program-go.activities.show', $activity) }}" class="theme-button-secondary rounded-lg px-3 py-2 text-sm font-semibold">View</a>
-                                    @if ($workspace === 'my' && $activity->canBeEditedBy($user))
+                                    @if (in_array($workspace, ['my', 'shared'], true) && $activity->canBeEditedBy($user))
                                         <a href="{{ route('program-go.activities.edit', $activity) }}" class="theme-button-primary rounded-lg px-3 py-2 text-sm font-semibold">Edit</a>
                                     @endif
                                     @if ($activity->canBeDeletedBy($user, $canManage))
@@ -178,6 +208,8 @@
                     @empty
                         @if ($workspace === 'my')
                             <x-empty-state title="No activities yet" message="Create your first ProgramGo activity submission when paperwork is ready." />
+                        @elseif ($workspace === 'shared')
+                            <x-empty-state title="No shared activities found" message="Activities where you are assigned as a co-author will appear here." />
                         @else
                             <x-empty-state title="No approved activities found" message="Approved activities submitted by other staff will appear here." />
                         @endif

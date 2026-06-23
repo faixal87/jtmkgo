@@ -77,8 +77,16 @@ class ProgramGoService
             default => 'Your programme/activity submission has been updated.',
         };
 
-        if ($activity->lecturer) {
-            $this->notifications->send($activity->lecturer, $title, $message, 'program-go', $actor);
+        $activity->loadMissing(['lecturer', 'collaborators.user']);
+
+        $recipients = collect([$activity->lecturer])
+            ->merge($activity->collaborators->pluck('user'))
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        foreach ($recipients as $recipient) {
+            $this->notifications->send($recipient, $title, $message, 'program-go', $actor);
         }
     }
 
