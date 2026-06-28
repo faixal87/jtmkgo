@@ -109,8 +109,67 @@
                 resizingSidebar: false,
                 minSidebarWidth: 224,
                 maxSidebarWidth: 384,
+                init() {
+                    this.$nextTick(() => {
+                        const savedSidebarScroll = sessionStorage.getItem('jtmkSidebarScrollTop');
+
+                        if (savedSidebarScroll !== null) {
+                            const sidebar = document.querySelector('[data-sidebar-scroll-container]');
+
+                            if (sidebar) {
+                                sidebar.scrollTop = Number(savedSidebarScroll) || 0;
+                            }
+
+                            sessionStorage.removeItem('jtmkSidebarScrollTop');
+                        }
+                    });
+                },
                 sidebarOffset() {
                     return this.sidebarCollapsed ? '5rem' : `${this.sidebarWidth}px`;
+                },
+                sidebarScrollContainer(event) {
+                    return event?.target?.closest('[data-sidebar-scroll-container]') || null;
+                },
+                preserveSidebarScroll(event) {
+                    const sidebar = this.sidebarScrollContainer(event);
+                    const sidebarScrollTop = sidebar ? sidebar.scrollTop : 0;
+                    const windowScrollTop = window.scrollY;
+
+                    this.$nextTick(() => {
+                        if (sidebar) {
+                            sidebar.scrollTop = sidebarScrollTop;
+                        }
+
+                        if (window.scrollY !== windowScrollTop) {
+                            window.scrollTo({ top: windowScrollTop, left: window.scrollX, behavior: 'instant' });
+                        }
+                    });
+                },
+                handleSidebarNavigation(event) {
+                    const link = event.target.closest('a');
+
+                    if (! link) {
+                        return;
+                    }
+
+                    const sidebar = this.sidebarScrollContainer(event);
+
+                    if (sidebar) {
+                        sessionStorage.setItem('jtmkSidebarScrollTop', String(sidebar.scrollTop));
+                    }
+
+                    if (! link.href || link.getAttribute('href') === 'javascript:void(0)') {
+                        event.preventDefault();
+
+                        return;
+                    }
+
+                    const targetUrl = new URL(link.href);
+
+                    if (targetUrl.origin === window.location.origin && targetUrl.pathname === window.location.pathname) {
+                        event.preventDefault();
+                        this.preserveSidebarScroll(event);
+                    }
                 },
                 toggleSidebar() {
                     this.sidebarCollapsed = ! this.sidebarCollapsed;

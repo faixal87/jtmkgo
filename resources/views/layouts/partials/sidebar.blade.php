@@ -105,14 +105,9 @@
     </div>
 
     <nav
+        data-sidebar-scroll-container
         class="flex-1 overflow-y-auto px-3 py-4"
-        @click.capture="
-            const link = $event.target.closest('a');
-
-            if (link && link.href === window.location.href) {
-                $event.preventDefault();
-            }
-        "
+        @click.capture="handleSidebarNavigation($event)"
     >
         <x-sidebar.section :title="__('app.sidebar.workspace')">
             <a href="{{ route('dashboard') }}" title="{{ __('app.sidebar.dashboard') }}" class="{{ $navItem }} {{ request()->routeIs('dashboard') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
@@ -464,14 +459,9 @@
     x-cloak
     x-transition
     class="fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto border-r border-[var(--color-sidebar-border)] bg-[var(--color-sidebar)] p-4 text-[var(--color-sidebar-text)] shadow-2xl lg:hidden"
+    data-sidebar-scroll-container
     x-data="{ sidebarCollapsed: false }"
-    @click.capture="
-        const link = $event.target.closest('a');
-
-        if (link && link.href === window.location.href) {
-            $event.preventDefault();
-        }
-    "
+    @click.capture="handleSidebarNavigation($event)"
 >
     <div class="flex items-center justify-between">
         <div class="flex min-w-0 flex-1 items-center justify-center pe-10">
