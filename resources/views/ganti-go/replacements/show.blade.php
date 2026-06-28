@@ -1,5 +1,6 @@
 @php
     $selfVerificationBlocked = $replacement->blocksSelfVerificationFor(auth()->user());
+    $canSubmitImplementationToday = ! $replacement->replacement_date->isFuture();
 @endphp
 
 <x-app-layout>
@@ -140,16 +141,24 @@
                             @endcan
 
                             @can('submitImplementation', $replacement)
-                                <form method="POST" action="{{ route('ganti-go.replacements.submit-implementation', $replacement) }}" enctype="multipart/form-data" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                    @csrf
-                                    @method('PATCH')
-                                    <x-input-label for="evidence_file" value="Evidence Upload" />
-                                    <input id="evidence_file" name="evidence_file" type="file" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white">
-                                    <x-input-error :messages="$errors->get('evidence_file')" class="mt-2" />
-                                    <button type="submit" class="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-slate-800">
-                                        {{ $replacement->status === 'rejected' ? 'Resubmit Implementation' : 'Mark as Implemented' }}
-                                    </button>
-                                </form>
+                                @if ($canSubmitImplementationToday)
+                                    <form method="POST" action="{{ route('ganti-go.replacements.submit-implementation', $replacement) }}" enctype="multipart/form-data" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        @csrf
+                                        @method('PATCH')
+                                        <x-input-label for="evidence_file" value="Evidence Upload" />
+                                        <input id="evidence_file" name="evidence_file" type="file" accept=".jpg,.jpeg,.png,.pdf" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white">
+                                        <x-input-error :messages="$errors->get('evidence_file')" class="mt-2" />
+                                        <x-input-error :messages="$errors->get('replacement_date')" class="mt-2" />
+                                        <button type="submit" class="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-slate-800">
+                                            {{ $replacement->status === 'rejected' ? 'Resubmit Implementation' : 'Mark as Implemented' }}
+                                        </button>
+                                    </form>
+                                @else
+                                    <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                                        <p class="font-semibold">Implementation cannot be submitted yet.</p>
+                                        <p class="mt-1">This planned replacement can only be marked as implemented on or after {{ $replacement->replacement_date->format('d M Y') }}.</p>
+                                    </div>
+                                @endif
                             @endcan
 
                             @if ($selfVerificationBlocked)

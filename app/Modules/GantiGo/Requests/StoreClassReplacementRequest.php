@@ -84,6 +84,8 @@ class StoreClassReplacementRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $this->validateReplacementDateByWorkflow($validator);
+
             if (! $this->filled(['academic_semester_id', 'academic_subject_offering_id'])) {
                 return;
             }
@@ -135,6 +137,35 @@ class StoreClassReplacementRequest extends FormRequest
                 );
             }
         });
+    }
+
+    private function validateReplacementDateByWorkflow(Validator $validator): void
+    {
+        if (! $this->filled('replacement_date')) {
+            return;
+        }
+
+        try {
+            $replacementDate = Carbon::parse($this->input('replacement_date'))->startOfDay();
+        } catch (\Throwable) {
+            return;
+        }
+
+        $today = now()->startOfDay();
+
+        if ($this->boolean('already_implemented') && $replacementDate->gt($today)) {
+            $validator->errors()->add(
+                'replacement_date',
+                'Already implemented replacement cannot use a future replacement date.'
+            );
+        }
+
+        if (! $this->boolean('already_implemented') && $replacementDate->lt($today)) {
+            $validator->errors()->add(
+                'replacement_date',
+                'Planned replacement must use today or a future replacement date.'
+            );
+        }
     }
 
     private function normalizeTime(mixed $time): mixed

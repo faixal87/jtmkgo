@@ -3,9 +3,11 @@
 namespace App\Modules\GantiGo\Requests;
 
 use App\Modules\GantiGo\Models\GantiGoSetting;
+use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class SubmitImplementationRequest extends FormRequest
 {
@@ -37,5 +39,23 @@ class SubmitImplementationRequest extends FormRequest
                 'max:5120',
             ],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $replacement = $this->route('classReplacement');
+
+            if (! $replacement?->replacement_date) {
+                return;
+            }
+
+            if (Carbon::parse($replacement->replacement_date)->startOfDay()->gt(now()->startOfDay())) {
+                $validator->errors()->add(
+                    'replacement_date',
+                    'Implementation can only be submitted on or after the replacement class date.'
+                );
+            }
+        });
     }
 }

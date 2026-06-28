@@ -45,6 +45,7 @@
         reason: @js($selectedReason),
         alreadyImplemented: @js($alreadyImplemented),
         workflowLocked: @js($workflowLocked),
+        today: @js(now()->toDateString()),
         offeringSearch: '',
         selectedOffering: Number(@js((int) $selectedOffering)),
         selectedAcademicClassGroups: @js($selectedClasses),
@@ -214,7 +215,19 @@
 
             <div>
                 <x-input-label for="replacement_date" value="Replacement Date" />
-                <x-text-input id="replacement_date" name="replacement_date" type="date" class="mt-1 block w-full" :value="old('replacement_date', isset($replacement) ? $replacement->replacement_date->format('Y-m-d') : '')" required />
+                <x-text-input
+                    id="replacement_date"
+                    name="replacement_date"
+                    type="date"
+                    class="mt-1 block w-full"
+                    :value="old('replacement_date', isset($replacement) ? $replacement->replacement_date->format('Y-m-d') : '')"
+                    x-bind:max="alreadyImplemented ? today : null"
+                    x-bind:min="alreadyImplemented ? null : today"
+                    required
+                />
+                <p class="mt-2 text-xs text-slate-500" x-text="alreadyImplemented ? 'Already implemented replacement must use today or a past date.' : 'Planned replacement must use today or a future date.'">
+                    Planned replacement must use today or a future date.
+                </p>
                 <x-input-error :messages="$errors->get('replacement_date')" class="mt-2" />
             </div>
 
