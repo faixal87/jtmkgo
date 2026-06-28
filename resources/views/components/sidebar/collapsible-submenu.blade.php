@@ -32,7 +32,10 @@
     <button
         type="button"
         title="{{ $title }}"
-        @click="
+        @click.prevent.stop="
+            const scrollContainer = $el.closest('nav, aside');
+            const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+
             if (sidebarCollapsed) {
                 sidebarCollapsed = false;
                 localStorage.setItem('jtmkSidebarCollapsed', false);
@@ -40,6 +43,12 @@
             } else {
                 open = ! open;
             }
+
+            $nextTick(() => {
+                if (scrollContainer) {
+                    scrollContainer.scrollTop = scrollTop;
+                }
+            });
         "
         class="flex w-full items-center gap-3 rounded-lg text-left font-medium transition duration-200 {{ $triggerClass }} {{ $buttonClass }}"
         :class="sidebarCollapsed ? 'justify-center px-2' : ''"

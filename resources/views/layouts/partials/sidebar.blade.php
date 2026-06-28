@@ -104,7 +104,16 @@
         </button>
     </div>
 
-    <nav class="flex-1 overflow-y-auto px-3 py-4">
+    <nav
+        class="flex-1 overflow-y-auto px-3 py-4"
+        @click.capture="
+            const link = $event.target.closest('a');
+
+            if (link && link.href === window.location.href) {
+                $event.preventDefault();
+            }
+        "
+    >
         <x-sidebar.section :title="__('app.sidebar.workspace')">
             <a href="{{ route('dashboard') }}" title="{{ __('app.sidebar.dashboard') }}" class="{{ $navItem }} {{ request()->routeIs('dashboard') ? $navActive : $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
                 <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -358,7 +367,7 @@
             @endif
 
             @foreach ($regularModules as $module)
-                <a href="{{ $module->route_prefix ? url($module->route_prefix) : '#' }}" title="{{ $module->name }}" class="{{ $navItem }} {{ $navIdle }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
+                <a href="{{ $module->route_prefix ? url($module->route_prefix) : 'javascript:void(0)' }}" title="{{ $module->name }}" class="{{ $navItem }} {{ $module->route_prefix ? $navIdle : $subDisabled }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
                     <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <path d="M4 6h16" />
                         <path d="M4 12h16" />
@@ -450,7 +459,20 @@
 
 <div x-show="sidebarOpen" x-cloak x-transition.opacity class="fixed inset-0 z-50 bg-slate-950/50 lg:hidden" @click="sidebarOpen = false"></div>
 
-<aside x-show="sidebarOpen" x-cloak x-transition class="fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto border-r border-[var(--color-sidebar-border)] bg-[var(--color-sidebar)] p-4 text-[var(--color-sidebar-text)] shadow-2xl lg:hidden" x-data="{ sidebarCollapsed: false }">
+<aside
+    x-show="sidebarOpen"
+    x-cloak
+    x-transition
+    class="fixed inset-y-0 left-0 z-50 w-80 overflow-y-auto border-r border-[var(--color-sidebar-border)] bg-[var(--color-sidebar)] p-4 text-[var(--color-sidebar-text)] shadow-2xl lg:hidden"
+    x-data="{ sidebarCollapsed: false }"
+    @click.capture="
+        const link = $event.target.closest('a');
+
+        if (link && link.href === window.location.href) {
+            $event.preventDefault();
+        }
+    "
+>
     <div class="flex items-center justify-between">
         <div class="flex min-w-0 flex-1 items-center justify-center pe-10">
             @if ($workspaceLogo)

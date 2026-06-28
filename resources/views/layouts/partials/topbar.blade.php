@@ -1,5 +1,5 @@
 <header class="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-page)]/95 backdrop-blur">
-    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto flex min-h-[4.75rem] max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div class="flex min-w-0 items-center gap-3">
             <button @click="sidebarOpen = true" class="theme-button-secondary rounded-lg p-2 shadow-sm lg:hidden">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -21,6 +21,8 @@
             @endif
 
             <div class="min-w-0">
+                <x-breadcrumbs />
+
                 @isset($header)
                     {{ $header }}
                 @else
