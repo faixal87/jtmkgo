@@ -38,7 +38,7 @@
                     <x-ganti.workflow-card
                         mode="planned"
                         title="Planned Replacement"
-                        description="Create a replacement plan before the replacement class is conducted."
+                        description="Plan a replacement before it is conducted. The replacement may be before or after the original class date."
                         accent="blue"
                     />
 
@@ -70,7 +70,7 @@
                             <h2 class="mt-2 text-xl font-semibold tracking-tight text-slate-950" x-text="selectedWorkflow === 'implemented' ? 'Submit Implemented Replacement' : 'Create Planned Replacement'">
                                 Create Planned Replacement
                             </h2>
-                            <p class="mt-2 text-sm text-slate-500" x-text="selectedWorkflow === 'implemented' ? 'This record will be submitted directly for module admin verification.' : 'This record will be saved as a planned replacement.'">
+                            <p class="mt-2 text-sm text-slate-500" x-text="selectedWorkflow === 'implemented' ? 'This record will be submitted directly for module admin verification.' : 'This record will be saved as a planned replacement before implementation.'">
                                 This record will be saved as a planned replacement.
                             </p>
                         </div>

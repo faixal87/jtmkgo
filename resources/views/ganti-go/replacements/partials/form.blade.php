@@ -198,8 +198,8 @@
                 <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Workflow mode</p>
                     <p class="mt-2 text-sm font-medium text-slate-950" x-text="alreadyImplemented ? 'Already Implemented Replacement' : 'Planned Replacement'">Planned Replacement</p>
-                    <p class="mt-1 text-sm text-slate-500" x-text="alreadyImplemented ? 'The record will move directly to pending verification.' : 'The record will remain planned until implementation is submitted.'">
-                        The record will remain planned until implementation is submitted.
+                    <p class="mt-1 text-sm text-slate-500" x-text="alreadyImplemented ? 'The record will move directly to pending verification.' : 'The record will remain planned until implementation is submitted. The replacement may be scheduled before or after the original class date.'">
+                        The record will remain planned until implementation is submitted. The replacement may be scheduled before or after the original class date.
                     </p>
                 </div>
             @else
@@ -225,8 +225,8 @@
                     x-bind:min="alreadyImplemented ? null : today"
                     required
                 />
-                <p class="mt-2 text-xs text-slate-500" x-text="alreadyImplemented ? 'Already implemented replacement must use today or a past date.' : 'Planned replacement must use today or a future date.'">
-                    Planned replacement must use today or a future date.
+                <p class="mt-2 text-xs text-slate-500" x-text="alreadyImplemented ? 'Already implemented replacement must use today or a past date.' : 'Planned replacement can be before or after the original class date, but the replacement date must not have passed.'">
+                    Planned replacement can be before or after the original class date, but the replacement date must not have passed.
                 </p>
                 <x-input-error :messages="$errors->get('replacement_date')" class="mt-2" />
             </div>

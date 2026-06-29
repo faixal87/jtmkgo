@@ -163,7 +163,7 @@ class UpdateClassReplacementRequest extends FormRequest
         if (! $this->boolean('already_implemented') && $replacementDate->lt($today)) {
             $validator->errors()->add(
                 'replacement_date',
-                'Planned replacement must use today or a future replacement date.'
+                'Planned replacement must use a date that has not passed. The replacement date may be before or after the original class date.'
             );
         }
     }
