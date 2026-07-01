@@ -3,6 +3,7 @@
     'showOwner' => true,
     'canEdit' => false,
     'canManage' => false,
+    'showQr' => true,
 ])
 
 @php
@@ -34,7 +35,9 @@
                 @endif
             </div>
 
-            <button type="button" class="theme-button-secondary shrink-0 rounded-lg px-3 py-2 text-xs font-semibold" x-data @click="$dispatch('open-modal', '{{ $modalName }}')">QR</button>
+            @if ($showQr)
+                <button type="button" class="theme-button-secondary shrink-0 rounded-lg px-3 py-2 text-xs font-semibold" x-data @click="$dispatch('open-modal', '{{ $modalName }}')">QR</button>
+            @endif
         </div>
 
         <div class="grid gap-2 text-xs text-[var(--color-muted)] sm:grid-cols-2">
@@ -67,26 +70,28 @@
         </div>
     </div>
 
-    <x-modal :name="$modalName" maxWidth="md">
-        <div class="p-6">
-            <div class="flex items-start justify-between gap-4">
-                <div class="min-w-0">
-                    <h3 class="break-words text-base font-semibold text-[var(--color-text)]">QR Code</h3>
-                    <p class="mt-1 break-words text-sm text-[var(--color-muted)]">{{ $link->title }}</p>
+    @if ($showQr)
+        <x-modal :name="$modalName" maxWidth="md">
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="min-w-0">
+                        <h3 class="break-words text-base font-semibold text-[var(--color-text)]">QR Code</h3>
+                        <p class="mt-1 break-words text-sm text-[var(--color-muted)]">{{ $link->title }}</p>
+                    </div>
+                    <button type="button" class="rounded-lg p-2 text-[var(--color-muted)] transition hover:bg-[var(--color-secondary-bg)]" x-data @click="$dispatch('close-modal', '{{ $modalName }}')">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                    </button>
                 </div>
-                <button type="button" class="rounded-lg p-2 text-[var(--color-muted)] transition hover:bg-[var(--color-secondary-bg)]" x-data @click="$dispatch('close-modal', '{{ $modalName }}')">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                </button>
+                <div class="mt-5 flex justify-center rounded-xl border border-[var(--color-border)] bg-white p-4">
+                    <img src="{{ route('link-go.links.qr', $link) }}" alt="QR code for {{ $link->title }}" class="h-64 w-64 object-contain">
+                </div>
+                <div class="mt-5 flex flex-wrap gap-2">
+                    <a href="{{ route('link-go.links.qr.download', $link) }}" class="theme-button-primary inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold">Download PNG</a>
+                    <a href="{{ route('link-go.links.open', $link) }}" target="_blank" rel="noopener" class="theme-button-secondary inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold">Open Link</a>
+                </div>
             </div>
-            <div class="mt-5 flex justify-center rounded-xl border border-[var(--color-border)] bg-white p-4">
-                <img src="{{ route('link-go.links.qr', $link) }}" alt="QR code for {{ $link->title }}" class="h-64 w-64 object-contain">
-            </div>
-            <div class="mt-5 flex flex-wrap gap-2">
-                <a href="{{ route('link-go.links.qr.download', $link) }}" class="theme-button-primary inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold">Download PNG</a>
-                <a href="{{ route('link-go.links.open', $link) }}" target="_blank" rel="noopener" class="theme-button-secondary inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold">Open Link</a>
-            </div>
-        </div>
-    </x-modal>
+        </x-modal>
+    @endif
 
     @if ($canEdit || $canManage)
         <x-modal :name="$deleteModal" maxWidth="md">

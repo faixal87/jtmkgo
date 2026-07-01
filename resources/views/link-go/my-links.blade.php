@@ -34,7 +34,7 @@
 
             <section class="grid gap-4 lg:grid-cols-2">
                 @forelse ($links as $link)
-                    @include('link-go.partials.link-card', ['link' => $link, 'showOwner' => false, 'canEdit' => true, 'canManage' => false])
+                    @include('link-go.partials.link-card', ['link' => $link, 'showOwner' => false, 'canEdit' => true, 'canManage' => false, 'showQr' => false])
                 @empty
                     <div class="lg:col-span-2">
                         <x-empty-state title="No links submitted yet" message="Submit a link to keep important JTMK resources easy to find." />
