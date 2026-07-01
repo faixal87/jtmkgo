@@ -134,6 +134,30 @@ class NotificationService
         return $this->sendToUsers($recipients, $title, $message, $type, $createdBy, $actionUrl, $actionLabel);
     }
 
+    public function sendToModuleAdminsBySlug(
+        string $moduleSlug,
+        string $title,
+        string $message,
+        ?string $type = null,
+        ?User $createdBy = null,
+        ?string $actionUrl = null,
+        ?string $actionLabel = null,
+        ?User $excludeUser = null
+    ): int {
+        $recipients = User::query()
+            ->where('account_status', 'approved')
+            ->where('is_super_admin', false)
+            ->when($excludeUser, fn ($query) => $query->whereKeyNot($excludeUser->id))
+            ->whereHas('adminModules', function ($query) use ($moduleSlug): void {
+                $query
+                    ->where('modules.slug', $moduleSlug)
+                    ->where('module_admins.is_active', true);
+            })
+            ->get(['id', 'name', 'email']);
+
+        return $this->sendToUsers($recipients, $title, $message, $type, $createdBy, $actionUrl, $actionLabel);
+    }
+
     public function sendBirthdayNotifications(): int
     {
         $today = now();

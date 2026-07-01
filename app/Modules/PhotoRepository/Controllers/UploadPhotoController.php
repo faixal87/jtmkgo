@@ -9,6 +9,7 @@ use App\Modules\PhotoRepository\Models\MediaPhoto;
 use App\Modules\PhotoRepository\Models\MediaProfile;
 use App\Modules\PhotoRepository\Requests\StoreMediaPhotoRequest;
 use App\Modules\PhotoRepository\Services\PhotoProcessingService;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -43,7 +44,7 @@ class UploadPhotoController extends Controller
         ]);
     }
 
-    public function store(StoreMediaPhotoRequest $request, PhotoProcessingService $processor): RedirectResponse
+    public function store(StoreMediaPhotoRequest $request, PhotoProcessingService $processor, NotificationService $notifications): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -57,13 +58,26 @@ class UploadPhotoController extends Controller
 
         $profile = $this->resolveProfile($request);
 
-        MediaPhoto::create($processed + [
+        $photo = MediaPhoto::create($processed + [
             'media_profile_id' => $profile->id,
             'media_category_id' => $validated['media_category_id'],
             'caption' => $validated['caption'] ?? null,
             'status' => MediaPhoto::STATUS_PENDING,
             'uploaded_by' => $request->user()->id,
         ]);
+
+        $photo->loadMissing(['profile', 'category']);
+
+        $notifications->sendToModuleAdminsBySlug(
+            'photo-repository',
+            'Photo Repository Review Request',
+            "{$request->user()->name} uploaded a photo for {$photo->profile->name} and it is waiting for review.",
+            'photo-repository:pending-review',
+            $request->user(),
+            route('photo-repository.admin.review-queue', ['status' => MediaPhoto::STATUS_PENDING]),
+            'Open Review Queue',
+            $request->user()
+        );
 
         Cache::forget('photo-repository.review.status-counts');
         Cache::forget('photo-repository.analytics.storage-usage');

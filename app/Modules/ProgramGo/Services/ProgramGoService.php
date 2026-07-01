@@ -56,8 +56,10 @@ class ProgramGoService
             $admins,
             'ProgramGo Activity Submitted',
             "{$actor->name} submitted {$activity->activity_name} for verification.",
-            'program-go',
-            $actor
+            'program-go:pending-verification',
+            $actor,
+            route('program-go.admin.review-submissions', ['status' => ProgramActivity::STATUS_PENDING]),
+            'Review Submission'
         );
     }
 

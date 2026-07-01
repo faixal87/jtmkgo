@@ -36,7 +36,7 @@ class ClassReplacementWorkflowService
 
         $replacement->academicClassGroups()->sync($academicClassGroupIds);
 
-        return $replacement->fresh([
+        $replacement = $replacement->fresh([
             'academicSemester',
             'academicSubjectOffering.subject',
             'academicSubject',
@@ -47,6 +47,12 @@ class ClassReplacementWorkflowService
             'classes',
             'lecturer',
         ]);
+
+        if ($isDirectImplementation) {
+            $this->notifyPendingVerification($replacement, $lecturer);
+        }
+
+        return $replacement;
     }
 
     /**
@@ -68,10 +74,12 @@ class ClassReplacementWorkflowService
             ];
         }
 
+        $isDirectImplementation = (bool) Arr::get($attributes, 'already_implemented', false);
+
         $classReplacement->update($attributes);
         $classReplacement->academicClassGroups()->sync($academicClassGroupIds);
 
-        return $classReplacement->fresh([
+        $classReplacement = $classReplacement->fresh([
             'academicSemester',
             'academicSubjectOffering.subject',
             'academicSubject',
@@ -82,6 +90,12 @@ class ClassReplacementWorkflowService
             'classes',
             'lecturer',
         ]);
+
+        if ($isDirectImplementation && $classReplacement->lecturer) {
+            $this->notifyPendingVerification($classReplacement, $classReplacement->lecturer);
+        }
+
+        return $classReplacement;
     }
 
     public function cancel(ClassReplacement $classReplacement): ClassReplacement
@@ -109,7 +123,18 @@ class ClassReplacementWorkflowService
             'implementation_admin_remarks' => null,
         ])->save();
 
-        return $classReplacement->fresh();
+        $classReplacement = $classReplacement->fresh([
+            'academicSubjectOffering.subject',
+            'academicSubject',
+            'course',
+            'lecturer',
+        ]);
+
+        if ($classReplacement->lecturer) {
+            $this->notifyPendingVerification($classReplacement, $classReplacement->lecturer);
+        }
+
+        return $classReplacement;
     }
 
     /**
@@ -188,6 +213,20 @@ class ClassReplacementWorkflowService
         if ($classReplacement->blocksSelfVerificationFor($admin)) {
             throw new AuthorizationException('Self-verification is not allowed.');
         }
+    }
+
+    private function notifyPendingVerification(ClassReplacement $classReplacement, User $lecturer): void
+    {
+        $this->notifications->sendToModuleAdminsBySlug(
+            'ganti-go',
+            'Ganti Go Verification Request',
+            "{$lecturer->name} submitted a replacement implementation for {$classReplacement->displayCourseLabel()}.",
+            'ganti-go:pending-verification',
+            $lecturer,
+            route('ganti-go.admin.review-queue', ['status' => ClassReplacement::STATUS_PENDING_VERIFICATION]),
+            'Review Replacement',
+            $lecturer
+        );
     }
 
     public function markOverdueRecords(): int
