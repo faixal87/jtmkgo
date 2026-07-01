@@ -30,7 +30,7 @@
                     </div>
                     <div class="grid gap-4 lg:grid-cols-2">
                         @foreach ($pinnedLinks as $link)
-                            @include('link-go.partials.link-card', ['link' => $link, 'canEdit' => $link->user_id === auth()->id(), 'canManage' => $canManage])
+                            @include('link-go.partials.link-card', ['link' => $link, 'canEdit' => $link->user_id === auth()->id(), 'canManage' => $canManage, 'showQr' => false])
                         @endforeach
                     </div>
                 </section>
