@@ -64,9 +64,12 @@
                         @foreach ($links as $link)
                             <a
                                 href="{{ route('link-go.links.show', $link) }}"
-                                class="block px-4 py-3 transition hover:bg-[var(--color-secondary-bg)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent)]"
+                                class="group relative block px-4 py-3 transition hover:bg-[var(--color-secondary-bg)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent)]"
                             >
-                                <span class="block truncate text-sm font-semibold text-[var(--color-text)]">{{ $link->title }}</span>
+                                <span class="absolute inset-y-2 left-0 w-1 origin-y scale-y-0 rounded-r-full bg-[var(--color-accent)] transition-transform duration-200 group-hover:scale-y-100"></span>
+                                <span class="inline-block max-w-full truncate text-sm font-semibold text-[var(--color-accent-text)] underline decoration-[var(--color-accent)]/35 decoration-1 underline-offset-4 transition duration-200 group-hover:translate-x-1 group-hover:decoration-2 group-hover:underline-offset-8">
+                                    {{ $link->title }}
+                                </span>
                             </a>
                         @endforeach
                     </div>
