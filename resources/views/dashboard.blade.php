@@ -79,6 +79,8 @@
                 </section>
             @endif
 
+            <x-year-intelligence-panel />
+
             <section>
                 <div class="mb-4">
                     <h2 class="text-sm font-semibold text-slate-950">{{ __('app.dashboard.modules') }}</h2>
