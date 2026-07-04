@@ -212,7 +212,7 @@ class ClassReplacement extends Model
     public function canSubmitImplementation(): bool
     {
         return ! $this->isArchived()
-            && in_array($this->status, [self::STATUS_PLANNED, self::STATUS_REJECTED], true);
+            && in_array($this->status, [self::STATUS_PLANNED, self::STATUS_REJECTED, self::STATUS_OVERDUE], true);
     }
 
     public function canBeReviewed(): bool
