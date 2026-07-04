@@ -163,8 +163,8 @@
 
                             @if ($selfVerificationBlocked)
                                 <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                                    <p class="font-semibold">Self-verification is not allowed.</p>
-                                    <p class="mt-1">Awaiting verification by another module admin.</p>
+                                    <p class="font-semibold">Implementation submitted for verification.</p>
+                                    <p class="mt-1">KJ/KPro module admins have been notified and will review this replacement record.</p>
                                 </div>
                             @endif
 
