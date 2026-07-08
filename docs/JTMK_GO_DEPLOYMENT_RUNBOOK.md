@@ -1,6 +1,6 @@
 # JTMK Go Deployment Runbook
 
-Last updated: 2026-06-30
+Last updated: 2026-07-08
 
 This runbook explains how to move JTMK Go development to another PC and how to deploy safely to AWS.
 
@@ -122,10 +122,13 @@ Known production target:
 
 ```text
 Host/IP: 54.151.202.158
+Public URL: https://go.jtmkpolimas.com
 SSH user: ubuntu
 Project path: /var/www/jtmkgo
 Deploy branch: feature/program-go
 ```
+
+The old domain `jtmkgo.ddns.net` (free No-IP dynamic DNS) is retired and no longer resolves. Do not reference it in new work; use `go.jtmkpolimas.com`.
 
 Private key content must not be committed. Keep the key locally and configure it per PC.
 
@@ -136,6 +139,29 @@ C:\Users\Administrator\OneDrive - polimas.edu.my\Documents\JTMK GO\jtmkgo.ppk
 ```
 
 On a new PC, either place the key in an equivalent private location or update the deploy command path.
+
+## 4.1 SSL / HTTPS (Certbot)
+
+Set up 2026-07-08. Do not redo this setup unless the certificate is genuinely broken or the domain changes.
+
+```text
+Domain: go.jtmkpolimas.com
+DNS: A record -> 54.151.202.158, managed via mschosting.com nameservers
+Certificate: Let's Encrypt, obtained via Certbot (snap install, --nginx plugin)
+Auto-renewal: snap.certbot.renew.timer (runs twice daily, renews when close to expiry)
+nginx site config: /etc/nginx/sites-available/jtmkgo (managed blocks for SSL + HTTP->HTTPS redirect added by Certbot)
+```
+
+`APP_URL` in production `.env` is `https://go.jtmkpolimas.com`.
+
+To check certificate status or force a renewal test (does not consume real rate limits):
+
+```bash
+sudo certbot certificates
+sudo certbot renew --dry-run
+```
+
+If the domain ever changes, re-run `sudo certbot --nginx -d <new-domain> --non-interactive --agree-tos -m <email> --redirect` after updating `server_name` in the nginx config and confirming DNS resolves to the server first — Let's Encrypt cannot issue a certificate for a domain that does not resolve to this server.
 
 ## 5. AWS Deploy With PuTTY Plink
 
@@ -198,7 +224,7 @@ php artisan optimize:clear
 php artisan view:cache
 ```
 
-In browser:
+In browser, at `https://go.jtmkpolimas.com`:
 
 - Hard refresh with Ctrl + F5.
 - Test the updated page.

@@ -1,6 +1,6 @@
 # JTMK Go Project Context
 
-Last updated: 2026-06-30
+Last updated: 2026-07-08
 
 Use this file as the first handoff document when continuing development on another PC or in a fresh Codex session.
 
