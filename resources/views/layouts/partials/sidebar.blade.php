@@ -186,9 +186,6 @@
                                 @if ($canManageGantiGo)
                                     <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.review_queue') }}</a>
                                 @endif
-                                @if ($canViewGantiGoAnalytics)
-                                    <a href="{{ route('ganti-go.analytics') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.analytics') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.analytics') }}</a>
-                                @endif
                                 @if ($canManageGantiGo && $canManageAcademicCore)
                                     <a href="{{ route('ganti-go.courses.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.courses') }}</a>
                                     <a href="{{ route('ganti-go.classes.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('ganti-go.classes.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.classes') }}</a>
@@ -553,9 +550,6 @@
                                 @endif
                                 @if ($canManageGantiGo)
                                     <a href="{{ route('ganti-go.admin.review-queue') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.admin.review-queue') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.review_queue') }}</a>
-                                @endif
-                                @if ($canViewGantiGoAnalytics)
-                                    <a href="{{ route('ganti-go.analytics') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.analytics') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.analytics') }}</a>
                                 @endif
                                 @if ($canManageGantiGo && $canManageAcademicCore)
                                     <a href="{{ route('ganti-go.courses.index') }}" class="{{ $mobileNestedSubItem }} {{ request()->routeIs('ganti-go.courses.*') ? $subActive : $subIdle }}">{{ __('ganti_go.menu.courses') }}</a>

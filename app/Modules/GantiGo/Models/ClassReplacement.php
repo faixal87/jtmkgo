@@ -244,13 +244,18 @@ class ClassReplacement extends Model
 
     public function statusLabel(): string
     {
-        return match ($this->status) {
+        return self::labelForStatus($this->status);
+    }
+
+    public static function labelForStatus(string $status): string
+    {
+        return match ($status) {
             self::STATUS_PLANNED => 'Planned',
             self::STATUS_PENDING_VERIFICATION => 'Pending Verification',
             self::STATUS_VERIFIED => 'Verified',
             self::STATUS_REJECTED => 'Rejected',
             self::STATUS_CANCELLED => 'Cancelled',
-            self::STATUS_OVERDUE => 'Overdue',
+            self::STATUS_OVERDUE => 'Not Submitted',
             default => 'Unknown',
         };
     }

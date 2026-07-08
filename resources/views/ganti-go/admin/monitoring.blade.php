@@ -1,15 +1,5 @@
 @php
-    $statusTotal = max(array_sum($statusBreakdown), 1);
-    $verifiedDeg = ($statusBreakdown['verified'] ?? 0) / $statusTotal * 360;
-    $pendingDeg = $verifiedDeg + (($statusBreakdown['pending_verification'] ?? 0) / $statusTotal * 360);
-    $rejectedDeg = $pendingDeg + (($statusBreakdown['rejected'] ?? 0) / $statusTotal * 360);
-    $cancelledDeg = $rejectedDeg + (($statusBreakdown['cancelled'] ?? 0) / $statusTotal * 360);
-    $pieStyle = "background: conic-gradient(#10b981 0deg {$verifiedDeg}deg, #3b82f6 {$verifiedDeg}deg {$pendingDeg}deg, #a855f7 {$pendingDeg}deg {$rejectedDeg}deg, #ef4444 {$rejectedDeg}deg {$cancelledDeg}deg, #f59e0b {$cancelledDeg}deg 360deg)";
-    $monthlyMax = max(collect($monthlyCounts)->max('total') ?? 1, 1);
     $semesterMax = max(collect($semesterTrend)->max('total') ?? 1, 1);
-    $academicSessionMax = max(collect($academicSessionTrend)->max('total') ?? 1, 1);
-    $programmeMax = max(collect($programmeCounts)->max('total') ?? 1, 1);
-    $reasonMax = max(collect($reasonBreakdown)->max('total') ?? 1, 1);
     $firstReplacementId = $replacements->first()?->id;
     $analyticsRouteName = $analyticsRouteName ?? (request()->routeIs('ganti-go.analytics') ? 'ganti-go.analytics' : 'ganti-go.admin.monitoring');
     $analyticsRoute = route($analyticsRouteName);
@@ -35,123 +25,33 @@
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             @include('ganti-go.partials.flash')
 
-            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-                <x-ganti.stat-card title="Total Planned Classes" :value="$stats['planned']" accent="amber" />
+            <section class="grid gap-4 sm:grid-cols-3">
                 <x-ganti.stat-card title="Pending Verification" :value="$stats['pendingVerification']" accent="blue" />
-                <x-ganti.stat-card title="Verified Replacement" :value="$stats['verified']" accent="emerald" />
-                <x-ganti.stat-card title="Rejected Replacement" :value="$stats['rejected']" accent="purple" />
-                <x-ganti.stat-card title="Overdue Replacements" :value="$stats['overdue']" accent="red" />
-                <x-ganti.stat-card title="Upcoming Classes" :value="$stats['upcoming']" accent="slate" />
+                <x-ganti.stat-card title="Verified" :value="$stats['verified']" accent="emerald" />
+                <x-ganti.stat-card title="Not Submitted" :value="$stats['overdue']" accent="red" />
             </section>
 
-            <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <x-ganti.stat-card title="Submitted for Verification" :value="$verificationStats['submitted'] ?? 0" accent="blue" />
-                <x-ganti.stat-card title="Reviews Completed" :value="$verificationStats['reviewed'] ?? 0" accent="emerald" />
+            <section class="grid gap-4 sm:grid-cols-2">
                 <x-ganti.stat-card title="Verification Rate" :value="($verificationStats['verificationRate'] ?? 0).'%'" accent="purple" />
                 <x-ganti.stat-card title="Review Completion" :value="($verificationStats['completionRate'] ?? 0).'%'" accent="amber" />
             </section>
 
-            <section class="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-                <x-ganti.card>
-                    <x-ganti.section-header title="Status Breakdown" description="Verified vs pending, rejected, cancelled, and planned." />
-                    <div class="mt-6 flex flex-col items-center gap-5 sm:flex-row">
-                        <div class="h-40 w-40 rounded-full border border-slate-200 shadow-inner" style="{{ $pieStyle }}"></div>
-                        <div class="grid flex-1 gap-2 text-sm">
-                            <div class="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-emerald-800"><span>Verified</span><span class="font-semibold">{{ $statusBreakdown['verified'] }}</span></div>
-                            <div class="flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2 text-blue-800"><span>Pending</span><span class="font-semibold">{{ $statusBreakdown['pending_verification'] }}</span></div>
-                            <div class="flex items-center justify-between rounded-lg bg-purple-50 px-3 py-2 text-purple-800"><span>Rejected</span><span class="font-semibold">{{ $statusBreakdown['rejected'] }}</span></div>
-                            <div class="flex items-center justify-between rounded-lg bg-red-50 px-3 py-2 text-red-800"><span>Cancelled</span><span class="font-semibold">{{ $statusBreakdown['cancelled'] }}</span></div>
+            <x-ganti.card>
+                <x-ganti.section-header title="Semester Trend" description="Verified implementations across semesters." />
+                <div class="mt-6 flex h-56 items-end gap-3">
+                    @forelse ($semesterTrend as $item)
+                        <div class="flex flex-1 flex-col items-center gap-2">
+                            <div class="flex w-full items-end rounded-t-lg bg-blue-50" style="height: {{ max(($item['total'] / $semesterMax) * 190, 8) }}px">
+                                <div class="h-full w-full rounded-t-lg bg-blue-500"></div>
+                            </div>
+                            <span class="text-center text-xs text-slate-500">{{ $item['label'] }}</span>
+                            <span class="text-xs font-semibold text-slate-800">{{ $item['total'] }}</span>
                         </div>
-                    </div>
-                </x-ganti.card>
-
-                <x-ganti.card>
-                    <x-ganti.section-header title="Monthly Implementations" description="Verified replacement classes by month." />
-                    <div class="mt-6 space-y-3">
-                        @forelse ($monthlyCounts as $item)
-                            <div class="grid grid-cols-[5.5rem_1fr_3rem] items-center gap-3 text-sm">
-                                <span class="text-slate-500">{{ $item['label'] }}</span>
-                                <div class="h-3 overflow-hidden rounded-full bg-slate-100">
-                                    <div class="h-full rounded-full bg-emerald-500" style="width: {{ max(($item['total'] / $monthlyMax) * 100, 4) }}%"></div>
-                                </div>
-                                <span class="text-right font-semibold text-slate-800">{{ $item['total'] }}</span>
-                            </div>
-                        @empty
-                            <x-ganti.empty-state title="No monthly data yet" message="Verified implementations will appear once records are approved by module admin." />
-                        @endforelse
-                    </div>
-                </x-ganti.card>
-            </section>
-
-            <section class="grid gap-6 xl:grid-cols-4">
-                <x-ganti.card>
-                    <x-ganti.section-header title="Semester Trend" description="Verified implementations across semesters." />
-                    <div class="mt-6 flex h-56 items-end gap-3">
-                        @forelse ($semesterTrend as $item)
-                            <div class="flex flex-1 flex-col items-center gap-2">
-                                <div class="flex w-full items-end rounded-t-lg bg-blue-50" style="height: {{ max(($item['total'] / $semesterMax) * 190, 8) }}px">
-                                    <div class="h-full w-full rounded-t-lg bg-blue-500"></div>
-                                </div>
-                                <span class="text-center text-xs text-slate-500">{{ $item['label'] }}</span>
-                                <span class="text-xs font-semibold text-slate-800">{{ $item['total'] }}</span>
-                            </div>
-                        @empty
-                            <x-ganti.empty-state title="No semester trend yet" message="Trend data will build as verified replacements are recorded." />
-                        @endforelse
-                    </div>
-                </x-ganti.card>
-
-                <x-ganti.card>
-                    <x-ganti.section-header title="Programme Comparison" description="Replacement totals by programme." />
-                    <div class="mt-6 space-y-3">
-                        @forelse ($programmeCounts as $item)
-                            <div class="grid grid-cols-[4.5rem_1fr_3rem] items-center gap-3 text-sm">
-                                <span class="font-medium text-slate-700">{{ $item['label'] }}</span>
-                                <div class="h-3 overflow-hidden rounded-full bg-slate-100">
-                                    <div class="h-full rounded-full bg-purple-500" style="width: {{ max(($item['total'] / $programmeMax) * 100, 4) }}%"></div>
-                                </div>
-                                <span class="text-right font-semibold text-slate-800">{{ $item['total'] }}</span>
-                            </div>
-                        @empty
-                            <x-ganti.empty-state title="No programme data yet" message="Programme counts appear after replacement records are created." />
-                        @endforelse
-                    </div>
-                </x-ganti.card>
-
-                <x-ganti.card>
-                    <x-ganti.section-header title="Replacement Reason" description="Replacement totals by selected reason." />
-                    <div class="mt-6 space-y-3">
-                        @forelse ($reasonBreakdown as $item)
-                            <div class="grid grid-cols-[8rem_1fr_3rem] items-center gap-3 text-sm">
-                                <span class="font-medium text-slate-700">{{ $item['label'] }}</span>
-                                <div class="h-3 overflow-hidden rounded-full bg-slate-100">
-                                    <div class="h-full rounded-full bg-amber-500" style="width: {{ max(($item['total'] / $reasonMax) * 100, 4) }}%"></div>
-                                </div>
-                                <span class="text-right font-semibold text-slate-800">{{ $item['total'] }}</span>
-                            </div>
-                        @empty
-                            <x-ganti.empty-state title="No reason data yet" message="Reason breakdown appears after replacement records are submitted." />
-                        @endforelse
-                    </div>
-                </x-ganti.card>
-
-                <x-ganti.card>
-                    <x-ganti.section-header title="Academic Session Comparison" description="Verified replacements grouped by academic session." />
-                    <div class="mt-6 space-y-3">
-                        @forelse ($academicSessionTrend as $item)
-                            <div class="grid grid-cols-[5.5rem_1fr_3rem] items-center gap-3 text-sm">
-                                <span class="font-medium text-slate-700">{{ $item['label'] }}</span>
-                                <div class="h-3 overflow-hidden rounded-full bg-slate-100">
-                                    <div class="h-full rounded-full bg-cyan-500" style="width: {{ max(($item['total'] / $academicSessionMax) * 100, 4) }}%"></div>
-                                </div>
-                                <span class="text-right font-semibold text-slate-800">{{ $item['total'] }}</span>
-                            </div>
-                        @empty
-                            <x-ganti.empty-state title="No academic session data yet" message="Verified records will build session comparison over time." />
-                        @endforelse
-                    </div>
-                </x-ganti.card>
-            </section>
+                    @empty
+                        <x-ganti.empty-state title="No semester trend yet" message="Trend data will build as verified replacements are recorded." />
+                    @endforelse
+                </div>
+            </x-ganti.card>
 
             <section class="grid gap-6 xl:grid-cols-[1fr_0.75fr]">
                 <x-ganti.card padding="p-0">
@@ -168,7 +68,7 @@
                                     <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Verified</th>
                                     <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Pending</th>
                                     <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Rejected</th>
-                                    <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Overdue</th>
+                                    <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Not Submitted</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 bg-white">
@@ -199,7 +99,7 @@
                     <div class="mt-5 space-y-5">
                         @foreach ([
                             'stalePending' => 'Pending verification over 7 days',
-                            'overdue' => 'Overdue replacements',
+                            'overdue' => 'Not yet submitted',
                             'upcoming' => 'Upcoming within 3 days',
                         ] as $key => $title)
                             <div>
@@ -296,7 +196,7 @@
                         <select id="status" name="status" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
                             <option value="">All statuses</option>
                             @foreach ($statusOptions as $status)
-                                <option value="{{ $status }}" @selected(request('status') === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>
+                                <option value="{{ $status }}" @selected(request('status') === $status)>{{ \App\Modules\GantiGo\Models\ClassReplacement::labelForStatus($status) }}</option>
                             @endforeach
                         </select>
                     </div>

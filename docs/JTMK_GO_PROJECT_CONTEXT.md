@@ -126,7 +126,7 @@ Status flow:
 - `verified`
 - `rejected`
 - `cancelled`
-- `overdue`
+- `overdue` — internal status key only. Displayed to users as "Not Submitted", not "Overdue", because the replacement class itself was very likely conducted; the lecturer simply has not yet submitted the implementation record. Do not reintroduce "overdue"/"late" wording in user-facing labels.
 
 Workflow:
 

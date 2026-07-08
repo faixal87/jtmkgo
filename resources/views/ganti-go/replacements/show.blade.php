@@ -150,7 +150,7 @@
                                         <x-input-error :messages="$errors->get('evidence_file')" class="mt-2" />
                                         <x-input-error :messages="$errors->get('replacement_date')" class="mt-2" />
                                         <button type="submit" class="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-slate-800">
-                                            {{ $replacement->status === 'rejected' ? 'Resubmit Implementation' : ($replacement->status === 'overdue' ? 'Submit Late Implementation' : 'Mark as Implemented') }}
+                                            {{ $replacement->status === 'rejected' ? 'Resubmit Implementation' : 'Mark as Implemented' }}
                                         </button>
                                     </form>
                                 @else

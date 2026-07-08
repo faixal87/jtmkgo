@@ -21,7 +21,7 @@
         'verified', 'implemented', 'approved' => 'Verified',
         'rejected', 'implementation_rejected' => 'Rejected',
         'cancelled' => 'Cancelled',
-        'overdue' => 'Overdue',
+        'overdue' => 'Not Submitted',
         'active' => 'Active',
         'inactive' => 'Inactive',
         default => str($status)->replace('_', ' ')->title(),

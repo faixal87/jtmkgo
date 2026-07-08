@@ -39,18 +39,13 @@ class AdminReplacementController extends Controller
         $selectedSemesterId = $filters['semester_id'];
         $isAnalyticsRoute = $request->routeIs('ganti-go.analytics');
         $query = $this->filteredQuery($request, $filters);
-        $widgetKeys = ['stats', 'statusBreakdown', 'monthlyCounts', 'semesterTrend', 'academicSessionTrend', 'programmeCounts', 'reasonBreakdown', 'verificationStats'];
+        $widgetKeys = ['stats', 'semesterTrend', 'verificationStats'];
         $widgets = SafeArrayCache::remember("ganti-go.monitoring.widgets.".md5(json_encode($filters)), now()->addSeconds(30), function () use ($filters) {
             $statusBreakdown = $this->statusBreakdown($filters);
 
             return [
-                'stats' => $this->statsFromBreakdown($statusBreakdown, $filters),
-                'statusBreakdown' => $statusBreakdown,
-                'monthlyCounts' => $this->monthlyCounts($filters),
+                'stats' => $this->statsFromBreakdown($statusBreakdown),
                 'semesterTrend' => $this->semesterTrend(),
-                'academicSessionTrend' => $this->academicSessionTrend(),
-                'programmeCounts' => $this->programmeCounts($filters),
-                'reasonBreakdown' => $this->reasonBreakdown($filters),
                 'verificationStats' => $this->verificationStats($statusBreakdown),
             ];
         }, $widgetKeys);
@@ -98,6 +93,10 @@ class AdminReplacementController extends Controller
 
         $activeSemester = $semesterActivation->autoActivateForToday();
         $selectedSemesterId = $request->integer('semester_id') ?: $activeSemester?->id;
+        $selectedStatus = $request->filled('status') && in_array((string) $request->string('status'), ClassReplacement::STATUSES, true)
+            ? (string) $request->string('status')
+            : null;
+        $selectedLecturerId = $request->integer('lecturer_id') ?: null;
 
         return view('ganti-go.admin.review-queue', [
             'replacements' => ClassReplacement::query()
@@ -112,13 +111,18 @@ class AdminReplacementController extends Controller
                     'classes',
                     'lecturer',
                 ])
-                ->submittedForReview()
                 ->when($selectedSemesterId, fn ($query) => $query->forSemesterContext(Semester::query()->find($selectedSemesterId)))
-                ->latest('implementation_submitted_at')
+                ->when($selectedStatus, fn ($query) => $query->where('status', $selectedStatus))
+                ->when($selectedLecturerId, fn ($query) => $query->where('user_id', $selectedLecturerId))
+                ->latest('replacement_date')
                 ->paginate(15)
                 ->withQueryString(),
             'semesters' => Semester::query()->orderByDesc('start_date')->get(),
+            'lecturers' => User::query()->approvedStaff()->orderBy('name')->get(['id', 'name']),
+            'statusOptions' => ClassReplacement::STATUSES,
             'selectedSemesterId' => $selectedSemesterId,
+            'selectedStatus' => $selectedStatus,
+            'selectedLecturerId' => $selectedLecturerId,
         ]);
     }
 
@@ -216,17 +220,12 @@ class AdminReplacementController extends Controller
      * @param  array<string, int>  $statusBreakdown
      * @return array<string, int>
      */
-    private function statsFromBreakdown(array $statusBreakdown, array $filters): array
+    private function statsFromBreakdown(array $statusBreakdown): array
     {
         return [
-            'planned' => $statusBreakdown[ClassReplacement::STATUS_PLANNED] ?? 0,
             'pendingVerification' => $statusBreakdown[ClassReplacement::STATUS_PENDING_VERIFICATION] ?? 0,
             'verified' => $statusBreakdown[ClassReplacement::STATUS_VERIFIED] ?? 0,
-            'rejected' => $statusBreakdown[ClassReplacement::STATUS_REJECTED] ?? 0,
             'overdue' => $statusBreakdown[ClassReplacement::STATUS_OVERDUE] ?? 0,
-            'upcoming' => $this->filteredBaseQuery($filters)
-                ->upcoming()
-                ->count(),
         ];
     }
 
@@ -243,22 +242,6 @@ class AdminReplacementController extends Controller
 
         return collect(ClassReplacement::STATUSES)
             ->mapWithKeys(fn ($status) => [$status => (int) ($counts[$status] ?? 0)])
-            ->all();
-    }
-
-    /**
-     * @return array<int, array{label: string, total: int}>
-     */
-    private function monthlyCounts(array $filters): array
-    {
-        return $this->filteredBaseQuery($filters)
-            ->selectRaw("DATE_FORMAT(replacement_date, '%Y-%m') as label, COUNT(*) as total")
-            ->where('status', ClassReplacement::STATUS_VERIFIED)
-            ->groupBy('label')
-            ->orderBy('label')
-            ->limit(12)
-            ->get()
-            ->map(fn ($row) => ['label' => $row->label, 'total' => (int) $row->total])
             ->all();
     }
 
@@ -283,86 +266,6 @@ class AdminReplacementController extends Controller
             ->values()
             ->map(fn ($row) => ['label' => $row->label, 'total' => (int) $row->total])
             ->all();
-    }
-
-    /**
-     * @return array<int, array{label: string, total: int}>
-     */
-    private function academicSessionTrend(): array
-    {
-        return AcademicSemester::query()
-            ->leftJoin('class_replacements', function ($join) {
-                $join
-                    ->on('academic_semesters.id', '=', 'class_replacements.academic_semester_id')
-                    ->where('class_replacements.status', '=', ClassReplacement::STATUS_VERIFIED);
-            })
-            ->select('academic_semesters.academic_session as label', DB::raw('COUNT(class_replacements.id) as total'))
-            ->groupBy('academic_semesters.academic_session')
-            ->orderBy('academic_semesters.academic_session')
-            ->get()
-            ->map(fn ($row) => ['label' => $row->label, 'total' => (int) $row->total])
-            ->all();
-    }
-
-    /**
-     * @return array<int, array{label: string, total: int}>
-     */
-    private function programmeCounts(array $filters): array
-    {
-        return $this->filteredBaseQuery($filters)
-            ->leftJoin('programmes', 'programmes.id', '=', 'class_replacements.programme_id')
-            ->selectRaw("COALESCE(UPPER(programmes.code), 'Unassigned') as label, COUNT(class_replacements.id) as total")
-            ->groupBy('label')
-            ->orderBy('label')
-            ->get()
-            ->map(fn ($row) => ['label' => $row->label, 'total' => (int) $row->total])
-            ->all();
-    }
-
-    /**
-     * @return array<int, array{label: string, total: int}>
-     */
-    private function reasonBreakdown(array $filters): array
-    {
-        $counts = $this->filteredBaseQuery($filters)
-            ->select('reason', DB::raw('COUNT(*) as total'))
-            ->groupBy('reason')
-            ->pluck('total', 'reason')
-            ->all();
-
-        $knownReasons = array_keys(ClassReplacement::replacementReasonOptions());
-        $normalizedCounts = [];
-        $legacyTotal = 0;
-
-        foreach ($counts as $reason => $total) {
-            $normalizedReason = ClassReplacement::normalizeReasonValue($reason);
-
-            if (is_string($normalizedReason) && in_array($normalizedReason, $knownReasons, true)) {
-                $normalizedCounts[$normalizedReason] = ($normalizedCounts[$normalizedReason] ?? 0) + (int) $total;
-
-                continue;
-            }
-
-            if (! blank($reason)) {
-                $legacyTotal += (int) $total;
-            }
-        }
-
-        $breakdown = collect(ClassReplacement::replacementReasonOptions())
-            ->map(fn (string $label, string $reason) => [
-                'label' => $label,
-                'total' => (int) ($normalizedCounts[$reason] ?? 0),
-            ])
-            ->values();
-
-        if ($legacyTotal > 0) {
-            $breakdown->push([
-                'label' => 'LEGACY / OTHER',
-                'total' => (int) $legacyTotal,
-            ]);
-        }
-
-        return $breakdown->all();
     }
 
     /**

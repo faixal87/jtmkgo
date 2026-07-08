@@ -27,7 +27,7 @@
                         <select id="status" name="status" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
                             <option value="">All statuses</option>
                             @foreach ($statusOptions as $status)
-                                <option value="{{ $status }}" @selected($selectedStatus === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>
+                                <option value="{{ $status }}" @selected($selectedStatus === $status)>{{ \App\Modules\GantiGo\Models\ClassReplacement::labelForStatus($status) }}</option>
                             @endforeach
                         </select>
                     </div>

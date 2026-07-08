@@ -68,7 +68,7 @@
                                 <p class="mt-2 text-2xl font-semibold text-emerald-300">{{ $adminStats['implemented'] ?? 0 }}</p>
                             </div>
                             <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                                <p class="text-xs font-medium text-slate-400">Overdue</p>
+                                <p class="text-xs font-medium text-slate-400">Not Submitted</p>
                                 <p class="mt-2 text-2xl font-semibold text-red-300">{{ $adminStats['overdue'] ?? 0 }}</p>
                             </div>
                         </div>
@@ -82,7 +82,7 @@
                     <x-ganti.stat-card title="Pending Verification" :value="$myStats['submittedForReview']" accent="blue" :href="route('ganti-go.replacements.index', ['status' => 'pending_verification'])" />
                     <x-ganti.stat-card title="Verified Implementations" :value="$myStats['approvedImplementations']" accent="emerald" :href="route('ganti-go.replacements.index', ['status' => 'verified'])" />
                     <x-ganti.stat-card title="Rejected Implementations" :value="$myStats['rejectedImplementations']" accent="purple" :href="route('ganti-go.replacements.index', ['status' => 'rejected'])" />
-                    <x-ganti.stat-card title="Overdue" :value="$myStats['overdueReplacements']" accent="red" :href="route('ganti-go.replacements.index', ['status' => 'overdue'])" />
+                    <x-ganti.stat-card title="Not Submitted" :value="$myStats['overdueReplacements']" accent="red" :href="route('ganti-go.replacements.index', ['status' => 'overdue'])" />
                 </section>
             @else
                 <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -90,7 +90,7 @@
                     <x-ganti.stat-card title="Pending Verification" :value="$adminStats['reviewQueue'] ?? 0" accent="blue" />
                     <x-ganti.stat-card title="Verified" :value="$adminStats['implemented'] ?? 0" accent="emerald" />
                     <x-ganti.stat-card title="Cancelled" :value="$adminStats['cancelled'] ?? 0" accent="purple" />
-                    <x-ganti.stat-card title="Overdue" :value="$adminStats['overdue'] ?? 0" accent="red" />
+                    <x-ganti.stat-card title="Not Submitted" :value="$adminStats['overdue'] ?? 0" accent="red" />
                 </section>
             @endif
 
