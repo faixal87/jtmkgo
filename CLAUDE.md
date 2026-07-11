@@ -87,6 +87,8 @@ auth → session.timeout → verified → approved → module.access:<slug> → 
 
 Middleware aliases are registered in `bootstrap/app.php`, not `app/Http/Kernel.php` (Laravel 13's bootstrap-based middleware config).
 
+Per-module `view-<slug>`/`manage-<slug>` gates (e.g. `manage-academic-core`) are registered in `AppServiceProvider::boot()`, each delegating to that module's `Policies/` class — this is what routes like `can:manage-academic-core` check.
+
 ### Access control model
 
 Three-tier: **Super Admin** (full platform control) → **Module Admin** (per-module management, via `ModuleAdmin` pivot) → **Staff User** (assigned module access only, via `ModuleUserAccess`). A separate `FeaturePermission` system grants narrower cross-cutting permissions independent of module admin status (e.g. `staff-directory-sensitive-view` for full IC-number visibility in Staff Directory). New users self-register with an IC number and stay `pending` until a super admin approves them.
