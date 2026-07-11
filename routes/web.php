@@ -69,6 +69,8 @@ use App\Modules\SurveyGo\Controllers\Admin\ResponseController as SurveyGoRespons
 use App\Modules\SurveyGo\Controllers\Admin\SurveyController as SurveyGoSurveyController;
 use App\Modules\SurveyGo\Controllers\DashboardController as SurveyGoDashboardController;
 use App\Modules\SurveyGo\Controllers\SurveyResponseController as SurveyGoSurveyResponseController;
+use App\Services\CurrentMonthBirthdayService;
+use App\Support\BrandingSettings;
 use App\Support\SafeArrayCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -146,8 +148,23 @@ Route::get('/dashboard', function (Request $request) {
     }, ['available_modules', 'managed_module_ids']);
     $availableModules = Module::hydrate($dashboardModuleData['available_modules'] ?? []);
     $managedModuleIds = collect($dashboardModuleData['managed_module_ids'] ?? []);
+    $dashboardBirthdaysEnabled = app(BrandingSettings::class)->get('dashboard_birthdays_enabled') !== '0';
+    $birthdayMonthData = [
+        'month_label' => now()->locale(app()->getLocale())->isoFormat('MMMM YYYY'),
+        'birthdays' => [],
+    ];
 
-    return view('dashboard', compact('availableModules', 'managedModuleIds'));
+    if ($dashboardBirthdaysEnabled) {
+        $birthdayMonthData = app(CurrentMonthBirthdayService::class)->forCurrentMonth();
+    }
+
+    return view('dashboard', [
+        'availableModules' => $availableModules,
+        'managedModuleIds' => $managedModuleIds,
+        'dashboardBirthdaysEnabled' => $dashboardBirthdaysEnabled,
+        'currentBirthdayMonthLabel' => $birthdayMonthData['month_label'] ?? now()->format('F Y'),
+        'currentMonthBirthdays' => $birthdayMonthData['birthdays'] ?? [],
+    ]);
 })->middleware(['auth', 'session.timeout', 'verified', 'approved'])->name('dashboard');
 
 Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'super.admin'])

@@ -7,8 +7,8 @@ use App\Support\BrandingSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class BrandingSettingsController extends Controller
 {
@@ -38,6 +38,7 @@ class BrandingSettingsController extends Controller
             'landing_logo_size' => ['required', Rule::in(['large', 'medium', 'small'])],
             'sidebar_logo_size' => ['required', Rule::in(['large', 'medium', 'small'])],
             'default_theme' => ['required', Rule::in(['default', 'blue', 'dark', 'purple-matcha'])],
+            'dashboard_birthdays_enabled' => ['nullable', 'boolean'],
             'landing_page_logo_1' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
             'landing_page_logo_2' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
             'sidebar_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
@@ -84,6 +85,7 @@ class BrandingSettingsController extends Controller
         $settings['sidebar_brand_text'] = $settings['sidebar_brand_text'] ?? 'JTMK';
         $settings['workspace_brand_text'] = $settings['sidebar_brand_text'] ?: 'JTMK';
         $settings['logo_size'] = $settings['landing_logo_size'];
+        $settings['dashboard_birthdays_enabled'] = $request->boolean('dashboard_birthdays_enabled') ? '1' : '0';
 
         $branding->update($settings);
 

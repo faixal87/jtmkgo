@@ -13,6 +13,7 @@
         ['id' => 'landing', 'title' => 'Landing Page Branding', 'description' => 'Login page logos and logo size.'],
         ['id' => 'sidebar', 'title' => 'Sidebar Branding', 'description' => 'Internal menu logo, size, and fallback text.'],
         ['id' => 'identity', 'title' => 'Footer/System', 'description' => 'System title, tagline, version, footer, and theme.'],
+        ['id' => 'dashboard', 'title' => 'Dashboard Widgets', 'description' => 'Control optional dashboard cards.'],
         ['id' => 'reset', 'title' => 'Reset', 'description' => 'Restore default JTMK Go! branding values.'],
     ];
     $initialSection = old('active_section', 'landing');
@@ -21,6 +22,8 @@
         $initialSection = 'sidebar';
     } elseif ($errors->has('system_title') || $errors->has('tagline') || $errors->has('version_name') || $errors->has('footer_text') || $errors->has('default_theme')) {
         $initialSection = 'identity';
+    } elseif ($errors->has('dashboard_birthdays_enabled')) {
+        $initialSection = 'dashboard';
     }
 @endphp
 
@@ -225,6 +228,31 @@
                             <x-input-error :messages="$errors->get('default_theme')" class="mt-2" />
                         </section>
 
+                        <section x-show="activeSection === 'dashboard'" x-cloak class="space-y-5">
+                            <div class="border-b border-[var(--color-border)] pb-5">
+                                <h3 class="text-lg font-semibold text-[var(--color-text)]">Dashboard Widgets</h3>
+                                <p class="mt-1 text-sm text-[var(--color-muted)]">Control optional cards that appear on the main dashboard.</p>
+                            </div>
+
+                            <label class="enterprise-card flex cursor-pointer flex-col gap-4 rounded-xl border p-5 transition hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-start sm:justify-between">
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-semibold text-[var(--color-text)]">Show Current Month Birthdays</span>
+                                    <span class="mt-2 block text-sm leading-6 text-[var(--color-muted)]">Displays approved staff with birthdays in the current month below the Year Progress card.</span>
+                                </span>
+                                <span class="flex shrink-0 items-center gap-3 rounded-full border border-[var(--color-border)] bg-[var(--color-secondary-bg)] px-3 py-2 text-sm font-semibold text-[var(--color-muted)]">
+                                    <input
+                                        type="checkbox"
+                                        name="dashboard_birthdays_enabled"
+                                        value="1"
+                                        class="h-5 w-5 rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
+                                        @checked(old('dashboard_birthdays_enabled', $branding['dashboard_birthdays_enabled'] ?? '1') == '1')
+                                    >
+                                    Enabled
+                                </span>
+                            </label>
+                            <x-input-error :messages="$errors->get('dashboard_birthdays_enabled')" class="mt-2" />
+                        </section>
+
                         <section x-show="activeSection === 'reset'" x-cloak class="space-y-5">
                             <div class="border-b border-[var(--color-border)] pb-5">
                                 <h3 class="text-lg font-semibold text-[var(--color-text)]">Reset Branding</h3>
@@ -233,7 +261,7 @@
 
                             <div class="enterprise-card rounded-xl border border-red-200 p-5">
                                 <h4 class="text-sm font-semibold text-red-700">Reset to Default Branding</h4>
-                                <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">This resets system title to JTMK Go!, tagline, pulut-sekaya footer/version, blank landing logos, blank sidebar logo, JTMK sidebar fallback text, and default orange theme.</p>
+                                <p class="mt-2 text-sm leading-6 text-[var(--color-muted)]">This resets system title to JTMK Go!, tagline, pulut-sekaya footer/version, blank landing logos, blank sidebar logo, JTMK sidebar fallback text, default orange theme, and dashboard widgets.</p>
                                 <button type="submit" form="branding-reset-form" class="mt-4 inline-flex items-center justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50">
                                     Reset to Default Branding
                                 </button>

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Setting;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class BrandingSettings
@@ -38,6 +39,9 @@ class BrandingSettings
             $settings['sidebar_logo_size'] = in_array($settings['sidebar_logo_size'] ?? 'medium', ['large', 'medium', 'small'], true)
                 ? $settings['sidebar_logo_size']
                 : 'medium';
+            $settings['dashboard_birthdays_enabled'] = ($settings['dashboard_birthdays_enabled'] ?? '1') === '0'
+                ? '0'
+                : '1';
 
             return $settings;
         }, array_keys($this->defaults()));
@@ -64,7 +68,7 @@ class BrandingSettings
     }
 
     /**
-     * @param array<string, string|null> $settings
+     * @param  array<string, string|null>  $settings
      */
     public function update(array $settings): void
     {
@@ -83,7 +87,7 @@ class BrandingSettings
             );
         }
 
-        \Illuminate\Support\Facades\Cache::forget('branding.settings');
+        Cache::forget('branding.settings');
     }
 
     public function resetToDefaults(): void
@@ -99,7 +103,7 @@ class BrandingSettings
             );
         }
 
-        \Illuminate\Support\Facades\Cache::forget('branding.settings');
+        Cache::forget('branding.settings');
     }
 
     /**
@@ -121,6 +125,7 @@ class BrandingSettings
             'sidebar_logo_size' => 'medium',
             'logo_size' => 'medium',
             'default_theme' => 'default',
+            'dashboard_birthdays_enabled' => '1',
         ];
     }
 }

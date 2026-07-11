@@ -83,6 +83,13 @@
 
             <x-year-intelligence-panel />
 
+            @if ($dashboardBirthdaysEnabled ?? true)
+                <x-current-month-birthdays-card
+                    :birthdays="$currentMonthBirthdays ?? []"
+                    :month-label="$currentBirthdayMonthLabel ?? now()->format('F Y')"
+                />
+            @endif
+
             <section>
                 <div class="mb-4">
                     <h2 class="text-sm font-semibold text-slate-950">{{ __('app.dashboard.modules') }}</h2>
