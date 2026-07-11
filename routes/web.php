@@ -1,34 +1,41 @@
 <?php
 
-use App\Http\Controllers\ModuleAdmin\ModuleAccessController;
-use App\Http\Controllers\ModuleAccessRequestController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ModuleAccessRequestController;
+use App\Http\Controllers\ModuleAdmin\ModuleAccessController;
 use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\NotificationComposerController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaffDirectoryController;
 use App\Http\Controllers\SuperAdmin\AccessControlController;
+use App\Http\Controllers\SuperAdmin\AnnouncementController;
 use App\Http\Controllers\SuperAdmin\BrandingSettingsController;
+use App\Http\Controllers\SuperAdmin\EmailLogController;
+use App\Http\Controllers\SuperAdmin\MailSettingsController;
 use App\Http\Controllers\SuperAdmin\ModuleController;
 use App\Http\Controllers\SuperAdmin\UserApprovalController;
 use App\Http\Controllers\SuperAdmin\UserImportController;
 use App\Models\Module;
-use App\Support\SafeArrayCache;
 use App\Modules\AcademicCore\Controllers\AcademicClassGroupController;
 use App\Modules\AcademicCore\Controllers\AcademicSemesterController;
 use App\Modules\AcademicCore\Controllers\AcademicSubjectController;
 use App\Modules\AcademicCore\Controllers\AcademicSubjectOfferingController;
 use App\Modules\GantiGo\Controllers\AdminReplacementController as GantiGoAdminReplacementController;
-use App\Modules\GantiGo\Controllers\ClassReplacementController as GantiGoClassReplacementController;
 use App\Modules\GantiGo\Controllers\ClassGroupController as GantiGoClassGroupController;
+use App\Modules\GantiGo\Controllers\ClassReplacementController as GantiGoClassReplacementController;
 use App\Modules\GantiGo\Controllers\CourseController as GantiGoCourseController;
 use App\Modules\GantiGo\Controllers\DashboardController as GantiGoDashboardController;
 use App\Modules\GantiGo\Controllers\GantiGoSettingController;
 use App\Modules\GantiGo\Controllers\ImportController as GantiGoImportController;
 use App\Modules\GantiGo\Controllers\ProgrammeController as GantiGoProgrammeController;
 use App\Modules\GantiGo\Controllers\SemesterController as GantiGoSemesterController;
-use App\Modules\PhotoRepository\Controllers\Admin\CategoryController as PhotoRepositoryCategoryController;
+use App\Modules\LinkGo\Controllers\Admin\AnalyticsController as LinkGoAnalyticsController;
+use App\Modules\LinkGo\Controllers\Admin\LinkManagementController as LinkGoLinkManagementController;
+use App\Modules\LinkGo\Controllers\Admin\PortfolioController as LinkGoPortfolioController;
+use App\Modules\LinkGo\Controllers\DashboardController as LinkGoDashboardController;
+use App\Modules\LinkGo\Controllers\LinkController as LinkGoLinkController;
 use App\Modules\PhotoRepository\Controllers\Admin\AnalyticsController as PhotoRepositoryAnalyticsController;
+use App\Modules\PhotoRepository\Controllers\Admin\CategoryController as PhotoRepositoryCategoryController;
 use App\Modules\PhotoRepository\Controllers\Admin\PhotoManagementController as PhotoRepositoryPhotoManagementController;
 use App\Modules\PhotoRepository\Controllers\Admin\ProfileController as PhotoRepositoryProfileController;
 use App\Modules\PhotoRepository\Controllers\Admin\ReviewQueueController as PhotoRepositoryReviewQueueController;
@@ -44,17 +51,6 @@ use App\Modules\ProgramGo\Controllers\Admin\ReportController as ProgramGoReportC
 use App\Modules\ProgramGo\Controllers\Admin\ReviewSubmissionController as ProgramGoReviewSubmissionController;
 use App\Modules\ProgramGo\Controllers\DashboardController as ProgramGoDashboardController;
 use App\Modules\ProgramGo\Controllers\ProgramActivityController as ProgramGoActivityController;
-use App\Modules\LinkGo\Controllers\Admin\AnalyticsController as LinkGoAnalyticsController;
-use App\Modules\LinkGo\Controllers\Admin\LinkManagementController as LinkGoLinkManagementController;
-use App\Modules\LinkGo\Controllers\Admin\PortfolioController as LinkGoPortfolioController;
-use App\Modules\LinkGo\Controllers\DashboardController as LinkGoDashboardController;
-use App\Modules\LinkGo\Controllers\LinkController as LinkGoLinkController;
-use App\Modules\SurveyGo\Controllers\Admin\AnalyticsController as SurveyGoAnalyticsController;
-use App\Modules\SurveyGo\Controllers\Admin\QuestionController as SurveyGoQuestionController;
-use App\Modules\SurveyGo\Controllers\Admin\ResponseController as SurveyGoResponseController;
-use App\Modules\SurveyGo\Controllers\Admin\SurveyController as SurveyGoSurveyController;
-use App\Modules\SurveyGo\Controllers\DashboardController as SurveyGoDashboardController;
-use App\Modules\SurveyGo\Controllers\SurveyResponseController as SurveyGoSurveyResponseController;
 use App\Modules\SubjekGo\Controllers\AdminPreferenceController as SubjekGoAdminPreferenceController;
 use App\Modules\SubjekGo\Controllers\AnalyticsController as SubjekGoAnalyticsController;
 use App\Modules\SubjekGo\Controllers\ClassGroupController as SubjekGoClassGroupController;
@@ -63,10 +59,17 @@ use App\Modules\SubjekGo\Controllers\MySelectionController as SubjekGoMySelectio
 use App\Modules\SubjekGo\Controllers\OfferedSubjectController as SubjekGoOfferedSubjectController;
 use App\Modules\SubjekGo\Controllers\PreferenceController as SubjekGoPreferenceController;
 use App\Modules\SubjekGo\Controllers\SessionController as SubjekGoSessionController;
-use App\Modules\SubjekGo\Controllers\SubjectMasterController as SubjekGoSubjectMasterController;
 use App\Modules\SubjekGo\Controllers\SubjectCoordinatorController as SubjekGoSubjectCoordinatorController;
+use App\Modules\SubjekGo\Controllers\SubjectMasterController as SubjekGoSubjectMasterController;
 use App\Modules\SubjekGo\Controllers\TeachingExperienceController as SubjekGoTeachingExperienceController;
 use App\Modules\SubjekGo\Controllers\TeachingHistoryController as SubjekGoTeachingHistoryController;
+use App\Modules\SurveyGo\Controllers\Admin\AnalyticsController as SurveyGoAnalyticsController;
+use App\Modules\SurveyGo\Controllers\Admin\QuestionController as SurveyGoQuestionController;
+use App\Modules\SurveyGo\Controllers\Admin\ResponseController as SurveyGoResponseController;
+use App\Modules\SurveyGo\Controllers\Admin\SurveyController as SurveyGoSurveyController;
+use App\Modules\SurveyGo\Controllers\DashboardController as SurveyGoDashboardController;
+use App\Modules\SurveyGo\Controllers\SurveyResponseController as SurveyGoSurveyResponseController;
+use App\Support\SafeArrayCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -106,8 +109,7 @@ Route::get('/dashboard', function (Request $request) {
     $dashboardModuleData = SafeArrayCache::remember("dashboard.modules.{$user->id}", now()->addSeconds(30), function () use ($user) {
         if ($user->is_super_admin) {
             return [
-                'available_modules' =>
-                Module::query()
+                'available_modules' => Module::query()
                     ->select(['id', 'name', 'slug', 'icon', 'route_prefix', 'description', 'is_active'])
                     ->where('is_active', true)
                     ->whereNotIn('slug', ['passport-photo', 'survey-go'])
@@ -125,8 +127,7 @@ Route::get('/dashboard', function (Request $request) {
         }
 
         return [
-            'available_modules' =>
-            $user->accessibleModules()
+            'available_modules' => $user->accessibleModules()
                 ->select(['modules.id', 'modules.name', 'modules.slug', 'modules.icon', 'modules.route_prefix', 'modules.description', 'modules.is_active'])
                 ->where('modules.is_active', true)
                 ->whereNotIn('modules.slug', ['passport-photo', 'survey-go'])
@@ -136,8 +137,7 @@ Route::get('/dashboard', function (Request $request) {
                 ->map(fn (Module $module) => $module->only(['id', 'name', 'slug', 'icon', 'route_prefix', 'description', 'is_active']))
                 ->values()
                 ->toArray(),
-            'managed_module_ids' =>
-            $user->adminModules()
+            'managed_module_ids' => $user->adminModules()
                 ->wherePivot('is_active', true)
                 ->pluck('modules.id')
                 ->values()
@@ -174,6 +174,17 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'super.adm
         Route::get('/settings/branding', [BrandingSettingsController::class, 'edit'])->name('settings.branding.edit');
         Route::patch('/settings/branding', [BrandingSettingsController::class, 'update'])->name('settings.branding.update');
         Route::post('/settings/branding/reset', [BrandingSettingsController::class, 'reset'])->name('settings.branding.reset');
+
+        Route::get('/settings/mail', [MailSettingsController::class, 'edit'])->name('settings.mail.edit');
+        Route::patch('/settings/mail', [MailSettingsController::class, 'update'])->name('settings.mail.update');
+        Route::post('/settings/mail/test', [MailSettingsController::class, 'sendTest'])->name('settings.mail.test');
+
+        Route::get('/email-logs', [EmailLogController::class, 'index'])->name('email-logs.index');
+
+        Route::get('/announcements', [AnnouncementController::class, 'create'])->name('announcements.create');
+        Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+        Route::post('/announcements/templates', [AnnouncementController::class, 'storeTemplate'])->name('announcements.templates.store');
+        Route::delete('/announcements/templates/{template}', [AnnouncementController::class, 'destroyTemplate'])->name('announcements.templates.destroy');
 
         Route::get('/access-control', [AccessControlController::class, 'index'])->name('access-control.index');
         Route::get('/access-control/users/search', [AccessControlController::class, 'searchUsers'])->name('access-control.users.search');

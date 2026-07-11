@@ -429,7 +429,19 @@
 
                     @if ($user?->is_super_admin)
                         <a href="{{ route('super-admin.access-control.index') }}" class="{{ $subItem }} {{ request()->routeIs('super-admin.access-control.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.access_control') }}</a>
-                        <a href="{{ route('super-admin.settings.branding.edit') }}" class="{{ $subItem }} {{ request()->routeIs('super-admin.settings.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.branding_settings') }}</a>
+                        <a href="{{ route('super-admin.settings.branding.edit') }}" class="{{ $subItem }} {{ request()->routeIs('super-admin.settings.branding.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.branding_settings') }}</a>
+                        <x-sidebar.collapsible-submenu id="admin-email" :title="__('app.sidebar.email')" :active="request()->routeIs('super-admin.settings.mail.*') || request()->routeIs('super-admin.email-logs.*')" :nested="true">
+                            <x-slot name="icon">
+                                <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                                    <path d="m3 7 9 6 9-6" />
+                                </svg>
+                            </x-slot>
+
+                            <a href="{{ route('super-admin.settings.mail.edit') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('super-admin.settings.mail.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.mail_setting') }}</a>
+                            <a href="{{ route('super-admin.email-logs.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('super-admin.email-logs.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.email_log') }}</a>
+                        </x-sidebar.collapsible-submenu>
+                        <a href="{{ route('super-admin.announcements.create') }}" class="{{ $subItem }} {{ request()->routeIs('super-admin.announcements.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.announcements') }}</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
             </div>
@@ -778,7 +790,19 @@
                     <a href="{{ route('admin.module-access-requests.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('admin.module-access-requests.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.access_requests') }}</a>
                     @if ($user?->is_super_admin)
                         <a href="{{ route('super-admin.access-control.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('super-admin.access-control.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.access_control') }}</a>
-                        <a href="{{ route('super-admin.settings.branding.edit') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('super-admin.settings.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.branding_settings') }}</a>
+                        <a href="{{ route('super-admin.settings.branding.edit') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('super-admin.settings.branding.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.branding_settings') }}</a>
+                        <x-sidebar.collapsible-submenu id="admin-email-mobile" :title="__('app.sidebar.email')" :active="request()->routeIs('super-admin.settings.mail.*') || request()->routeIs('super-admin.email-logs.*')" :nested="true">
+                            <x-slot name="icon">
+                                <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                                    <path d="m3 7 9 6 9-6" />
+                                </svg>
+                            </x-slot>
+
+                            <a href="{{ route('super-admin.settings.mail.edit') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('super-admin.settings.mail.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.mail_setting') }}</a>
+                            <a href="{{ route('super-admin.email-logs.index') }}" class="{{ $nestedSubItem }} {{ request()->routeIs('super-admin.email-logs.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.email_log') }}</a>
+                        </x-sidebar.collapsible-submenu>
+                        <a href="{{ route('super-admin.announcements.create') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('super-admin.announcements.*') ? $subActive : $subIdle }}">{{ __('app.sidebar.announcements') }}</a>
                     @endif
                 </x-sidebar.collapsible-submenu>
             </div>

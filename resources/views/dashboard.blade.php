@@ -42,6 +42,8 @@
         ['title' => __('app.dashboard.actions.access_requests'), 'description' => __('app.dashboard.actions.access_requests_description'), 'href' => route('admin.module-access-requests.index'), 'accent' => 'blue', 'icon' => 'shield'],
         ['title' => __('app.dashboard.actions.notifications'), 'description' => __('app.dashboard.actions.notifications_description'), 'href' => route('admin.notifications.create'), 'accent' => 'amber', 'icon' => 'activity'],
         ['title' => __('app.dashboard.actions.branding_settings'), 'description' => __('app.dashboard.actions.branding_settings_description'), 'href' => route('super-admin.settings.branding.edit'), 'accent' => 'purple', 'icon' => 'activity'],
+        ['title' => __('app.dashboard.actions.email'), 'description' => __('app.dashboard.actions.email_description'), 'href' => route('super-admin.settings.mail.edit'), 'accent' => 'purple', 'icon' => 'activity'],
+        ['title' => __('app.dashboard.actions.announcements'), 'description' => __('app.dashboard.actions.announcements_description'), 'href' => route('super-admin.announcements.create'), 'accent' => 'amber', 'icon' => 'activity'],
     ];
 @endphp
 

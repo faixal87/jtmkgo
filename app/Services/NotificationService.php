@@ -2,16 +2,28 @@
 
 namespace App\Services;
 
+use App\Jobs\SendNotificationEmail;
+use App\Models\EmailLog;
 use App\Models\Module;
 use App\Models\Notification;
 use App\Models\User;
+use App\Support\MailSettings;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class NotificationService
 {
+    /**
+     * Maximum notification emails dispatched per minute during a blast.
+     */
+    private const EMAILS_PER_MINUTE = 30;
+
+    public function __construct(private readonly MailSettings $mailSettings) {}
+
     public function send(
         User $recipient,
         string $title,
@@ -20,8 +32,7 @@ class NotificationService
         ?User $createdBy = null,
         ?string $actionUrl = null,
         ?string $actionLabel = null
-    ): Notification
-    {
+    ): Notification {
         $attributes = [
             'user_id' => $recipient->id,
             'title' => $title,
@@ -39,11 +50,13 @@ class NotificationService
 
         Cache::forget("notifications.unread-count.{$recipient->id}");
 
+        $this->dispatchEmail($recipient, $title, $message, $type, $actionUrl, $actionLabel);
+
         return $notification;
     }
 
     /**
-     * @param iterable<int, User>|Collection<int, User>|EloquentCollection<int, User> $recipients
+     * @param  iterable<int, User>|Collection<int, User>|EloquentCollection<int, User>  $recipients
      */
     public function sendToUsers(
         iterable $recipients,
@@ -53,8 +66,7 @@ class NotificationService
         ?User $createdBy = null,
         ?string $actionUrl = null,
         ?string $actionLabel = null
-    ): int
-    {
+    ): int {
         $hasActionColumns = $this->hasActionColumns();
 
         $rows = collect($recipients)
@@ -83,8 +95,27 @@ class NotificationService
             ->chunk(500)
             ->each(fn (Collection $chunk) => Notification::query()->insert($chunk->all()));
 
-        foreach ($rows->pluck('user_id')->unique() as $userId) {
+        $userIds = $rows->pluck('user_id')->unique();
+
+        foreach ($userIds as $userId) {
             Cache::forget("notifications.unread-count.{$userId}");
+        }
+
+        if ($this->mailSettings->isEnabled()) {
+            User::query()
+                ->whereIn('id', $userIds)
+                ->whereNotNull('email')
+                ->get(['id', 'email'])
+                // Blast throttle: batches of 30 recipients, one batch per minute.
+                ->each(fn (User $recipient, int $index) => $this->dispatchEmail(
+                    $recipient,
+                    $title,
+                    $message,
+                    $type,
+                    $actionUrl,
+                    $actionLabel,
+                    delaySeconds: intdiv($index, self::EMAILS_PER_MINUTE) * 60
+                ));
         }
 
         return $rows->count();
@@ -230,5 +261,44 @@ class NotificationService
         return $hasColumns ??= Schema::hasTable('notifications')
             && Schema::hasColumn('notifications', 'action_url')
             && Schema::hasColumn('notifications', 'action_label');
+    }
+
+    private function dispatchEmail(
+        User $recipient,
+        string $title,
+        string $message,
+        ?string $type,
+        ?string $actionUrl,
+        ?string $actionLabel,
+        int $delaySeconds = 0
+    ): void {
+        if (! $this->mailSettings->isEnabled() || ! $recipient->email) {
+            return;
+        }
+
+        try {
+            $log = EmailLog::query()->create([
+                'user_id' => $recipient->id,
+                'recipient_email' => $recipient->email,
+                'subject' => $title,
+                'type' => $type,
+                'status' => EmailLog::STATUS_QUEUED,
+            ]);
+
+            SendNotificationEmail::dispatch(
+                $log->id,
+                $recipient->email,
+                $title,
+                $message,
+                $actionUrl,
+                $actionLabel,
+                $type
+            )->delay($delaySeconds > 0 ? now()->addSeconds($delaySeconds) : null);
+        } catch (Throwable $e) {
+            Log::warning('Failed to queue notification email.', [
+                'user_id' => $recipient->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

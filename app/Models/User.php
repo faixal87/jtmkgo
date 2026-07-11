@@ -200,6 +200,40 @@ class User extends Authenticatable
         return $repositoryPhotoUrlCache[$this->getKey()] = $photo?->thumbnailUrl() ?: $photo?->photoUrl();
     }
 
+    /**
+     * Absolute local file path of the user's photo, for inline email
+     * embedding (remote URLs don't resolve for external mail clients).
+     */
+    public function profilePhotoStoragePath(): ?string
+    {
+        if ($this->profile_photo && Storage::disk('public')->exists($this->profile_photo)) {
+            return Storage::disk('public')->path($this->profile_photo);
+        }
+
+        static $photoRepositoryTablesExist = null;
+        $photoRepositoryTablesExist ??= Schema::hasTable('media_profiles') && Schema::hasTable('media_photos');
+
+        if (! $photoRepositoryTablesExist || ! $this->getKey()) {
+            return null;
+        }
+
+        $photo = MediaPhoto::query()
+            ->approved()
+            ->whereHas('profile', fn (Builder $query) => $query->where('linked_user_id', $this->id))
+            ->orderByDesc('is_current_official')
+            ->latest('approved_at')
+            ->latest()
+            ->first();
+
+        foreach ([$photo?->thumbnail_path, $photo?->photo_path] as $path) {
+            if ($path && Storage::disk('public')->exists($path)) {
+                return Storage::disk('public')->path($path);
+            }
+        }
+
+        return null;
+    }
+
     public function initials(): string
     {
         return collect(explode(' ', trim($this->name)))

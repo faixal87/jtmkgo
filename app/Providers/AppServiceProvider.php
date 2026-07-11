@@ -2,19 +2,19 @@
 
 namespace App\Providers;
 
+use App\Modules\AcademicCore\Policies\AcademicCorePolicy;
 use App\Modules\GantiGo\Models\ClassReplacement;
 use App\Modules\GantiGo\Policies\ClassReplacementPolicy;
 use App\Modules\GantiGo\Policies\GantiGoPolicy;
-use App\Modules\AcademicCore\Policies\AcademicCorePolicy;
+use App\Modules\LinkGo\Policies\LinkGoPolicy;
 use App\Modules\PhotoRepository\Models\MediaPhoto;
 use App\Modules\PhotoRepository\Policies\MediaPhotoPolicy;
 use App\Modules\PhotoRepository\Policies\PhotoRepositoryPolicy;
 use App\Modules\ProgramGo\Policies\ProgramGoPolicy;
-use App\Modules\LinkGo\Policies\LinkGoPolicy;
-use App\Modules\SurveyGo\Policies\SurveyGoPolicy;
 use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
 use App\Modules\SubjekGo\Policies\PreferencePolicy as SubjekGoPreferencePolicy;
 use App\Modules\SubjekGo\Policies\SubjekGoPolicy;
+use App\Modules\SurveyGo\Policies\SurveyGoPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
