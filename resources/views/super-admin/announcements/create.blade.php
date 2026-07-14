@@ -297,7 +297,7 @@
                     return this.computedSubject.split('{name}').join(this.previewName);
                 },
                 get previewHtml() {
-                    const photoPlaceholder = '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;"><tr><td align="center"><div style="width:140px;height:140px;border-radius:70px;background:#FFF7ED;border:4px solid #F0E4D4;text-align:center;line-height:140px;font-size:13px;color:#B45309;font-family:Arial,sans-serif;">Foto Staf</div></td></tr></table>';
+                    const photoPlaceholder = '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;"><tr><td align="center"><div style="width:140px;height:140px;border-radius:70px;background:#F9EDF1;border:4px solid #F0E2E6;text-align:center;line-height:140px;font-size:13px;color:#701A33;font-family:Arial,sans-serif;">Foto Staf</div></td></tr></table>';
                     return this.computedHtml
                         .split('{name}').join(this.previewName)
                         .split('{photo}').join(photoPlaceholder);
