@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Mail\BirthdayNotificationMail;
 use App\Mail\GeneralNotificationMail;
 use App\Models\EmailLog;
 use App\Support\MailSettings;
@@ -34,11 +35,14 @@ class SendNotificationEmail implements ShouldQueue
         // request's runtime config.
         $mailSettings->applyToRuntimeConfig();
 
-        Mail::to($this->recipientEmail)->send(
-            new GeneralNotificationMail($this->title, $this->body, $this->actionUrl, $this->actionLabel, $this->type)
-        );
+        $log = EmailLog::query()->with('user')->find($this->emailLogId);
+        $mailable = str_starts_with((string) $this->type, 'birthday:') && $log?->user
+            ? new BirthdayNotificationMail($log->user, $this->actionUrl, $this->actionLabel)
+            : new GeneralNotificationMail($this->title, $this->body, $this->actionUrl, $this->actionLabel, $this->type);
 
-        EmailLog::query()->find($this->emailLogId)?->markSent();
+        Mail::to($this->recipientEmail)->send($mailable);
+
+        $log?->markSent();
     }
 
     public function failed(?Throwable $exception): void

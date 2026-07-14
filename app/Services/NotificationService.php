@@ -215,8 +215,8 @@ class NotificationService
 
                     $this->send(
                         $user,
-                        'Happy Birthday JTMK Stars!',
-                        'Happy Birthday JTMK Stars! Have a Blast!',
+                        "Happy Birthday, {$user->name}!",
+                        'Wishing you good health, barakah, ease in every matter, and a joyful year ahead with your family, friends, and colleagues.',
                         $type,
                         actionUrl: route('staff-directory.index', ['user_id' => $user->id]),
                         actionLabel: 'View Profile'
