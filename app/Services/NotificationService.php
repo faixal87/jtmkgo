@@ -192,20 +192,20 @@ class NotificationService
     public function sendBirthdayNotifications(): int
     {
         $today = now();
-        $type = 'birthday:'.$today->toDateString();
         $sent = 0;
-        $birthdayUsers = collect();
+        $recipients = User::query()
+            ->where('account_status', 'approved')
+            ->get(['id', 'name', 'email']);
 
         User::query()
             ->where('account_status', 'approved')
             ->whereMonth('date_of_birth', $today->month)
             ->whereDay('date_of_birth', $today->day)
-            ->chunkById(100, function ($users) use ($type, &$sent, $birthdayUsers) {
+            ->chunkById(100, function ($users) use ($today, $recipients, &$sent) {
                 foreach ($users as $user) {
-                    $birthdayUsers->push($user);
+                    $type = 'birthday:'.$today->toDateString().':'.$user->id;
 
                     $alreadySent = Notification::query()
-                        ->where('user_id', $user->id)
                         ->where('type', $type)
                         ->exists();
 
@@ -213,36 +213,14 @@ class NotificationService
                         continue;
                     }
 
-                    $this->send(
-                        $user,
+                    $sent += $this->sendToUsers(
+                        $recipients,
                         "Happy Birthday, {$user->name}!",
                         'Wishing you good health, barakah, ease in every matter, and a joyful year ahead with your family, friends, and colleagues.',
-                        $type,
-                        actionUrl: route('staff-directory.index', ['user_id' => $user->id]),
-                        actionLabel: 'View Profile'
+                        $type
                     );
-
-                    $sent++;
                 }
             });
-
-        $adminBirthdayType = $type.':admin';
-
-        if ($birthdayUsers->isNotEmpty() && ! Notification::query()->where('type', $adminBirthdayType)->exists()) {
-            $names = $birthdayUsers
-                ->pluck('name')
-                ->take(8)
-                ->implode(', ');
-            $extra = $birthdayUsers->count() > 8 ? ' and '.($birthdayUsers->count() - 8).' more' : '';
-
-            $this->sendToSuperAdmins(
-                'Today\'s Staff Birthday',
-                "Birthday today: {$names}{$extra}.",
-                $adminBirthdayType,
-                actionUrl: route('staff-directory.index', ['q' => $birthdayUsers->first()->name]),
-                actionLabel: 'Open Staff Directory'
-            );
-        }
 
         return $sent;
     }

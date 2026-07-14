@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Mail\BirthdayNotificationMail;
 use App\Mail\GeneralNotificationMail;
 use App\Models\EmailLog;
+use App\Models\User;
 use App\Support\MailSettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -36,8 +37,9 @@ class SendNotificationEmail implements ShouldQueue
         $mailSettings->applyToRuntimeConfig();
 
         $log = EmailLog::query()->with('user')->find($this->emailLogId);
-        $mailable = str_starts_with((string) $this->type, 'birthday:') && $log?->user
-            ? new BirthdayNotificationMail($log->user, $this->actionUrl, $this->actionLabel)
+        $birthdayCelebrant = $this->birthdayCelebrant($log);
+        $mailable = $birthdayCelebrant
+            ? new BirthdayNotificationMail($birthdayCelebrant, $this->actionUrl, $this->actionLabel)
             : new GeneralNotificationMail($this->title, $this->body, $this->actionUrl, $this->actionLabel, $this->type);
 
         Mail::to($this->recipientEmail)->send($mailable);
@@ -50,5 +52,20 @@ class SendNotificationEmail implements ShouldQueue
         EmailLog::query()->find($this->emailLogId)?->markFailed(
             $exception?->getMessage() ?? 'Unknown error.'
         );
+    }
+
+    private function birthdayCelebrant(?EmailLog $log): ?User
+    {
+        if (! str_starts_with((string) $this->type, 'birthday:')) {
+            return null;
+        }
+
+        $celebrantIdValue = str($this->type)->afterLast(':')->value();
+
+        if (ctype_digit($celebrantIdValue) && (int) $celebrantIdValue > 0) {
+            return User::query()->find((int) $celebrantIdValue);
+        }
+
+        return $log?->user;
     }
 }
