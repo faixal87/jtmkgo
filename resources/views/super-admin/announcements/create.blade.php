@@ -1,3 +1,7 @@
+@php
+    $sectionIconClass = 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]';
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <div>
@@ -19,11 +23,13 @@
             <x-toast />
 
             <div class="flex flex-wrap gap-2 border-b border-[var(--color-border)] pb-4">
-                <button type="button" @click="pageTab = 'send'" class="rounded-full px-4 py-2 text-sm font-semibold transition" :class="pageTab === 'send' ? 'theme-button-primary shadow-sm' : 'border border-[var(--color-border)] text-[var(--color-muted)] hover:bg-[var(--color-surface)]'">
-                    ✈️ Send Announcement
+                <button type="button" @click="pageTab = 'send'" class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition" :class="pageTab === 'send' ? 'theme-button-primary shadow-sm' : 'border border-[var(--color-border)] text-[var(--color-muted)] hover:bg-[var(--color-surface)]'">
+                    <x-themed-icon name="send" size="sm" />
+                    Send Announcement
                 </button>
-                <button type="button" @click="pageTab = 'templates'" class="rounded-full px-4 py-2 text-sm font-semibold transition" :class="pageTab === 'templates' ? 'theme-button-primary shadow-sm' : 'border border-[var(--color-border)] text-[var(--color-muted)] hover:bg-[var(--color-surface)]'">
-                    📄 Manage Templates
+                <button type="button" @click="pageTab = 'templates'" class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition" :class="pageTab === 'templates' ? 'theme-button-primary shadow-sm' : 'border border-[var(--color-border)] text-[var(--color-muted)] hover:bg-[var(--color-surface)]'">
+                    <x-themed-icon name="file" size="sm" />
+                    Manage Templates
                 </button>
             </div>
 
@@ -40,7 +46,12 @@
 
                     <div class="enterprise-card space-y-6 rounded-2xl border p-6">
                         <section>
-                            <h3 class="text-lg font-semibold text-[var(--color-text)]">📄 Template</h3>
+                            <div class="flex items-center gap-3">
+                                <span class="{{ $sectionIconClass }}">
+                                    <x-themed-icon name="file" />
+                                </span>
+                                <h3 class="text-lg font-semibold text-[var(--color-text)]">Template</h3>
+                            </div>
                             <p class="mt-1 text-sm text-[var(--color-muted)]">Pick a ready-made template for common occasions, or a custom template you have added.</p>
 
                             <div class="mt-4">
@@ -54,7 +65,12 @@
                         </section>
 
                         <section class="border-t border-[var(--color-border)] pt-6" x-show="placeholders.length > 0">
-                            <h3 class="text-lg font-semibold text-[var(--color-text)]">✏️ Announcement Details</h3>
+                            <div class="flex items-center gap-3">
+                                <span class="{{ $sectionIconClass }}">
+                                    <x-themed-icon name="edit" />
+                                </span>
+                                <h3 class="text-lg font-semibold text-[var(--color-text)]">Announcement Details</h3>
+                            </div>
                             <p class="mt-1 text-sm text-[var(--color-muted)]">Just fill in the blanks below — the email content is assembled automatically from the template.</p>
 
                             <div class="mt-4 grid gap-4 md:grid-cols-2">
@@ -75,7 +91,12 @@
                         </section>
 
                         <section class="border-t border-[var(--color-border)] pt-6">
-                            <h3 class="text-lg font-semibold text-[var(--color-text)]">👥 Recipients</h3>
+                            <div class="flex items-center gap-3">
+                                <span class="{{ $sectionIconClass }}">
+                                    <x-themed-icon name="users" />
+                                </span>
+                                <h3 class="text-lg font-semibold text-[var(--color-text)]">Recipients</h3>
+                            </div>
                             <p class="mt-1 text-sm text-[var(--color-muted)]">Send to all approved users, or pick specific users only.</p>
 
                             <div class="mt-4 flex flex-wrap gap-4">
@@ -114,14 +135,20 @@
 
                         <div class="flex flex-wrap items-center gap-3 border-t border-[var(--color-border)] pt-5">
                             <button type="submit" class="theme-button-primary inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold shadow-sm">
-                                ✈️ Send Announcement
+                                <x-themed-icon name="send" size="sm" />
+                                Send Announcement
                             </button>
                             <p class="text-xs text-[var(--color-muted)]">Queued in batches of 30 emails per minute. Track delivery in <a href="{{ route('super-admin.email-logs.index') }}" class="font-semibold underline">Email Log</a>.</p>
                         </div>
                     </div>
 
                     <div class="enterprise-card rounded-2xl border p-6 lg:sticky lg:top-6">
-                        <h3 class="text-lg font-semibold text-[var(--color-text)]">👁️ Preview</h3>
+                        <div class="flex items-center gap-3">
+                            <span class="{{ $sectionIconClass }}">
+                                <x-themed-icon name="eye" />
+                            </span>
+                            <h3 class="text-lg font-semibold text-[var(--color-text)]">Preview</h3>
+                        </div>
                         <p class="mt-1 text-sm text-[var(--color-muted)]">Subject: <span class="font-semibold text-[var(--color-text)]" x-text="previewSubject"></span></p>
                         <div class="mt-3 overflow-hidden rounded-xl border border-[var(--color-border)]">
                             <iframe :srcdoc="previewHtml" @load="resizeFrame($event.target)" class="w-full bg-white" style="height:480px;border:0;display:block;" title="Email preview"></iframe>
@@ -132,7 +159,12 @@
 
             <div x-show="pageTab === 'templates'" x-cloak class="space-y-6">
                 <section class="enterprise-card rounded-2xl border p-6">
-                    <h3 class="text-lg font-semibold text-[var(--color-text)]">📄 Custom Templates</h3>
+                    <div class="flex items-center gap-3">
+                        <span class="{{ $sectionIconClass }}">
+                            <x-themed-icon name="file" />
+                        </span>
+                        <h3 class="text-lg font-semibold text-[var(--color-text)]">Custom Templates</h3>
+                    </div>
                     <p class="mt-1 text-sm text-[var(--color-muted)]">Built-in templates cannot be edited or deleted. Add a new template below if you need a different design.</p>
 
                     <div class="mt-4 divide-y divide-[var(--color-border)]">
@@ -158,7 +190,12 @@
                     @csrf
 
                     <div>
-                        <h3 class="text-lg font-semibold text-[var(--color-text)]">➕ Add New Template</h3>
+                        <div class="flex items-center gap-3">
+                            <span class="{{ $sectionIconClass }}">
+                                <x-themed-icon name="plus" />
+                            </span>
+                            <h3 class="text-lg font-semibold text-[var(--color-text)]">Add New Template</h3>
+                        </div>
                         <p class="mt-1 text-sm text-[var(--color-muted)]">Write your own email HTML. Use tokens like <code>[TARIKH]</code> or <code>[MESEJ]</code> for the parts admins will fill in when sending — they become form fields automatically. <code>{name}</code> inserts the recipient's name; <code>{photo}</code> embeds their profile photo.</p>
                     </div>
 
@@ -192,7 +229,8 @@
 
                     <div>
                         <button type="submit" class="theme-button-primary inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold shadow-sm">
-                            💾 Save Template
+                            <x-themed-icon name="save" size="sm" />
+                            Save Template
                         </button>
                     </div>
                 </form>
@@ -259,7 +297,7 @@
                     return this.computedSubject.split('{name}').join(this.previewName);
                 },
                 get previewHtml() {
-                    const photoPlaceholder = '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;"><tr><td align="center"><div style="width:140px;height:140px;border-radius:70px;background:#F9EDF1;border:4px solid #EADCE1;text-align:center;line-height:140px;font-size:13px;color:#701A33;font-family:Arial,sans-serif;">Foto Staf</div></td></tr></table>';
+                    const photoPlaceholder = '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;"><tr><td align="center"><div style="width:140px;height:140px;border-radius:70px;background:#FFF7ED;border:4px solid #F0E4D4;text-align:center;line-height:140px;font-size:13px;color:#B45309;font-family:Arial,sans-serif;">Foto Staf</div></td></tr></table>';
                     return this.computedHtml
                         .split('{name}').join(this.previewName)
                         .split('{photo}').join(photoPlaceholder);
