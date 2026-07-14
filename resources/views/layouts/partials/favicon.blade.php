@@ -1,0 +1,2 @@
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2329231f'/%3E%3Cpath d='M17 20h13v8h-5v16h-8V20Zm30 0v8H37c-3.5 0-6 2.4-6 6s2.5 6 6 6h3v-5h-5v-7h13v20H37c-8.3 0-14.5-5.8-14.5-14S28.7 20 37 20h10Z' fill='%23f59e0b'/%3E%3C/svg%3E">
+<link rel="alternate icon" href="{{ asset('favicon.ico') }}">

@@ -15,8 +15,8 @@
             <td align="center">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
                     <tr>
-                        <td style="background-color:#4338ca; padding:20px 28px;">
-                            <span style="color:#ffffff; font-size:18px; font-weight:bold;">{{ $systemTitle }}</span>
+                        <td style="background-color:#29231f; padding:20px 28px;">
+                            <span style="color:#f59e0b; font-size:18px; font-weight:bold; letter-spacing:0.04em; text-transform:uppercase;">{{ $systemTitle }}</span>
                         </td>
                     </tr>
                     <tr>
@@ -25,8 +25,8 @@
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding:16px 28px; background-color:#f9fafb; border-top:1px solid #eceff3;">
-                            <span style="color:#8a8f98; font-size:12px;">{!! $branding['footer_text'] ?? $systemTitle !!} &middot; This is an automated message, please do not reply.</span>
+                        <td style="padding:16px 28px; background-color:#faf7f2; border-top:1px solid #f0e4d4;">
+                            <span style="color:#7c6f64; font-size:12px;">{!! $branding['footer_text'] ?? $systemTitle !!} &middot; This is an automated message, please do not reply.</span>
                         </td>
                     </tr>
                 </table>

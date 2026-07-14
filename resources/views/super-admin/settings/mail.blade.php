@@ -1,5 +1,6 @@
 @php
     $selectClass = 'mt-1 block w-full rounded-lg border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] shadow-sm focus:border-[var(--color-accent)] focus:ring-[var(--color-accent)]';
+    $sectionIconClass = 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent-text)]';
 
     $awsRegions = [
         'ap-southeast-1' => 'Asia Pacific (Singapore) - ap-southeast-1',
@@ -31,8 +32,13 @@
             @include('super-admin.settings.partials.mail-tabs', ['activeTab' => 'settings'])
 
             <div class="enterprise-card rounded-2xl border p-6">
-                <div class="flex items-center gap-2">
-                    <span class="text-lg">&#128231;</span>
+                <div class="flex items-center gap-3">
+                    <span class="{{ $sectionIconClass }}" aria-hidden="true">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z" />
+                            <path d="m4 8 8 5 8-5" />
+                        </svg>
+                    </span>
                     <h3 class="text-lg font-semibold text-[var(--color-text)]">Email Delivery</h3>
                 </div>
                 <p class="mt-1 text-sm text-[var(--color-muted)]">Choose an email delivery provider. Both sets of settings are stored separately, so you can switch anytime without retyping.</p>
@@ -181,7 +187,12 @@
 
                     <div class="flex flex-wrap items-center gap-3 border-t border-[var(--color-border)] pt-5">
                         <button type="submit" class="theme-button-primary inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold shadow-sm">
-                            <span>&#128190;</span> Save Config
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+                                <path d="M17 21v-8H7v8" />
+                                <path d="M7 3v5h8" />
+                            </svg>
+                            Save Config
                         </button>
                         <p class="text-xs text-[var(--color-muted)]">Saving stores both SMTP and SES settings together — switching providers later won't lose the other's saved values.</p>
                     </div>
@@ -189,8 +200,13 @@
             </div>
 
             <div class="enterprise-card rounded-2xl border p-6">
-                <div class="flex items-center gap-2">
-                    <span class="text-lg">&#9992;&#65039;</span>
+                <div class="flex items-center gap-3">
+                    <span class="{{ $sectionIconClass }}" aria-hidden="true">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 2 11 13" />
+                            <path d="m22 2-7 20-4-9-9-4 20-7Z" />
+                        </svg>
+                    </span>
                     <h3 class="text-lg font-semibold text-[var(--color-text)]">Test SMTP</h3>
                 </div>
                 <p class="mt-1 text-sm text-[var(--color-muted)]">Send a test email using the saved mail config. Save the config first before testing.</p>
@@ -202,7 +218,11 @@
                         <x-text-input id="test_email" name="test_email" type="email" class="mt-1 block w-full" value="{{ old('test_email', auth()->user()->email) }}" required />
                     </div>
                     <button type="submit" class="theme-button-primary inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold shadow-sm">
-                        <span>&#9992;&#65039;</span> Test SMTP
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M22 2 11 13" />
+                            <path d="m22 2-7 20-4-9-9-4 20-7Z" />
+                        </svg>
+                        Test SMTP
                     </button>
                 </form>
             </div>

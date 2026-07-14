@@ -2,7 +2,7 @@
 
 @section('content')
     @if ($isAnnouncement ?? false)
-        <p style="margin:0 0 12px; color:#4338ca; font-size:12px; font-weight:bold; letter-spacing:0.05em; text-transform:uppercase;">Announcement</p>
+        <p style="margin:0 0 12px; color:#b45309; font-size:12px; font-weight:bold; letter-spacing:0.05em; text-transform:uppercase;">Announcement</p>
     @endif
 
     <h1 style="margin:0 0 16px; color:#1a1a1a; font-size:20px;">{{ $title }}</h1>
@@ -12,8 +12,8 @@
     @if ($actionUrl)
         <table role="presentation" cellpadding="0" cellspacing="0">
             <tr>
-                <td style="border-radius:8px; background-color:#4338ca;">
-                    <a href="{{ $actionUrl }}" style="display:inline-block; padding:12px 20px; color:#ffffff; font-size:14px; font-weight:bold; text-decoration:none;">
+                <td style="border-radius:8px; background-color:#29231f;">
+                    <a href="{{ $actionUrl }}" style="display:inline-block; padding:12px 20px; color:#fbbf24; font-size:14px; font-weight:bold; text-decoration:none;">
                         {{ $actionLabel ?: 'View Details' }}
                     </a>
                 </td>
