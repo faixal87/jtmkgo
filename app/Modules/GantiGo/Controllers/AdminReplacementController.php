@@ -114,6 +114,25 @@ class AdminReplacementController extends Controller
                 ->when($selectedSemesterId, fn ($query) => $query->forSemesterContext(Semester::query()->find($selectedSemesterId)))
                 ->when($selectedStatus, fn ($query) => $query->where('status', $selectedStatus))
                 ->when($selectedLecturerId, fn ($query) => $query->where('user_id', $selectedLecturerId))
+                ->orderByRaw(
+                    'CASE class_replacements.status
+                        WHEN ? THEN 0
+                        WHEN ? THEN 1
+                        WHEN ? THEN 2
+                        WHEN ? THEN 3
+                        WHEN ? THEN 4
+                        WHEN ? THEN 5
+                        ELSE 6
+                    END',
+                    [
+                        ClassReplacement::STATUS_PENDING_VERIFICATION,
+                        ClassReplacement::STATUS_PLANNED,
+                        ClassReplacement::STATUS_VERIFIED,
+                        ClassReplacement::STATUS_REJECTED,
+                        ClassReplacement::STATUS_CANCELLED,
+                        ClassReplacement::STATUS_OVERDUE,
+                    ]
+                )
                 ->latest('replacement_date')
                 ->paginate(15)
                 ->withQueryString(),
