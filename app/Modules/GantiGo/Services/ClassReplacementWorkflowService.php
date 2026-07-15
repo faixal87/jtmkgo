@@ -2,6 +2,7 @@
 
 namespace App\Modules\GantiGo\Services;
 
+use App\Models\Notification;
 use App\Models\User;
 use App\Modules\AcademicCore\Models\AcademicSubjectOffering;
 use App\Modules\GantiGo\Models\ClassReplacement;
@@ -235,6 +236,70 @@ class ClassReplacementWorkflowService
             ->where('status', ClassReplacement::STATUS_PLANNED)
             ->whereDate('replacement_date', '<', now()->toDateString())
             ->update(['status' => ClassReplacement::STATUS_OVERDUE]);
+    }
+
+    public function sendImplementationReminders(): int
+    {
+        $this->markOverdueRecords();
+
+        $today = now()->startOfDay();
+        $sent = 0;
+
+        ClassReplacement::query()
+            ->with([
+                'academicSubjectOffering.subject',
+                'academicSubject',
+                'academicClassGroups',
+                'course',
+                'lecturer:id,name,email',
+            ])
+            ->whereIn('status', [ClassReplacement::STATUS_PLANNED, ClassReplacement::STATUS_OVERDUE])
+            ->whereNull('implementation_submitted_at')
+            ->whereDate('replacement_date', '<=', $today->toDateString())
+            ->chunkById(100, function ($replacements) use ($today, &$sent): void {
+                foreach ($replacements as $replacement) {
+                    if (! $replacement->lecturer || ! $replacement->replacement_date) {
+                        continue;
+                    }
+
+                    $daysElapsed = (int) Carbon::parse($replacement->replacement_date)->startOfDay()->diffInDays($today);
+
+                    if ($daysElapsed % 2 !== 0) {
+                        continue;
+                    }
+
+                    $type = "ganti-go:implementation-reminder:{$replacement->id}:{$today->toDateString()}";
+
+                    $alreadySent = Notification::query()
+                        ->where('user_id', $replacement->lecturer->id)
+                        ->where('type', $type)
+                        ->exists();
+
+                    if ($alreadySent) {
+                        continue;
+                    }
+
+                    $message = implode("\n", [
+                        "Please mark your planned class replacement as implemented once the session has been completed.",
+                        "Course: {$replacement->displayCourseLabel()}",
+                        "Class: {$replacement->formattedClassGroups()}",
+                        'Replacement: '.$replacement->replacement_date->format('d M Y').', '.substr((string) $replacement->replacement_start_time, 0, 5).' - '.substr((string) $replacement->replacement_end_time, 0, 5),
+                    ]);
+
+                    $this->notifications->send(
+                        $replacement->lecturer,
+                        'Ganti Go Implementation Reminder',
+                        $message,
+                        $type,
+                        actionUrl: route('ganti-go.replacements.show', $replacement),
+                        actionLabel: 'Mark Implementation'
+                    );
+
+                    $sent++;
+                }
+            });
+
+        return $sent;
     }
 
     /**

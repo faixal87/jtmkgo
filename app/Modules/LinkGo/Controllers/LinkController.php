@@ -71,7 +71,8 @@ class LinkController extends Controller
         $data['is_active'] = true;
         $data['is_pinned'] = $linkGo->canManage($request->user()) && $request->boolean('is_pinned');
 
-        Link::create($data);
+        $link = Link::create($data);
+        $linkGo->notifyLinkPublished($link, $request->user());
 
         return redirect()
             ->route('link-go.my-links')
@@ -137,6 +138,11 @@ class LinkController extends Controller
         $data['is_pinned'] = $linkGo->canManage($request->user()) && $request->boolean('is_pinned');
 
         $link->update($data);
+        $link = $link->fresh(['portfolio:id,name', 'owner:id,name']);
+
+        if ($link) {
+            $linkGo->notifyLinkUpdated($link, $request->user());
+        }
 
         return redirect()
             ->route($link->user_id === $request->user()->id ? 'link-go.my-links' : 'link-go.admin.links.index')
