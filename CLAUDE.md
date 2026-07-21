@@ -100,8 +100,13 @@ The `/dashboard` route caches per-user module visibility via `SafeArrayCache` (`
 ### Cross-module shared systems
 
 - **Notifications** (`app/Models/Notification.php`, `NotificationCenterController`, `NotificationComposerController`) — in-app notification feed alerting super admins about pending approvals, module access requests, and other events; not tied to any one module.
+- **Email / announcements** (`app/Mail`, `App\Jobs\SendAnnouncementEmail`/`SendNotificationEmail`, `App\Models\EmailLog`, `App\Support\MailSettings`) — separate from the in-app notification feed above; this is actual outbound mail (announcements, birthday greetings, password reset). Mail provider (SMTP or SES) is DB-configurable at runtime via `SuperAdmin\MailSettingsController`, not `.env` — `MailSettings::applyToRuntimeConfig()` must be called immediately before any `Mail::to()->send()`, since Laravel resolves the mailer/transport from config on first use (calling it inside a Mailable's `build()` is too late). Every send is a queued job tracked in `EmailLog` (queued/sent/failed), so the queue listener must be running for mail to actually go out; `SuperAdmin\AnnouncementController` throttles bulk sends to 30 emails/minute via per-recipient job delay.
 - **Staff Directory** — global read-only staff lookup across all modules, with server-side search and IC-number masking gated by `staff-directory-sensitive-view`.
 - **Theming** — per-user theme preference (`default`, `blue`, `dark`, `purple-matcha`) stored on `User`, applied via layout partials in `resources/views/layouts/`.
+
+### Scheduled commands
+
+Custom Artisan commands and their schedule live in `routes/console.php` (Laravel 13 has no `app/Console/Kernel.php`), not a module: `notifications:birthday` (daily 08:00), `ganti-go:remind-implementation` (daily 08:15), `ganti-go:mark-overdue` (daily 00:10). `academic-core:doctor` is an on-demand diagnostic (`php artisan academic-core:doctor`) reporting Academic Core migration health — counts, legacy-table status, and orphan checks across `GantiGo`/`SubjekGo` — reach for it first when debugging Academic Core data-integrity issues.
 
 ### Frontend
 
