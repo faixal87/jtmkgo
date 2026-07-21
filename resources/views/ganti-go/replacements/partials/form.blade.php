@@ -85,9 +85,6 @@
         },
         venueRequired() {
             return ['Face-to-face', 'Hybrid', 'Combined Class'].includes(this.method);
-        },
-        remarksRequired() {
-            return this.reason === 'lain_lain';
         }
     }"
     x-effect="if (workflowLocked && typeof selectedWorkflow !== 'undefined') alreadyImplemented = selectedWorkflow === 'implemented'"
@@ -292,9 +289,8 @@
 
             <div class="md:col-span-2">
                 <x-input-label for="remarks" value="Remarks" />
-                <textarea id="remarks" name="remarks" rows="3" x-bind:required="remarksRequired()" placeholder="Required if reason or method is Others." class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('remarks', $replacement->remarks ?? '') }}</textarea>
-                <p x-show="remarksRequired()" x-cloak class="mt-2 text-xs font-medium text-amber-700">Please provide remarks when selecting LAIN-LAIN.</p>
-                <x-form-helper x-show="!remarksRequired()" x-cloak>Optional supporting notes for the replacement record.</x-form-helper>
+                <textarea id="remarks" name="remarks" rows="3" required placeholder="Provide remarks for this replacement record." class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">{{ old('remarks', $replacement->remarks ?? '') }}</textarea>
+                <x-form-helper>Please provide remarks for the replacement record.</x-form-helper>
                 <x-input-error :messages="$errors->get('remarks')" class="mt-2" />
             </div>
         </div>

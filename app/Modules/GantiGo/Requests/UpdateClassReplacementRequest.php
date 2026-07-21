@@ -66,11 +66,7 @@ class UpdateClassReplacementRequest extends FormRequest
                 'max:255',
             ],
             'reason' => ['required', 'string', Rule::in(array_keys(ClassReplacement::replacementReasonOptions()))],
-            'remarks' => [
-                Rule::requiredIf(fn () => $this->input('reason') === ClassReplacement::REASON_LAIN_LAIN),
-                'nullable',
-                'string',
-            ],
+            'remarks' => ['required', 'string'],
             'evidence_file' => [
                 Rule::requiredIf(fn () => $this->boolean('already_implemented') && GantiGoSetting::bool('require_evidence_upload') && ! $this->route('classReplacement')?->evidence_path),
                 'nullable',
