@@ -69,6 +69,17 @@ class DefaultModulesSeeder extends Seeder
             ]
         );
 
+        Module::updateOrCreate(
+            ['slug' => 'rubric-grading'],
+            [
+                'name' => 'RubricGo',
+                'icon' => 'RG',
+                'route_prefix' => '/rubric-grading',
+                'description' => 'Rubric template builder, lecturer grading sessions, score exports, and official print forms.',
+                'is_active' => true,
+            ]
+        );
+
         $this->retireModule('class-replacement', $gantiGo);
         $this->retireModule('passport-photo', $photoRepository);
     }

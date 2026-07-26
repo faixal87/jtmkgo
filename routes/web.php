@@ -51,6 +51,13 @@ use App\Modules\ProgramGo\Controllers\Admin\ReportController as ProgramGoReportC
 use App\Modules\ProgramGo\Controllers\Admin\ReviewSubmissionController as ProgramGoReviewSubmissionController;
 use App\Modules\ProgramGo\Controllers\DashboardController as ProgramGoDashboardController;
 use App\Modules\ProgramGo\Controllers\ProgramActivityController as ProgramGoActivityController;
+use App\Modules\RubricGrading\Controllers\DashboardController as RubricGradingDashboardController;
+use App\Modules\RubricGrading\Controllers\ExportController as RubricGradingExportController;
+use App\Modules\RubricGrading\Controllers\GradingSessionController as RubricGradingSessionController;
+use App\Modules\RubricGrading\Controllers\PrintController as RubricGradingPrintController;
+use App\Modules\RubricGrading\Controllers\RubricController as RubricGradingRubricController;
+use App\Modules\RubricGrading\Controllers\SessionStudentController as RubricGradingSessionStudentController;
+use App\Modules\RubricGrading\Controllers\StudentScoreController as RubricGradingStudentScoreController;
 use App\Modules\SubjekGo\Controllers\AdminPreferenceController as SubjekGoAdminPreferenceController;
 use App\Modules\SubjekGo\Controllers\AnalyticsController as SubjekGoAnalyticsController;
 use App\Modules\SubjekGo\Controllers\ClassGroupController as SubjekGoClassGroupController;
@@ -389,6 +396,26 @@ Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.ac
 
             Route::get('/admin/analytics', LinkGoAnalyticsController::class)->name('admin.analytics');
         });
+    });
+
+Route::middleware(['auth', 'session.timeout', 'verified', 'approved', 'module.access:rubric-grading'])
+    ->prefix('rubric-grading')
+    ->name('rubric-grading.')
+    ->group(function () {
+        Route::get('/', RubricGradingDashboardController::class)->name('dashboard');
+
+        Route::post('/rubrics/{rubric}/duplicate', [RubricGradingRubricController::class, 'duplicate'])->name('rubrics.duplicate');
+        Route::resource('rubrics', RubricGradingRubricController::class);
+
+        Route::get('/sessions/{gradingSession}/export/csv', RubricGradingExportController::class)->name('sessions.export.csv');
+        Route::get('/sessions/{gradingSession}/print', [RubricGradingPrintController::class, 'show'])->name('sessions.print');
+        Route::post('/sessions/{gradingSession}/students/import', [RubricGradingSessionStudentController::class, 'import'])->name('sessions.students.import');
+        Route::post('/sessions/{gradingSession}/students', [RubricGradingSessionStudentController::class, 'store'])->name('sessions.students.store');
+        Route::patch('/sessions/{gradingSession}/students/{sessionStudent}', [RubricGradingSessionStudentController::class, 'update'])->name('sessions.students.update');
+        Route::delete('/sessions/{gradingSession}/students/{sessionStudent}', [RubricGradingSessionStudentController::class, 'destroy'])->name('sessions.students.destroy');
+        Route::post('/sessions/{gradingSession}/students/{sessionStudent}/scores', [RubricGradingStudentScoreController::class, 'store'])->name('sessions.students.scores.store');
+        Route::resource('sessions', RubricGradingSessionController::class)
+            ->parameters(['sessions' => 'gradingSession']);
     });
 
 Route::middleware(['auth', 'session.timeout', 'verified', 'approved'])

@@ -8,6 +8,8 @@ use App\Modules\GantiGo\Models\ClassReplacement;
 use App\Modules\LinkGo\Models\Link as LinkGoLink;
 use App\Modules\PhotoRepository\Models\MediaPhoto;
 use App\Modules\ProgramGo\Models\ProgramActivity;
+use App\Modules\RubricGrading\Models\GradingSession as RubricGradingSession;
+use App\Modules\RubricGrading\Models\Rubric as RubricGradingRubric;
 use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
 use App\Modules\SubjekGo\Models\TeachingExperience as SubjekGoTeachingExperience;
 use App\Modules\SubjekGo\Models\TeachingHistory as SubjekGoTeachingHistory;
@@ -161,6 +163,16 @@ class User extends Authenticatable
     public function linkGoLinks(): HasMany
     {
         return $this->hasMany(LinkGoLink::class);
+    }
+
+    public function rubricGradingRubrics(): HasMany
+    {
+        return $this->hasMany(RubricGradingRubric::class);
+    }
+
+    public function rubricGradingSessions(): HasMany
+    {
+        return $this->hasMany(RubricGradingSession::class);
     }
 
     public function subjekGoPreferences(): HasMany

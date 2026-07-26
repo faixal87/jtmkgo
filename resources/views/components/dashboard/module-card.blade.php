@@ -57,6 +57,16 @@
                         <path d="M3 18h.01" />
                     </svg>
                     @break
+                @case('rubric-grading')
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M4 5h16" />
+                        <path d="M4 10h16" />
+                        <path d="M4 15h16" />
+                        <path d="M9 5v14" />
+                        <path d="M15 5v14" />
+                        <path d="m17 19 2 2 3-5" />
+                    </svg>
+                    @break
                 @default
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <path d="M4 6h16" />

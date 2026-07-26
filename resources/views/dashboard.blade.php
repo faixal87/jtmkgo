@@ -34,6 +34,13 @@
             'icon' => 'module',
             'href' => route('subjek-go.dashboard'),
         ],
+        'rubric-grading' => [
+            'title' => 'RubricGo',
+            'subtitle' => 'Build rubric templates, grade students, export marks, and print official assessment forms.',
+            'accent' => 'emerald',
+            'icon' => 'rubric-grading',
+            'href' => route('rubric-grading.dashboard'),
+        ],
     ];
 
     $adminActions = [

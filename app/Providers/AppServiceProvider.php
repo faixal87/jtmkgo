@@ -11,6 +11,7 @@ use App\Modules\PhotoRepository\Models\MediaPhoto;
 use App\Modules\PhotoRepository\Policies\MediaPhotoPolicy;
 use App\Modules\PhotoRepository\Policies\PhotoRepositoryPolicy;
 use App\Modules\ProgramGo\Policies\ProgramGoPolicy;
+use App\Modules\RubricGrading\Policies\RubricGradingPolicy;
 use App\Modules\SubjekGo\Models\Preference as SubjekGoPreference;
 use App\Modules\SubjekGo\Policies\PreferencePolicy as SubjekGoPreferencePolicy;
 use App\Modules\SubjekGo\Policies\SubjekGoPolicy;
@@ -48,6 +49,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('submit-program-go', [ProgramGoPolicy::class, 'submit']);
         Gate::define('manage-program-go', [ProgramGoPolicy::class, 'manage']);
         Gate::define('view-program-go-analytics', [ProgramGoPolicy::class, 'viewAnalytics']);
+        Gate::define('view-rubric-grading', [RubricGradingPolicy::class, 'view']);
+        Gate::define('grade-rubric-grading', [RubricGradingPolicy::class, 'grade']);
+        Gate::define('manage-rubric-grading', [RubricGradingPolicy::class, 'manage']);
+        Gate::define('view-rubric-grading-analytics', [RubricGradingPolicy::class, 'viewAnalytics']);
         Gate::define('view-link-go', [LinkGoPolicy::class, 'view']);
         Gate::define('submit-link-go', [LinkGoPolicy::class, 'submit']);
         Gate::define('manage-link-go', [LinkGoPolicy::class, 'manage']);

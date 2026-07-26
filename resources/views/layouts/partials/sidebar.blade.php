@@ -14,7 +14,8 @@
     $programGoModule = $sidebarModules->firstWhere('slug', 'program-go');
     $linkGoModule = $sidebarModules->firstWhere('slug', 'link-go');
     $subjekGoModule = $sidebarModules->firstWhere('slug', 'subjek-go');
-    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'program-go', 'link-go', 'survey-go', 'subjek-go'], true));
+    $rubricGoModule = $sidebarModules->firstWhere('slug', 'rubric-grading');
+    $regularModules = $sidebarModules->reject(fn ($module) => in_array($module->slug, ['ganti-go', 'photo-repository', 'program-go', 'link-go', 'survey-go', 'subjek-go', 'rubric-grading'], true));
     $isSuperAdmin = (bool) $user?->is_super_admin;
     $canManageGantiGo = $gantiGoModule && $managedModuleIds->contains($gantiGoModule->id);
     $canViewGantiGoAnalytics = $isSuperAdmin || $canManageGantiGo;
@@ -27,6 +28,7 @@
     $canManageSurvey = $isSuperAdmin;
     $canManageSubjekGo = $subjekGoModule && ! $isSuperAdmin && $managedModuleIds->contains($subjekGoModule->id);
     $canViewSubjekGoAnalytics = $subjekGoModule && ($isSuperAdmin || $canManageSubjekGo);
+    $canManageRubricGo = $rubricGoModule && ! $isSuperAdmin && $managedModuleIds->contains($rubricGoModule->id);
     $canManageAcademicCore = $user?->can('manage-academic-core') ?? false;
     $canManageAnyModule = $isSuperAdmin || $managedModuleIds->isNotEmpty();
     $showAdminMenu = $canManageAnyModule || $canManageAcademicCore;
@@ -358,8 +360,28 @@
                 </x-sidebar.collapsible-submenu>
             @endif
 
+            @if ($rubricGoModule)
+                <x-sidebar.collapsible-submenu id="rubric-go" title="RubricGo" :active="request()->routeIs('rubric-grading.*')" :badge="$canManageRubricGo ? __('app.common.admin') : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M4 6h16" />
+                            <path d="M4 12h16" />
+                            <path d="M4 18h10" />
+                            <path d="m15 18 2 2 4-5" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('rubric-grading.rubrics.index') }}" class="{{ $subItem }} {{ request()->routeIs('rubric-grading.rubrics.*') ? $subActive : $subIdle }}">Rubric</a>
+                    <a href="{{ route('rubric-grading.sessions.index') }}" class="{{ $subItem }} {{ request()->routeIs('rubric-grading.sessions.*') ? $subActive : $subIdle }}">Session</a>
+                </x-sidebar.collapsible-submenu>
+            @endif
+
             @foreach ($regularModules as $module)
-                <a href="{{ $module->route_prefix ? url($module->route_prefix) : 'javascript:void(0)' }}" title="{{ $module->name }}" class="{{ $navItem }} {{ $module->route_prefix ? $navIdle : $subDisabled }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
+                @php
+                    $modulePath = $module->route_prefix ? trim($module->route_prefix, '/') : null;
+                    $moduleActive = $modulePath && request()->is($modulePath, "{$modulePath}/*");
+                @endphp
+                <a href="{{ $module->route_prefix ? url($module->route_prefix) : 'javascript:void(0)' }}" title="{{ $module->name }}" class="{{ $navItem }} {{ $module->route_prefix ? ($moduleActive ? $navActive : $navIdle) : $subDisabled }}" :class="sidebarCollapsed ? 'justify-center px-2' : ''">
                     <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <path d="M4 6h16" />
                         <path d="M4 12h16" />
@@ -732,6 +754,22 @@
                     @if ($isSuperAdmin && $canViewSubjekGoAnalytics)
                         <a href="{{ route('subjek-go.analytics') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('subjek-go.analytics') ? $subActive : $subIdle }}">{{ __('subjek_go.menu.analytics') }}</a>
                     @endif
+                </x-sidebar.collapsible-submenu>
+            @endif
+
+            @if ($rubricGoModule)
+                <x-sidebar.collapsible-submenu id="mobile-rubric-go" title="RubricGo" :active="request()->routeIs('rubric-grading.*')" :badge="$canManageRubricGo ? __('app.common.admin') : null">
+                    <x-slot name="icon">
+                        <svg class="h-4 w-4 text-[var(--color-sidebar-active-text)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M4 6h16" />
+                            <path d="M4 12h16" />
+                            <path d="M4 18h10" />
+                            <path d="m15 18 2 2 4-5" />
+                        </svg>
+                    </x-slot>
+
+                    <a href="{{ route('rubric-grading.rubrics.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('rubric-grading.rubrics.*') ? $subActive : $subIdle }}">Rubric</a>
+                    <a href="{{ route('rubric-grading.sessions.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('rubric-grading.sessions.*') ? $subActive : $subIdle }}">Session</a>
                 </x-sidebar.collapsible-submenu>
             @endif
         </x-sidebar.section>
