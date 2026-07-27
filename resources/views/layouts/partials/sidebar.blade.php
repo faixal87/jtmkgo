@@ -371,6 +371,7 @@
                         </svg>
                     </x-slot>
 
+                    <a href="{{ route('rubric-grading.dashboard') }}" class="{{ $subItem }} {{ request()->routeIs('rubric-grading.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
                     <a href="{{ route('rubric-grading.rubrics.index') }}" class="{{ $subItem }} {{ request()->routeIs('rubric-grading.rubrics.*') ? $subActive : $subIdle }}">Rubric</a>
                     <a href="{{ route('rubric-grading.sessions.index') }}" class="{{ $subItem }} {{ request()->routeIs('rubric-grading.sessions.*') ? $subActive : $subIdle }}">Session</a>
                 </x-sidebar.collapsible-submenu>
@@ -768,6 +769,7 @@
                         </svg>
                     </x-slot>
 
+                    <a href="{{ route('rubric-grading.dashboard') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('rubric-grading.dashboard') ? $subActive : $subIdle }}">Dashboard</a>
                     <a href="{{ route('rubric-grading.rubrics.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('rubric-grading.rubrics.*') ? $subActive : $subIdle }}">Rubric</a>
                     <a href="{{ route('rubric-grading.sessions.index') }}" class="{{ $mobileSubItem }} {{ request()->routeIs('rubric-grading.sessions.*') ? $subActive : $subIdle }}">Session</a>
                 </x-sidebar.collapsible-submenu>
